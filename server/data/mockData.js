@@ -115,4 +115,4 @@ const mockQuestions = [
   },
 ];
 
-module.exports = mockQuestions;
+export default mockQuestions;

@@ -1,7 +1,7 @@
-const { setupServer } = require("./config/serverConfig.js");
-const gameRoutes = require("./routes/gameRoutes");
-const { setupSocketEvents } = require("./socket/socketManager");
-const { cleanupOldGames } = require("./services/gameService");
+import { setupServer } from "./config/serverConfig.js";
+import gameRoutes from "./routes/gameRoutes.js";
+import { setupSocketEvents } from "./socket/socketManager.js";
+import { cleanupOldGames } from "./services/gameService.js";
 
 // Initialize server
 const { app, server, io } = setupServer();

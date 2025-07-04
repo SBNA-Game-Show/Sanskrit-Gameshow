@@ -1,12 +1,6 @@
-const {
-  getGame,
-  getPlayer,
-  updateGame,
-  updatePlayer,
-  getCurrentQuestion,
-} = require("../services/gameService");
+import { getGame, getPlayer, updateGame, updatePlayer, getCurrentQuestion } from "../services/gameService.js";
 
-function setupPlayerEvents(socket, io) {
+export function setupPlayerEvents(socket, io) {
   // Player joins game room
   socket.on("player-join", (data) => {
     const { gameCode, playerId } = data;
@@ -420,4 +414,4 @@ function advanceToNextQuestion(game, gameCode, io) {
   }
 }
 
-module.exports = { setupPlayerEvents };
+export default  setupPlayerEvents ;

@@ -1,9 +1,9 @@
-const { v4: uuidv4 } = require("uuid");
-const mockQuestions = require("../data/mockData");
+import { v4 as uuidv4 } from "uuid";
+import mockQuestions from "../data/mockData.js";
 
 // In-memory storage
-let games = {};
-let players = {};
+export let games = {};
+export let players = {};
 
 // Generate random game code
 function generateGameCode() {
@@ -11,7 +11,7 @@ function generateGameCode() {
 }
 
 // Get current question
-function getCurrentQuestion(game) {
+export function getCurrentQuestion(game) {
   if (game.currentQuestionIndex < game.questions.length) {
     return game.questions[game.currentQuestionIndex];
   }
@@ -20,7 +20,7 @@ function getCurrentQuestion(game) {
 
 // Create a new game
 // Create a new game
-function createGame() {
+export function createGame() {
   const gameCode = generateGameCode();
   const gameId = uuidv4();
 
@@ -77,7 +77,7 @@ function createGame() {
 }
 
 // Join a game
-function joinGame(gameCode, playerName) {
+export function joinGame(gameCode, playerName) {
   if (!games[gameCode]) {
     throw new Error("Game not found");
   }
@@ -99,17 +99,17 @@ function joinGame(gameCode, playerName) {
 }
 
 // Get game by code
-function getGame(gameCode) {
+export function getGame(gameCode) {
   return games[gameCode] || null;
 }
 
 // Get player by ID
-function getPlayer(playerId) {
+export function getPlayer(playerId) {
   return players[playerId] || null;
 }
 
 // Update game
-function updateGame(gameCode, updates) {
+export function updateGame(gameCode, updates) {
   if (games[gameCode]) {
     Object.assign(games[gameCode], updates);
     return games[gameCode];
@@ -118,7 +118,7 @@ function updateGame(gameCode, updates) {
 }
 
 // Update player
-function updatePlayer(playerId, updates) {
+export function updatePlayer(playerId, updates) {
   if (players[playerId]) {
     Object.assign(players[playerId], updates);
     return players[playerId];
@@ -127,7 +127,7 @@ function updatePlayer(playerId, updates) {
 }
 
 // Cleanup old games
-function cleanupOldGames() {
+export function cleanupOldGames() {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   Object.keys(games).forEach((gameCode) => {
     if (games[gameCode].createdAt < oneHourAgo) {
@@ -138,7 +138,7 @@ function cleanupOldGames() {
 }
 
 // Handle player disconnect
-function handlePlayerDisconnect(socketId) {
+export function handlePlayerDisconnect(socketId) {
   Object.values(players).forEach((player) => {
     if (player.socketId === socketId) {
       player.connected = false;
@@ -154,24 +154,24 @@ function handlePlayerDisconnect(socketId) {
 }
 
 // Get game statistics
-function getGameStats() {
+export function getGameStats() {
   return {
     activeGames: Object.keys(games).length,
     connectedPlayers: Object.keys(players).length,
   };
 }
 
-module.exports = {
-  createGame,
-  joinGame,
-  getGame,
-  getPlayer,
-  updateGame,
-  updatePlayer,
-  getCurrentQuestion,
-  cleanupOldGames,
-  handlePlayerDisconnect,
-  getGameStats,
-  games,
-  players,
-};
+export default
+  createGame
+  joinGame
+  getGame
+  getPlayer
+  updateGame
+  updatePlayer
+  getCurrentQuestion
+  cleanupOldGames
+  handlePlayerDisconnect
+  getGameStats
+  games
+  players
+

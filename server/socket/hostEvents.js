@@ -1,10 +1,6 @@
-const {
-  getGame,
-  updateGame,
-  getCurrentQuestion,
-} = require("../services/gameService");
+import { getGame, updateGame, getCurrentQuestion } from "../services/gameService.js";
 
-function setupHostEvents(socket, io) {
+export function setupHostEvents(socket, io) {
   // Host joins game
   socket.on("host-join", (data) => {
     console.log("👑 Host join event received:", data);
@@ -207,4 +203,4 @@ function setupHostEvents(socket, io) {
   });
 }
 
-module.exports = { setupHostEvents };
+export default  setupHostEvents ;
