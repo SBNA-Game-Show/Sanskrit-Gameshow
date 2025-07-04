@@ -22,4 +22,3 @@ export const setupServer = () => {
   return { app, server, io };
 };
 
-export default  setupServer ;

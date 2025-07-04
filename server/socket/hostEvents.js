@@ -203,4 +203,3 @@ export function setupHostEvents(socket, io) {
   });
 }
 
-export default  setupHostEvents ;

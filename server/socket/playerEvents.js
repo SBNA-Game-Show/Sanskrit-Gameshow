@@ -414,4 +414,3 @@ function advanceToNextQuestion(game, gameCode, io) {
   }
 }
 
-export default  setupPlayerEvents ;

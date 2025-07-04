@@ -161,17 +161,4 @@ export function getGameStats() {
   };
 }
 
-export default
-  createGame
-  joinGame
-  getGame
-  getPlayer
-  updateGame
-  updatePlayer
-  getCurrentQuestion
-  cleanupOldGames
-  handlePlayerDisconnect
-  getGameStats
-  games
-  players
 

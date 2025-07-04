@@ -1,6 +1,6 @@
 // Server constants and configuration
 
-const GAME_CONSTANTS = {
+export const GAME_CONSTANTS = {
   MAX_PLAYERS_PER_GAME: 10,
   MAX_TEAMS: 2,
   MAX_STRIKES: 3,
@@ -10,13 +10,13 @@ const GAME_CONSTANTS = {
   GAME_CLEANUP_INTERVAL: 3600000, // 1 hour in milliseconds
 };
 
-const GAME_STATUS = {
+export const GAME_STATUS = {
   WAITING: "waiting",
   ACTIVE: "active",
   FINISHED: "finished",
 };
 
-const SOCKET_EVENTS = {
+export const SOCKET_EVENTS = {
   // Connection events
   CONNECTION: "connection",
   DISCONNECT: "disconnect",
@@ -55,7 +55,7 @@ const SOCKET_EVENTS = {
   QUESTION_CLOSED: "question-closed",
 };
 
-const ERROR_MESSAGES = {
+export const ERROR_MESSAGES = {
   GAME_NOT_FOUND: "Game not found",
   PLAYER_NOT_FOUND: "Player not found",
   GAME_FULL: "Game is full",
@@ -68,7 +68,7 @@ const ERROR_MESSAGES = {
   NOT_YOUR_TURN: "It's not your turn to answer",
 };
 
-const SUCCESS_MESSAGES = {
+export const SUCCESS_MESSAGES = {
   GAME_CREATED: "Game created successfully",
   PLAYER_JOINED: "Player joined successfully",
   GAME_STARTED: "Game started successfully",
@@ -78,7 +78,7 @@ const SUCCESS_MESSAGES = {
   BUZZER_CLEARED: "Buzzer cleared",
 };
 
-const TEAM_DEFAULTS = {
+export const TEAM_DEFAULTS = {
   TEAM_1: {
     name: "Team Red",
     members: ["Captain Red", "", "", "", ""],
@@ -88,10 +88,3 @@ const TEAM_DEFAULTS = {
     members: ["Captain Blue", "", "", "", ""],
   },
 };
-
-export default GAME_CONSTANTS;
-GAME_STATUS;
-SOCKET_EVENTS;
-ERROR_MESSAGES;
-SUCCESS_MESSAGES;
-TEAM_DEFAULTS;

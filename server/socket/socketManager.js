@@ -18,4 +18,3 @@ export function setupSocketEvents(io) {
   });
 }
 
-export default  setupSocketEvents ;
