@@ -5,7 +5,7 @@ import { setupSocketEvents } from "./socket/socketManager.js";
 import { cleanupOldGames } from "./services/gameService.js";
 import connectDB from "./data/index.js";
 dotenv.config({
-  path: "/.env",
+  path: "./.env",
 });
 
 // Initialize server
@@ -22,6 +22,12 @@ setInterval(() => {
   cleanupOldGames();
 }, 60 * 60 * 1000);
 
+
+["MONGODB_URI", "DB_NAME", "PORT"].forEach((key) => {
+  if (!process.env[key]) {
+    throw new Error(`❌ Missing required env variable: ${key}`);
+  }
+});
 // Connect to MongoDB, then start the server
 const PORT = process.env.PORT || 5000;
 connectDB()
