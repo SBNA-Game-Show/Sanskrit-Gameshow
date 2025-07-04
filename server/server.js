@@ -4,6 +4,7 @@ import gameRoutes from "./routes/gameRoutes.js";
 import { setupSocketEvents } from "./socket/socketManager.js";
 import { cleanupOldGames } from "./services/gameService.js";
 import connectDB from "./data/index.js";
+import adminRouter from "./routes/questionRoutes.js";
 dotenv.config({
   path: "./.env",
 });
@@ -13,6 +14,7 @@ const { app, server, io } = setupServer();
 
 // Setup routes - FIXED: Use router properly
 app.use("/", gameRoutes);
+app.use("/game", adminRouter);
 
 // Setup socket events
 setupSocketEvents(io);
@@ -21,7 +23,6 @@ setupSocketEvents(io);
 setInterval(() => {
   cleanupOldGames();
 }, 60 * 60 * 1000);
-
 
 ["MONGODB_URI", "DB_NAME", "PORT"].forEach((key) => {
   if (!process.env[key]) {

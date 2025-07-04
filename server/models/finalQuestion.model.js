@@ -5,7 +5,7 @@ import {
   QUESTION_TYPE,
 } from "../utils/constants.js";
 
-const gameQuestionSchema = new Schema(
+const finalQuestionSchema = new Schema(
   {
     _id: { type: String },
     question: { type: String, required: true, trim: true },
@@ -24,6 +24,8 @@ const gameQuestionSchema = new Schema(
       enum: Object.values(QUESTION_LEVEL),
       required: false,
     },
+    timesSkipped: { type: Number, required: false, min: 0, default: 0 },
+    timesAnswered: { type: Number, required: false, min: 0, default: 0 },
     answers: [
       {
         _id: { type: String },
@@ -38,4 +40,7 @@ const gameQuestionSchema = new Schema(
   { timestamps: true }
 );
 
-export const GameQuestion = mongoose.model("GameQuestion", gameQuestionSchema);
+export const FinalQuestion = mongoose.model(
+  "FinalQuestion",
+  finalQuestionSchema
+);
