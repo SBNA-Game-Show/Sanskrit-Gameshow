@@ -27,13 +27,13 @@ export interface Game {
     answerTimeLimit: number;
     answerTimerActive: boolean;
     activeAnswers: {
-      text: string;
-      points: number;
+      answer: string;
+      score: number;
       foundBy: string;
     }[];
     remainingAnswers: {
-      text: string;
-      points: number;
+      answer: string;
+      score: number;
     }[];
   };
   // NEW: Game state tracking

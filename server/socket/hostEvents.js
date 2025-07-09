@@ -1,4 +1,8 @@
-import { getGame, updateGame, getCurrentQuestion } from "../services/gameService.js";
+import {
+  getGame,
+  updateGame,
+  getCurrentQuestion,
+} from "../services/gameService.js";
 
 export function setupHostEvents(socket, io) {
   // Host joins game
@@ -161,9 +165,18 @@ export function setupHostEvents(socket, io) {
       game.currentBuzzer = null;
 
       // Update round
+      //Assuming 6 questions per round.
       const currentQuestion = getCurrentQuestion(game);
       if (currentQuestion) {
-        game.currentRound = currentQuestion.round;
+        if (game.currentQuestionIndex >= 0 && game.currentQuestionIndex < 6) {
+          game.currentRound = 1;
+        }
+        if (game.currentQuestionIndex >= 6 && game.currentQuestionIndex < 12) {
+          game.currentRound = 2;
+        }
+        if (game.currentQuestionIndex >= 12 && game.currentQuestionIndex < 18) {
+          game.currentRound = 3;
+        }
       }
 
       if (game.currentQuestionIndex >= game.questions.length) {
@@ -202,4 +215,3 @@ export function setupHostEvents(socket, io) {
     }
   });
 }
-

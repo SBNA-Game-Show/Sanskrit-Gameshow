@@ -12,15 +12,15 @@ async function getQuestions(collection) {
     .sort({ createdAt: -1 })
     .limit(18);
 
-  const mcqQuestions = await collection
-    .find({ questionType: QUESTION_TYPE.MCQ })
-    .select(
-      "_id question questionCategory questionLevel questionType answers timestamps"
-    )
-    .sort({ createdAt: -1 })
-    .limit(5);
+  // const mcqQuestions = await collection
+  //   .find({ questionType: QUESTION_TYPE.MCQ })
+  //   .select(
+  //     "_id question questionCategory questionLevel questionType answers timestamps"
+  //   )
+  //   .sort({ createdAt: -1 })
+  //   .limit(5);
 
-  return [...mcqQuestions, ...inputQuestions];
+  return [...inputQuestions];
 }
 
 export { getQuestions };
