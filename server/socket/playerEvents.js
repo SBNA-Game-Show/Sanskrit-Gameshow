@@ -1,4 +1,11 @@
-import { getGame, getPlayer, updateGame, updatePlayer, getCurrentQuestion } from "../services/gameService.js";
+import {
+  getGame,
+  getPlayer,
+  updateGame,
+  updatePlayer,
+  getCurrentQuestion,
+} from "../services/gameService.js";
+import { ApiError } from "../utils/ApiError.js";
 
 export function setupPlayerEvents(socket, io) {
   // Player joins game room
@@ -167,6 +174,9 @@ export function setupPlayerEvents(socket, io) {
     const game = getGame(gameCode);
     const player = getPlayer(playerId);
 
+    if (!game && !player) {
+      throw new ApiError(500, "No Game or Player Found");
+    }
     console.log(
       `📝 Answer submitted: "${answer}" by ${player?.name} in game ${gameCode}`
     );
@@ -193,8 +203,8 @@ export function setupPlayerEvents(socket, io) {
         const matchingAnswer = currentQuestion.answers.find(
           (a) =>
             !a.revealed &&
-            (a.text.toLowerCase().includes(answer.toLowerCase().trim()) ||
-              answer.toLowerCase().trim().includes(a.text.toLowerCase()))
+            (a.answer.toLowerCase() === answer.toLowerCase().trim() ||
+              answer.toLowerCase().trim() === a.answer.toLowerCase())
         );
 
         const team = game.teams.find((t) => t.id === player.teamId);
@@ -204,11 +214,11 @@ export function setupPlayerEvents(socket, io) {
           matchingAnswer.revealed = true;
 
           // Award points based on the point value * round multiplier
-          const pointValue = matchingAnswer.points * game.currentRound;
+          const pointValue = matchingAnswer.score * game.currentRound;
           team.score += pointValue;
 
           console.log(
-            `✅ Correct: "${answer}" matches "${matchingAnswer.text}" by ${player.name} (+${pointValue} pts)`
+            `✅ Correct: "${answer}" matches "${matchingAnswer.answer}" by ${player.name} (+${pointValue} pts)`
           );
 
           const updatedGame = updateGame(gameCode, game);
@@ -413,4 +423,3 @@ function advanceToNextQuestion(game, gameCode, io) {
     console.log(`🏆 Game finished: ${gameCode}, Winner: ${winner.name}`);
   }
 }
-

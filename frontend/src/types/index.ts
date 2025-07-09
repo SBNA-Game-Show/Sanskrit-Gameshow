@@ -47,17 +47,20 @@ export interface Game {
 
 // No change needed for these other interfaces, but included for reference
 export interface Question {
-  id: number;
+  _id: string;
   round: number;
-  category: string;
   question: string;
+  questionCategory: string;
   answers: Answer[];
 }
 
 export interface Answer {
-  text: string;
-  points: number;
+  _id?: string;
+  answer: string;
+  score: number;
   revealed: boolean;
+  isCorrect?: boolean;
+  rank?: number;
 }
 
 export interface Team {

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { joinGame, getGameStats, createGame } from "../services/gameService.js";
+import { ApiError } from "../utils/ApiError.js";
 
 const router = Router();
 
@@ -12,34 +13,37 @@ router.get("/", (req, res) => {
       status: "Running",
       activeGames: stats.activeGames,
       connectedPlayers: stats.connectedPlayers,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Error getting stats:", error);
     res.status(500).json({
       error: "Failed to get server stats",
       message: "Family Feud Quiz Game Server",
-      status: "Running"
+      status: "Running",
     });
   }
 });
 
 // Create game endpoint
-router.post("/api/create-game", (req, res) => {
+router.post("/api/create-game", async (req, res) => {
   try {
     console.log("🎮 Create game request received");
-    const { gameCode, gameId } = createGame();
+    const { gameCode, gameId } = await createGame();
+    if (!gameCode) {
+      throw new ApiError(500, "No GameCode Created");
+    }
     console.log(`✅ Game created successfully: ${gameCode}`);
     res.json({
       gameCode,
       gameId,
-      success: true
+      success: true,
     });
   } catch (error) {
     console.error("❌ Error creating game:", error);
     res.status(500).json({
       error: "Failed to create game",
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -52,16 +56,19 @@ router.post("/api/join-game", (req, res) => {
 
     if (!gameCode || !playerName) {
       return res.status(400).json({
-        error: "Game code and player name are required"
+        error: "Game code and player name are required",
       });
     }
 
-    const { playerId, game } = joinGame(gameCode.toUpperCase(), playerName.trim());
+    const { playerId, game } = joinGame(
+      gameCode.toUpperCase(),
+      playerName.trim()
+    );
     console.log(`✅ Player joined successfully: ${playerName} in ${gameCode}`);
     res.json({
       playerId,
       game,
-      success: true
+      success: true,
     });
   } catch (error) {
     console.error("❌ Error joining game:", error);
@@ -72,7 +79,7 @@ router.post("/api/join-game", (req, res) => {
     } else {
       res.status(500).json({
         error: "Failed to join game",
-        details: error.message
+        details: error.message,
       });
     }
   }

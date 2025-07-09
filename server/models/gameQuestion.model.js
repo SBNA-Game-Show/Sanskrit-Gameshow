@@ -9,6 +9,7 @@ const gameQuestionSchema = new Schema(
   {
     _id: { type: String },
     question: { type: String, required: true, trim: true },
+    round: { type: Number },
     questionType: {
       type: String,
       enum: Object.values(QUESTION_TYPE),
@@ -28,7 +29,6 @@ const gameQuestionSchema = new Schema(
       {
         _id: { type: String },
         answer: { type: String, required: false, trim: true },
-        responseCount: { type: Number, required: false, min: 0, default: 0 },
         isCorrect: { type: Boolean, required: true, default: false },
         rank: { type: Number, required: false, min: 0, default: 0 },
         score: { type: Number, required: false, min: 0, default: 0 },

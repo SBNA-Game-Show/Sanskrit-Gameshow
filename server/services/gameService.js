@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import mockQuestions from "../data/mockData.js";
+import { GameQuestion } from "../models/gameQuestion.model.js";
 
 // In-memory storage
 export let games = {};
@@ -20,17 +21,18 @@ export function getCurrentQuestion(game) {
 
 // Create a new game
 // Create a new game
-export function createGame() {
+export async function createGame() {
   const gameCode = generateGameCode();
   const gameId = uuidv4();
-
+  const q = await GameQuestion.find();
+  console.log("Questions Fetched: ", q);
   games[gameCode] = {
     id: gameId,
     code: gameCode,
     status: "waiting",
     currentQuestionIndex: 0,
     currentRound: 1,
-    questions: JSON.parse(JSON.stringify(mockQuestions)),
+    questions:JSON.parse(JSON.stringify(q)),
     teams: [
       {
         id: uuidv4(),
@@ -160,5 +162,3 @@ export function getGameStats() {
     connectedPlayers: Object.keys(players).length,
   };
 }
-
-

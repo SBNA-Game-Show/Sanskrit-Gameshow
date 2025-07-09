@@ -36,7 +36,7 @@ const AnswerGrid: React.FC<AnswerGridProps> = ({
                     answer.revealed ? "text-green-300" : "text-slate-300"
                   }
                 >
-                  {index + 1}. {answer.text}
+                  {index + 1}. {answer.answer}
                 </span>
                 {answer.revealed && (
                   <span className="ml-2 text-green-400 text-xs">
@@ -51,7 +51,7 @@ const AnswerGrid: React.FC<AnswerGridProps> = ({
                     : "bg-slate-600 text-slate-300"
                 }`}
               >
-                {answer.points * currentRound}
+                {answer.score * currentRound}
               </span>
             </div>
           </div>
@@ -76,7 +76,7 @@ const AnswerGrid: React.FC<AnswerGridProps> = ({
               <span className="font-semibold">
                 {answer.revealed ? (
                   <span className="animate-reveal">
-                    {index + 1}. {answer.text}
+                    {index + 1}. {answer.answer}
                   </span>
                 ) : (
                   `${index + 1}. ${"_".repeat(10)}`
@@ -89,7 +89,7 @@ const AnswerGrid: React.FC<AnswerGridProps> = ({
                     : "bg-slate-700"
                 }`}
               >
-                {answer.revealed ? answer.points * currentRound : "?"}
+                {answer.revealed ? answer.score * currentRound : "?"}
               </span>
             </div>
           </div>
@@ -116,7 +116,7 @@ const AnswerGrid: React.FC<AnswerGridProps> = ({
               <span className="font-semibold text-lg">
                 {answer.revealed ? (
                   <span className="animate-reveal">
-                    {index + 1}. {answer.text}
+                    {index + 1}. {answer.answer}
                   </span>
                 ) : (
                   `${index + 1}. ${"_".repeat(12)}`
@@ -129,7 +129,7 @@ const AnswerGrid: React.FC<AnswerGridProps> = ({
                     : "bg-slate-700"
                 }`}
               >
-                {answer.revealed ? answer.points * currentRound : "?"}
+                {answer.revealed ? answer.score * currentRound : "?"}
               </span>
             </div>
           </div>
