@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { joinGame, getGameStats, createGame } from "../services/gameService.js";
 import { ApiError } from "../utils/ApiError.js";
+import adminRouter from "./questionRoutes.js";
+import { loadQuestions } from "../controllers/question.controller.js";
 
 const router = Router();
 
@@ -29,6 +31,11 @@ router.get("/", (req, res) => {
 router.post("/api/create-game", async (req, res) => {
   try {
     console.log("🎮 Create game request received");
+
+    //Using LoadQuestions method. Hopefully this runs when the game is created
+    console.log("Pulling fresh questions from DB");
+    loadQuestions();
+
     const { gameCode, gameId } = await createGame();
     if (!gameCode) {
       throw new ApiError(500, "No GameCode Created");
