@@ -36,6 +36,12 @@ const finalQuestionSchema = new Schema(
         score: { type: Number, required: false, min: 0, default: 0 },
       },
     ],
+    // set to True when question is used for Game
+    // Set to False when in Dev Mode for Testing
+    used: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
