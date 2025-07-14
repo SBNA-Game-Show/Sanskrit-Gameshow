@@ -7,7 +7,6 @@ import { SCHEMA_MODELS } from "../utils/enums.js";
 
 export const loadQuestions = asyncHandler(async (req, res) => {
   // Initial Step: Clean GameQuestion Schema
-  await GameQuestion.deleteMany();
 
   // Step:1   Fetch all questions with admin-level details (including answers and timesSkipped)
   const questions = await questionService.getQuestions(

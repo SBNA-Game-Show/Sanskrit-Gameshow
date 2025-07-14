@@ -1,4 +1,5 @@
 import { GameQuestion } from "../models/gameQuestion.model.js";
+import { ApiError } from "../utils/ApiError.js";
 import { QUESTION_TYPE } from "../utils/constants.js";
 
 async function getQuestions(collection) {
@@ -20,6 +21,10 @@ async function getQuestions(collection) {
   //   )
   //   .sort({ createdAt: -1 })
   //   .limit(5);
+
+  if (inputQuestions.length !== 18) {
+    throw new ApiError(404, "Less than 18 questions in the DB. Game needs 18.");
+  }
 
   return [...inputQuestions];
 }

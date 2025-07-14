@@ -164,19 +164,15 @@ export function setupHostEvents(socket, io) {
       game.currentQuestionIndex += 1;
       game.currentBuzzer = null;
 
-      // Update round
-      //Assuming 6 questions per round.
+      //Set Number of Questions per Round
+      const questionsPerRound = 6;
+
+      // Update round based on current question
       const currentQuestion = getCurrentQuestion(game);
-      if (currentQuestion) {
-        if (game.currentQuestionIndex >= 0 && game.currentQuestionIndex < 6) {
-          game.currentRound = 1;
-        }
-        if (game.currentQuestionIndex >= 6 && game.currentQuestionIndex < 12) {
-          game.currentRound = 2;
-        }
-        if (game.currentQuestionIndex >= 12 && game.currentQuestionIndex < 18) {
-          game.currentRound = 3;
-        }
+      if (currentQuestion && game.currentQuestionIndex >= 0) {
+        game.currentRound = Math.floor(
+          game.currentQuestionIndex / questionsPerRound + 1
+        );
       }
 
       if (game.currentQuestionIndex >= game.questions.length) {

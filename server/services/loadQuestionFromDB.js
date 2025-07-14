@@ -28,9 +28,9 @@ export async function prepareGameQuestions() {
   // Clear old ones before inserting
   await GameQuestion.deleteMany();
   await GameQuestion.insertMany(questions);
-  await FinalQuestion.updateMany(
-    { _id: { $in: questionIDs } },
-    { $set: { used: true } }
-  );
+  // await FinalQuestion.updateMany(
+  // { _id: { $in: questionIDs } }
+  // { $set: { used: true } }
+  // );
   return questions;
 }
