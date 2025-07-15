@@ -2,7 +2,8 @@ const TeamResponse = require('../models/Response');
 const Question = require('../models/question');
 
 exports.submitResponse = async (req, res) => {
-  const { team, questionId, answer } = req.body;
+  const team = req.user.role;
+  const {questionId, answer } = req.body;
 
   try {
     const question = await Question.findById(questionId);

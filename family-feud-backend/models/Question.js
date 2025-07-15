@@ -6,7 +6,7 @@ const answerSchema = new mongoose.Schema({
 });
 
 const questionSchema = new mongoose.Schema({
-  questionText: { type: String, required: true },
+  question: { type: String, required: true },
   answers: [answerSchema]
 });
 

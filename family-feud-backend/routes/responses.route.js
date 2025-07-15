@@ -5,7 +5,10 @@ const {
   getScores
 } = require('../controllers/questionResponse.controller');
 
-router.post('/submit', submitResponse);
+// ✅ Import the authentication middleware
+const authenticate = require('../middlewares/authenticate');
+
+router.post('/submit', authenticate, submitResponse); // Authenticated route
 router.get('/scores', getScores);
 
 module.exports = router;
