@@ -1,65 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import API from '../utils/api';
-import { LoginCredentials, LoginResponse } from '../types/auth';
+
+interface FormData {
+  username: string;
+  password: string;
+  rememberMe: boolean;
+}
 
 const LoginForm: React.FC = () => {
-  const navigate = useNavigate();
-
-  const [formData, setFormData] = useState<LoginCredentials & { rememberMe: boolean }>({
+  const [formData, setFormData] = useState<FormData>({
     username: '',
     password: '',
-    rememberMe: false,
+    rememberMe: false
   });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  // Check for dark mode preference on mount
   useEffect(() => {
-    const dark = JSON.parse(localStorage.getItem('darkMode') || 'false');
-    setIsDarkMode(dark);
-    if (dark) document.documentElement.classList.add('dark');
+    const darkModePreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDarkMode(darkModePreference);
   }, []);
 
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    localStorage.setItem('darkMode', JSON.stringify(newMode));
-    document.documentElement.classList.toggle('dark', newMode);
+  const toggleDarkMode = (): void => {
+    setIsDarkMode(!isDarkMode);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
-
+    
     try {
-      const res = await API.post<LoginResponse>('/auth/login', {
-        username: formData.username,
-        password: formData.password,
-      });
-
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('role', res.data.role);
+      // Simulate login process - replace with your actual API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // ✅ Navigate to the Question page after successful login
-      navigate('/question');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      console.log('Login data:', formData);
+      
+      // TODO: Implement actual login logic here
+      // const response = await loginAPI(formData.username, formData.password);
+      
+      alert(`Login attempted with username: ${formData.username}`);
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
     <div className={`min-h-screen flex items-center justify-center p-8 transition-all duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-yellow-100'}`}>
       {/* Header Bar */}
