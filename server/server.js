@@ -1,27 +1,52 @@
-const { setupServer } = require("./config/serverConfig.js");
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const http = require("http");
+const { Server } = require("socket.io");
+
 const gameRoutes = require("./routes/gameRoutes");
+const authRoutes = require("./routes/auth.routes");
 const { setupSocketEvents } = require("./socket/socketManager");
 const { cleanupOldGames } = require("./services/gameService");
 
-// Initialize server
-const { app, server, io } = setupServer();
+dotenv.config();
 
-// Setup routes - FIXED: Use router properly
+// App + Server
+const app = express();
+const server = http.createServer(app);
+
+// Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Allow frontend
+    methods: ["GET", "POST"],
+  },
+});
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use("/api/auth", authRoutes);
 app.use("/", gameRoutes);
 
-// Setup socket events
+// Socket Events
 setupSocketEvents(io);
 
-// Cleanup old games periodically (every hour)
-setInterval(() => {
-  cleanupOldGames();
-}, 60 * 60 * 1000);
+// MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB connected");
 
-// Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Family Feud Quiz Server running on port ${PORT}`);
-  console.log(`📱 Frontend should connect to http://localhost:${PORT}`);
-  console.log(`🎮 Ready for multiplayer games!`);
-  console.log(`🔧 Server organized with modular components`);
-});
+    const PORT = process.env.PORT || 5001;
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
+      console.log(`🎮 Sockets ready at ws://localhost:${PORT}`);
+    });
+  })
+  .catch(err => console.error("❌ Mongo error:", err));
+
+// Cleanup job
+setInterval(cleanupOldGames, 60 * 60 * 1000);

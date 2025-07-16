@@ -26,6 +26,6 @@
       "@styles/*": ["styles/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "../server/routes/routes", "../server/routes/auth.routes.js", "../server/utils/jwt.js"],
   "exclude": ["node_modules"]
 }

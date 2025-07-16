@@ -42,26 +42,9 @@ const HomePage: React.FC = () => {
             </Button>
           </AnimatedCard>
 
-          <AnimatedCard className="flex-1" delay={400}>
-            <Button
-              onClick={() => navigate(ROUTES.JOIN)}
-              variant="success"
-              size="xl"
-              className="w-full py-6 text-xl group"
-              icon={
-                <span className="text-3xl mr-3 group-hover:animate-bounce">
-                  🎯
-                </span>
-              }
-            >
-              JOIN GAME
-              <span className="block text-sm text-green-200 mt-1">
-                Enter as a contestant
-              </span>
-            </Button>
-          </AnimatedCard>
+          
         </div>
-      </div>
+        </div>
     </PageLayout>
   );
 };

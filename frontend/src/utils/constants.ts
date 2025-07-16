@@ -1,6 +1,6 @@
 // Game constants and configuration
 export const GAME_CONFIG = {
-  SOCKET_URL: "http://localhost:5000",
+  SOCKET_URL: "http://localhost:5001",
   ANSWER_TIME_LIMIT: 30000, // 30 seconds
   MIN_PLAYERS: 2,
   MAX_STRIKES: 3,
@@ -10,9 +10,13 @@ export const GAME_CONFIG = {
 } as const;
 
 export const ROUTES = {
-  HOME: "/",
+  LOGIN: "/",
+  HOSTHOME: "/HostHomePage",
+  PLAYERHOME:"/PlayerHomePage",
   HOST: "/host",
   JOIN: "/join",
+  JOINGAME:"/joingame",
+  REGISTER: "/register",
 } as const;
 
 export const GAME_STATUS = {

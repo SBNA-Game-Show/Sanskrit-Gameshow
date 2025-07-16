@@ -15,6 +15,12 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
   onSelectTeam,
   playerName,
 }) => {
+  const handleSelectTeam = (teamId: string) => {
+    // Save team to localStorage for persistence
+    localStorage.setItem("team", teamId);
+    onSelectTeam(teamId);
+  };
+
   return (
     <div className="glass-card p-8 text-center mb-8">
       <h2 className="text-3xl font-bold mb-4">Welcome {playerName}!</h2>
@@ -27,7 +33,8 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
               {teams.map((team) => (
                 <AnimatedCard key={team.id}>
                   <button
-                    onClick={() => onSelectTeam(team.id)}
+                    onClick={() => handleSelectTeam(team.id)}
+                    disabled={!!selectedTeamId} // Prevent reselection
                     className={`w-full p-6 rounded-lg text-left transition-all ${
                       team.id === selectedTeamId
                         ? "bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-blue-500/50"
@@ -36,7 +43,7 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
                   >
                     <h4 className="text-lg font-semibold">{team.name}</h4>
                     <p className="text-slate-400">
-                      Members: {team.members.join(", ")}
+                      Members: {team.members.join(", ") || "No members yet"}
                     </p>
                   </button>
                 </AnimatedCard>
@@ -48,7 +55,10 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
             <div className="mb-6 p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-lg border border-green-500/30">
               <p className="text-green-300 font-medium">
                 You've joined{" "}
-                {teams.find((t) => t.id === selectedTeamId)?.name || "a team"}!
+                <strong>
+                  {teams.find((t) => t.id === selectedTeamId)?.name || "your team"}
+                </strong>
+                !
               </p>
             </div>
             <p className="text-slate-400">

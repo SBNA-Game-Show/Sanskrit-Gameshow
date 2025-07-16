@@ -62,7 +62,7 @@ const GameResults: React.FC<GameResultsProps> = ({
               </Button>
             )}
 
-            <Link to={ROUTES.HOME}>
+            <Link to={ROUTES.HOSTHOME}>
               <Button variant="secondary" size="lg">
                 Back to Home
               </Button>

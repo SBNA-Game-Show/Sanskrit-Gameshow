@@ -8,6 +8,7 @@ interface PlayerListProps {
   teams: Team[];
   currentPlayerId?: string;
   variant?: "waiting" | "game";
+  onAssignTeam?: (playerId: string, teamId: string) => void; // ✅ Add support
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({
@@ -15,6 +16,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
   teams,
   currentPlayerId,
   variant = "waiting",
+  onAssignTeam,
 }) => {
   if (variant === "game") {
     return (
@@ -52,8 +54,8 @@ const PlayerList: React.FC<PlayerListProps> = ({
           Connected Players ({players.length})
         </h3>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {players.map((player, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {players.map((player) => (
             <div
               key={player.id}
               className={`glass-card p-3 text-center ${
@@ -63,13 +65,35 @@ const PlayerList: React.FC<PlayerListProps> = ({
               }`}
             >
               <StatusIndicator type="connected" />
-              {player.name}
+              <div className="font-semibold">{player.name}</div>
               {player.id === currentPlayerId && (
                 <span className="text-yellow-400 ml-1">👤</span>
               )}
-              {player.teamId && (
-                <div className="text-xs mt-1 text-blue-300">
-                  {teams.find((t) => t.id === player.teamId)?.name}
+
+              <div className="text-xs mt-1 text-blue-300">
+                {player.teamId
+                  ? `Team: ${
+                      teams.find((t) => t.id === player.teamId)?.name || "Unknown"
+                    }`
+                  : "Unassigned"}
+              </div>
+
+              {/* ✅ Show assign buttons if prop exists */}
+              {variant === "waiting" && onAssignTeam && (
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  {teams.map((team) => (
+                    <button
+                      key={team.id}
+                      onClick={() => onAssignTeam(player.id, team.id)}
+                      className={`px-3 py-1 text-sm rounded-md font-medium ${
+                        player.teamId === team.id
+                          ? "bg-green-600 text-white"
+                          : "bg-blue-500 text-white hover:bg-blue-600"
+                      }`}
+                    >
+                      {team.name}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

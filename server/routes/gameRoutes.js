@@ -43,7 +43,14 @@ router.post("/api/create-game", (req, res) => {
     });
   }
 });
-
+router.get('/players/:gameCode', async (req, res) => {
+  const game = await getGameByCode(req.params.gameCode);
+  if (game) {
+    res.json({ players: game.players });
+  } else {
+    res.status(404).json({ error: "Game not found" });
+  }
+});
 // Join game endpoint
 router.post("/api/join-game", (req, res) => {
   try {

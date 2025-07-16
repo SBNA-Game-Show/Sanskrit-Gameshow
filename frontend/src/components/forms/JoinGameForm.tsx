@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import AnimatedCard from "../common/AnimatedCard";
 import Button from "../common/Button";
@@ -7,27 +7,46 @@ import { ROUTES } from "../../utils/constants";
 
 interface JoinGameFormProps {
   gameCode: string;
-  playerName: string;
   onGameCodeChange: (value: string) => void;
-  onPlayerNameChange: (value: string) => void;
   onJoinGame: () => void;
   isLoading: boolean;
   error?: string;
+  alreadyJoined: boolean;
 }
 
 const JoinGameForm: React.FC<JoinGameFormProps> = ({
   gameCode,
-  playerName,
   onGameCodeChange,
-  onPlayerNameChange,
   onJoinGame,
   isLoading,
   error,
+  alreadyJoined,
 }) => {
+  const playerName = localStorage.getItem("username") || "Player";
+
+  // Auto-rejoin game if data exists
+  useEffect(() => {
+    const storedGameCode = localStorage.getItem("gameCode");
+    const storedPlayer = localStorage.getItem("playerName");
+    if (storedGameCode && storedPlayer && !alreadyJoined) {
+      onGameCodeChange(storedGameCode);
+      setTimeout(() => {
+        onJoinGame(); // auto rejoin
+      }, 300); // slight delay to allow gameCode state to update
+    }
+  }, [alreadyJoined]);
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      onJoinGame();
+      handleJoin();
     }
+  };
+
+  const handleJoin = () => {
+    if (!gameCode || alreadyJoined) return;
+    localStorage.setItem("gameCode", gameCode); // store for rejoin
+    localStorage.setItem("playerName", playerName); // store name
+    onJoinGame();
   };
 
   return (
@@ -42,7 +61,7 @@ const JoinGameForm: React.FC<JoinGameFormProps> = ({
               Ready to join the competition?
             </p>
             <p className="text-slate-400">
-              Enter the game code and your name to get started
+              Enter the game code below to join as <strong>{playerName}</strong>
             </p>
           </div>
 
@@ -64,33 +83,23 @@ const JoinGameForm: React.FC<JoinGameFormProps> = ({
               maxLength={6}
               disabled={isLoading}
             />
-
-            <Input
-              id="playerName"
-              value={playerName}
-              onChange={(e) => onPlayerNameChange(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Enter your name"
-              label="Your Name"
-              disabled={isLoading}
-            />
           </div>
 
           <Button
-            onClick={onJoinGame}
-            disabled={isLoading || !gameCode.trim() || !playerName.trim()}
+            onClick={handleJoin}
+            disabled={isLoading || !gameCode.trim() || alreadyJoined}
             variant="success"
             size="xl"
             loading={isLoading}
             icon={!isLoading ? <span className="text-2xl">🚀</span> : undefined}
             className="mb-6"
           >
-            {isLoading ? "Joining..." : "JOIN GAME"}
+            {alreadyJoined ? "Already Joined" : isLoading ? "Joining..." : "JOIN GAME"}
           </Button>
 
           <div className="mt-6">
             <Link
-              to={ROUTES.HOME}
+              to={ROUTES.PLAYERHOME}
               className="text-slate-400 hover:text-white transition-colors"
             >
               ← Back to Home

@@ -6,8 +6,8 @@ interface AnswerInputProps {
   answer: string;
   onAnswerChange: (value: string) => void;
   onSubmit: () => void;
-  canSubmit: boolean;
-  isMyTeam: boolean;
+  canSubmit: boolean; // true when input is enabled and it's the right team
+  isMyTeam: boolean;  // true when the player is on the buzzing team
   teamName?: string;
   strikes?: number;
 }
@@ -30,13 +30,13 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
   return (
     <div className="glass-card p-4 flex-1">
       <div className="text-center mb-4">
-        {isMyTeam ? (
+        {canSubmit ? (
           <h3 className="text-lg font-semibold text-green-300 mb-2">
             🎯 Your team has control!
           </h3>
         ) : (
           <h3 className="text-lg font-semibold text-gray-300 mb-2">
-            ⏳ Other team is answering...
+            ⏳ Waiting for your team’s turn...
           </h3>
         )}
       </div>
@@ -47,7 +47,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
           onChange={(e) => onAnswerChange(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder={
-            isMyTeam ? "Enter your answer..." : "Wait for your turn..."
+            canSubmit ? "Enter your answer..." : "Wait for your turn..."
           }
           className={`w-full ${
             canSubmit
@@ -55,14 +55,14 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
               : "border-slate-400 bg-slate-50/5 opacity-60"
           }`}
           disabled={!canSubmit}
-          autoFocus={!!canSubmit}
+          autoFocus={canSubmit}
         />
 
-        {isMyTeam && (
+        {canSubmit && (
           <Button
             onClick={onSubmit}
-            disabled={!answer.trim() || !canSubmit}
-            variant={canSubmit && answer.trim() ? "success" : "secondary"}
+            disabled={!answer.trim()}
+            variant={answer.trim() ? "success" : "secondary"}
             className="w-full"
           >
             Submit Answer
@@ -71,13 +71,13 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
       </div>
 
       <div className="mt-3 text-center">
-        {isMyTeam ? (
+        {canSubmit ? (
           <p className="text-xs text-green-200">
             Strike {strikes}/3 • Enter your answer above
           </p>
         ) : (
           <p className="text-xs text-gray-400">
-            Wait for the other team to finish
+            You can't submit right now. Wait for your turn.
           </p>
         )}
       </div>

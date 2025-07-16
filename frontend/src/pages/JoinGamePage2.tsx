@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
+// src/pages/JoinGamePage.tsx
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PageLayout from "../components/layout/PageLayout";
-import AnimatedCard from "../components/common/AnimatedCard";
 import JoinGameForm from "../components/forms/JoinGameForm";
 import TeamSelection from "../components/forms/TeamSelection";
-import GameBoard from "../components/game/GameBoard";
-import GameResults from "../components/game/GameResults";
 import PlayerList from "../components/game/PlayerList";
+import GameBoard from "../components/game/GameBoard";
 import PlayerStatus from "../components/game/PlayerStatus";
 import BuzzerButton from "../components/game/BuzzerButton";
 import AnswerInput from "../components/game/AnswerInput";
+import GameResults from "../components/game/GameResults";
+import AnimatedCard from "../components/common/AnimatedCard";
 import Button from "../components/common/Button";
 import { useSocket } from "../hooks/useSocket";
 import gameApi from "../services/gameApi";
@@ -18,11 +19,9 @@ import { ROUTES } from "../utils/constants";
 
 const JoinGamePage: React.FC = () => {
   const [gameCode, setGameCode] = useState("");
-  const [playerName] = useState(() => localStorage.getItem("username") || "");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [game, setGame] = useState<Game | null>(null);
+  const playerName = localStorage.getItem("username") || "Anonymous";
   const [player, setPlayer] = useState<Player | null>(null);
+  const [game, setGame] = useState<Game | null>(null);
   const [answer, setAnswer] = useState("");
   const [hasBuzzed, setHasBuzzed] = useState(false);
   const [buzzFeedback, setBuzzFeedback] = useState("");
@@ -36,45 +35,47 @@ const JoinGamePage: React.FC = () => {
     buzzIn,
     submitAnswer,
     requestPlayersList,
+    socket
   } = useSocket({
-    onPlayerJoined: ({ player }) => {
-      if (game) {
-        setGame((prev) =>
-          prev ? { ...prev, players: [...prev.players, player] } : null
-        );
-      }
-    },
+    onPlayerJoined: ({ player }) => setGame(prev => prev ? { ...prev, players: [...prev.players, player] } : null),
     onTeamUpdated: ({ game, playerId, teamId }) => {
       setGame(game);
       if (player && player.id === playerId) {
-        setPlayer({ ...player, teamId });
+        setPlayer({
+          id: player.id,
+          name: player.name,
+          gameCode: player.gameCode,
+          connected: player.connected,
+          socketId: player.socketId,
+          teamId: teamId,
+        });
       }
+      
     },
     onGameStarted: ({ game }) => {
       setGame(game);
       const updatedPlayer = game.players.find((p: Player) => p.id === player?.id);
       if (updatedPlayer) setPlayer(updatedPlayer);
     },
-    onPlayerBuzzed: (data: any) => {
-      if (!data?.game) return;
-      setGame(data.game);
-      if (player && data.playerId === player.id) {
+    onPlayerBuzzed: ({ game, playerId }) => {
+      if (!game) return;
+      setGame(game);
+    
+      if (player?.id === playerId || player?.teamId === game.currentBuzzer?.teamId) {
         setHasBuzzed(true);
       }
     },
     onAnswerRevealed: ({ game, teamId, score }) => {
       setGame(game);
-      setRoundAnswers((prev) => {
+      setRoundAnswers(prev => {
         const updated = [...prev, { teamId, score }];
         if (updated.length === 2) {
-          const winner =
-            updated[0].score === updated[1].score
-              ? "Tie"
-              : updated[0].score > updated[1].score
-              ? updated[0].teamId
-              : updated[1].teamId;
+          const winner = updated[0].score === updated[1].score ? "Tie" : (updated[0].score > updated[1].score ? updated[0].teamId : updated[1].teamId);
           setRoundWinner(winner);
           setTimeout(() => {
+            if (socket) {
+              socket.emit("advance-to-next-round", { gameCode: game.code, winnerTeamId: winner });
+            }
             setRoundAnswers([]);
             setRoundWinner(null);
           }, 4000);
@@ -95,40 +96,27 @@ const JoinGamePage: React.FC = () => {
     onGameOver: ({ game }) => setGame(game),
   });
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (game && player) {
-      requestPlayersList(game.code);
-      interval = setInterval(() => requestPlayersList(game.code), 3000);
-    }
-    return () => interval && clearInterval(interval);
-  }, [game?.code, player?.id]);
-
   const joinGame = async () => {
-    if (!gameCode.trim() || !playerName.trim()) {
-      setError("Please enter both game code and your name");
-      return;
-    }
-    setIsLoading(true);
     try {
-      const response = await gameApi.joinGame({
-        gameCode: gameCode.toUpperCase(),
-        playerName: playerName.trim(),
-      });
+      const response = await gameApi.joinGame({ gameCode: gameCode.toUpperCase(), playerName });
       const { playerId, game: gameData } = response;
-      setPlayer({ id: playerId, name: playerName, gameCode, connected: true });
+      const storedTeam = localStorage.getItem("team");
+      localStorage.setItem("playerId", playerId);
+      localStorage.setItem("gameCode", gameCode.toUpperCase());
+      setPlayer({ id: playerId, name: playerName, gameCode, connected: true, teamId: storedTeam || undefined });
       setGame(gameData);
       connect();
       playerJoinGame(gameCode.toUpperCase(), playerId);
-    } catch (error: any) {
-      setError(error.response?.data?.error || "Failed to join game");
+      if (storedTeam) joinTeam(gameData.code, playerId, storedTeam);
+    } catch (e) {
+      alert("Failed to join game");
     }
-    setIsLoading(false);
   };
 
   const handleJoinTeam = (teamId: string) => {
     if (player && game) {
       setPlayer({ ...player, teamId });
+      localStorage.setItem("team", teamId);
       joinTeam(game.code, player.id, teamId);
     }
   };
@@ -148,13 +136,12 @@ const JoinGamePage: React.FC = () => {
   if (!player) {
     return (
       <PageLayout>
-        <JoinGameForm
-          gameCode={gameCode}
-          onGameCodeChange={setGameCode}
-          onJoinGame={joinGame}
-          isLoading={isLoading}
-          error={error}
-          alreadyJoined={false}
+        <JoinGameForm 
+          gameCode={gameCode} 
+          onGameCodeChange={setGameCode} 
+          onJoinGame={joinGame} 
+          isLoading={false} 
+          alreadyJoined={false} 
         />
       </PageLayout>
     );
@@ -163,45 +150,35 @@ const JoinGamePage: React.FC = () => {
   if (game?.status === "waiting") {
     return (
       <PageLayout gameCode={game.code}>
-        <TeamSelection
-          teams={game.teams}
-          selectedTeamId={player.teamId}
-          onSelectTeam={handleJoinTeam}
-          playerName={player.name}
-        />
+        <TeamSelection teams={game.teams} selectedTeamId={player.teamId} onSelectTeam={handleJoinTeam} playerName={player.name} />
         <PlayerList players={game.players} teams={game.teams} currentPlayerId={player.id} variant="waiting" />
       </PageLayout>
     );
   }
 
   if (game?.status === "active") {
-    const myTeam = game.teams.find((t) => t.id === player.teamId);
-    const isMyTeamTurn = game.currentBuzzer?.teamId === player.teamId;
-    const canSubmit = isMyTeamTurn && game.gameState.inputEnabled;
+    const myTeam = game.teams.find(t => t.id === player.teamId);
+    const canSubmit = game.currentBuzzer?.teamId === player.teamId && game.gameState.inputEnabled;
 
     return (
       <PageLayout gameCode={game.code} variant="game">
         <GameBoard game={game} variant="player" />
         <PlayerStatus playerName={player.name} team={myTeam || null} isActiveTeam={canSubmit} />
-
         {!game.currentBuzzer && (
-          <BuzzerButton onBuzz={handleBuzzIn} disabled={hasBuzzed || !!game.currentBuzzer} teamName={myTeam?.name} />
+          <BuzzerButton onBuzz={handleBuzzIn} disabled={hasBuzzed} teamName={myTeam?.name} />
         )}
-
         {game.currentBuzzer && (
           <AnswerInput
             answer={answer}
             onAnswerChange={setAnswer}
             onSubmit={handleSubmitAnswer}
             canSubmit={canSubmit}
-            isMyTeam={isMyTeamTurn}
+            isMyTeam={game.currentBuzzer.teamId === player.teamId}
             teamName={myTeam?.name}
             strikes={myTeam?.strikes || 0}
           />
         )}
-
         {buzzFeedback && <p className="text-center text-yellow-300 mt-2">{buzzFeedback}</p>}
-
         {roundWinner && (
           <div className="glass-card bg-green-400/10 border border-green-500/50 p-4 mt-4 text-center">
             <p className="text-green-300 font-semibold text-lg">
@@ -209,7 +186,6 @@ const JoinGamePage: React.FC = () => {
             </p>
           </div>
         )}
-
         <PlayerList players={game.players} teams={game.teams} currentPlayerId={player.id} variant="game" />
       </PageLayout>
     );
