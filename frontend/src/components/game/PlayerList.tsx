@@ -8,7 +8,7 @@ interface PlayerListProps {
   teams: Team[];
   currentPlayerId?: string;
   variant?: "waiting" | "game";
-  onAssignTeam?: (playerId: string, teamId: string) => void; // ✅ Add support
+  onAssignTeam?: (playerId: string, teamId: string) => void;
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({
@@ -27,7 +27,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
         <div className="grid grid-cols-1 gap-2">
           {teams.map((team) => (
             <div
-              key={team.id}
+              key={`team-${team.id}`}
               className={`p-2 rounded text-center text-sm ${
                 team.active
                   ? "bg-green-600/20 border border-green-400/30"
@@ -36,10 +36,8 @@ const PlayerList: React.FC<PlayerListProps> = ({
             >
               <div className="font-semibold">{team.name}</div>
               <div className="text-lg font-bold">{team.score}</div>
-              <div className="text-xs opacity-75">
-                Strikes: {team.strikes}/3
-                {team.active && " • Active"}
-              </div>
+             
+                
             </div>
           ))}
         </div>
@@ -57,7 +55,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {players.map((player) => (
             <div
-              key={player.id}
+              key={`player-${player.id}`}
               className={`glass-card p-3 text-center ${
                 player.id === currentPlayerId
                   ? "border-yellow-400/50 bg-yellow-400/10"
@@ -78,12 +76,11 @@ const PlayerList: React.FC<PlayerListProps> = ({
                   : "Unassigned"}
               </div>
 
-              {/* ✅ Show assign buttons if prop exists */}
               {variant === "waiting" && onAssignTeam && (
                 <div className="mt-2 flex flex-wrap justify-center gap-2">
                   {teams.map((team) => (
                     <button
-                      key={team.id}
+                      key={`assign-${player.id}-${team.id}`}
                       onClick={() => onAssignTeam(player.id, team.id)}
                       className={`px-3 py-1 text-sm rounded-md font-medium ${
                         player.teamId === team.id

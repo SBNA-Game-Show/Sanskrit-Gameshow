@@ -91,8 +91,31 @@ const GameBoard: React.FC<GameBoardProps> = ({
         variant="compact"
       />
 
-      {/* Current Buzzer Display */}
-      {game.currentBuzzer && currentBuzzer && (
+      {/* Host-Side Buzzer Display */}
+      {isHost && currentBuzzer && (
+        <div className="text-center text-white mt-4">
+          <p>
+            Answering: <strong>{currentBuzzer.playerName}</strong> from <strong>{currentBuzzer.teamName}</strong>
+          </p>
+          <div className="flex justify-center mt-2 gap-4">
+            <button
+              onClick={onCorrectAnswer}
+              className="px-4 py-2 bg-green-600 rounded shadow"
+            >
+              ✅ Correct
+            </button>
+            <button
+              onClick={onIncorrectAnswer}
+              className="px-4 py-2 bg-red-600 rounded shadow"
+            >
+              ❌ Incorrect
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Optional BuzzerDisplay for animation */}
+      {!isHost && game.currentBuzzer && currentBuzzer && (
         <BuzzerDisplay
           currentBuzzer={currentBuzzer}
           answerTimeLeft={answerTimeLeft}

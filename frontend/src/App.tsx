@@ -8,7 +8,7 @@ import JoinGamePage from "./pages/JoinGamePage";
 import HostGamePage from "./pages/HostGamePage";
 import LoginPage from "./pages/Login";
 import HostHomePage from "./pages/HostHomePage";
-import JoinPage from "./pages/JoinGamePage2";
+
 import Register from "./components/forms/sanskrit_registration_page"
 // Import constants
 import { ROUTES } from "./utils/constants";
@@ -19,7 +19,7 @@ const App: React.FC = () => {
       <Routes>
 <Route path={ROUTES.REGISTER} element={<Register />} />
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-        <Route path={ROUTES.JOINGAME} element={<JoinPage />} />
+        
         <Route path={ROUTES.HOSTHOME} element={<HostHomePage />} />
         <Route path={ROUTES.PLAYERHOME} element={<PlayerHomePage />} />
         <Route path={ROUTES.HOST} element={<HostGamePage />} />

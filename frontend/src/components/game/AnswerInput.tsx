@@ -6,8 +6,8 @@ interface AnswerInputProps {
   answer: string;
   onAnswerChange: (value: string) => void;
   onSubmit: () => void;
-  canSubmit: boolean; // true when input is enabled and it's the right team
-  isMyTeam: boolean;  // true when the player is on the buzzing team
+  canSubmit: boolean; // general control flag
+  isMyTeam: boolean;  // if current team is active
   teamName?: string;
   strikes?: number;
 }
@@ -21,8 +21,10 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
   teamName,
   strikes = 0,
 }) => {
+  const inputEnabled = canSubmit && isMyTeam;
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && canSubmit && answer.trim()) {
+    if (e.key === "Enter" && inputEnabled && answer.trim()) {
       onSubmit();
     }
   };
@@ -30,7 +32,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
   return (
     <div className="glass-card p-4 flex-1">
       <div className="text-center mb-4">
-        {canSubmit ? (
+        {inputEnabled ? (
           <h3 className="text-lg font-semibold text-green-300 mb-2">
             🎯 Your team has control!
           </h3>
@@ -47,18 +49,18 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
           onChange={(e) => onAnswerChange(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder={
-            canSubmit ? "Enter your answer..." : "Wait for your turn..."
+            inputEnabled ? "Enter your answer..." : "Wait for your turn..."
           }
           className={`w-full ${
-            canSubmit
+            inputEnabled
               ? "border-green-400 bg-green-50/5"
               : "border-slate-400 bg-slate-50/5 opacity-60"
           }`}
-          disabled={!canSubmit}
-          autoFocus={canSubmit}
+          disabled={!inputEnabled}
+          autoFocus={inputEnabled}
         />
 
-        {canSubmit && (
+        {inputEnabled && (
           <Button
             onClick={onSubmit}
             disabled={!answer.trim()}
@@ -71,7 +73,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
       </div>
 
       <div className="mt-3 text-center">
-        {canSubmit ? (
+        {inputEnabled ? (
           <p className="text-xs text-green-200">
             Strike {strikes}/3 • Enter your answer above
           </p>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { GAME_CONFIG } from "../utils/constants";
+import { Game } from "../types";
 
 interface SocketCallbacks {
   onPlayerJoined?: (data: any) => void;
@@ -15,7 +16,7 @@ interface SocketCallbacks {
   onGameOver?: (data: any) => void;
   onBuzzerCleared?: (data: any) => void;
   onWrongAnswer?: (data: any) => void;
-  onTeamSwitched?: (data: any) => void;
+  onTeamSwitched?: (data: { currentTeamId: string }) => void;
   onPlayersListReceived?: (data: any) => void;
   onAnswerRejected?: (data: any) => void;
 }
@@ -23,28 +24,26 @@ interface SocketCallbacks {
 export const useSocket = (callbacks: SocketCallbacks = {}) => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [game, setGame] = useState<Game | null>(null);
+  const [gameCode, setGameCode] = useState<string>("");
 
   const connect = useCallback(() => {
     if (socketRef.current && socketRef.current.connected) {
-      console.log("✅ Socket already connected:", socketRef.current.id);
       return socketRef.current;
     }
 
-    console.log("🌐 Connecting to socket...");
     const newSocket = io(GAME_CONFIG.SOCKET_URL, {
-      transports: ["websocket"], // ✅ Force WebSocket to avoid polling
+      transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
 
     newSocket.on("connect", () => {
-      console.log("✅ Socket connected:", newSocket.id);
       setIsConnected(true);
     });
 
-    newSocket.on("disconnect", (reason) => {
-      console.warn("⚠️ Socket disconnected:", reason);
+    newSocket.on("disconnect", () => {
       setIsConnected(false);
     });
 
@@ -52,7 +51,6 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       console.error("❌ Socket connection error:", error.message);
     });
 
-    // 🧩 Register all callback handlers
     const eventsMap: { [event: string]: keyof SocketCallbacks } = {
       "player-joined": "onPlayerJoined",
       "team-updated": "onTeamUpdated",
@@ -84,55 +82,56 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
-      console.log("🛑 Disconnecting socket...");
       socketRef.current.disconnect();
       socketRef.current = null;
       setIsConnected(false);
     }
   }, []);
 
-  // ⚙️ Utility emitters
   const emit = (event: string, payload: any) => {
     socketRef.current?.emit(event, payload);
   };
 
-  const hostJoinGame = (gameCode: string, teams: any[]) =>
-    emit("host-join", { gameCode, teams });
+  // 🔌 Emitters
+  const hostJoinGame = (code: string, teams: any[]) => {
+    setGameCode(code);
+    emit("host-join", { gameCode: code, teams });
+  };
 
-  const startGame = (gameCode: string) =>
-    emit("start-game", { gameCode });
+  const startGame = (code: string) => emit("start-game", { gameCode: code });
 
-  const revealAnswer = (gameCode: string, answerIndex: number) =>
-    emit("reveal-answer", { gameCode, answerIndex });
+  const revealAnswer = (code: string, answerIndex: number) =>
+    emit("reveal-answer", { gameCode: code, answerIndex });
 
-  const nextQuestion = (gameCode: string) =>
-    emit("next-question", { gameCode });
+  const nextQuestion = (code: string) => emit("next-question", { gameCode: code });
 
-  const clearBuzzer = (gameCode: string) =>
-    emit("clear-buzzer", { gameCode });
+  const onTeamSwitched = (code: string) => emit("team-switched", { gameCode: code });
 
-  const playerJoinGame = (gameCode: string, playerId: string) =>
-    emit("player-join", { gameCode, playerId });
+  const clearBuzzer = (code: string) => emit("clear-buzzer", { gameCode: code });
 
-  const buzzIn = (gameCode: string, playerId: string) =>
-    emit("buzz-in", { gameCode, playerId });
+  const playerJoinGame = (code: string, playerId: string) => {
+    setGameCode(code);
+    emit("player-join", { gameCode: code, playerId });
+  };
 
-  const submitAnswer = (
-    gameCode: string,
-    playerId: string,
-    answer: string
-  ) => emit("submit-answer", { gameCode, playerId, answer });
+  const buzzIn = (code: string, playerId: string) =>
+    emit("buzz-in", { gameCode: code, playerId });
 
-  const joinTeam = (
-    gameCode: string,
-    playerId: string,
-    teamId: string
-  ) => emit("join-team", { gameCode, playerId, teamId });
+  const submitAnswer = (gameCode: string, playerId: string, answer: string) => {
+    if (socketRef.current) {
+      console.log("📤 Emitting submitAnswer socket event:", { gameCode, playerId, answer });
+      emit("submitAnswer", { gameCode, playerId, answer });
+    } else {
+      console.error("❌ Socket not connected. Cannot emit submitAnswer.");
+    }
+  };
 
-  const requestPlayersList = (gameCode: string) =>
-    emit("get-players", { gameCode });
+  const joinTeam = (code: string, playerId: string, teamId: string) =>
+    emit("join-team", { gameCode: code, playerId, teamId });
 
-  // ✅ Cleanup on unmount
+  const requestPlayersList = (code: string) =>
+    emit("get-players", { gameCode: code });
+
   useEffect(() => {
     return () => disconnect();
   }, [disconnect]);
@@ -142,6 +141,10 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
     isConnected,
     connect,
     disconnect,
+    game,
+    setGame,
+    gameCode,
+    setGameCode,
     hostJoinGame,
     startGame,
     revealAnswer,
@@ -152,5 +155,6 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
     submitAnswer,
     joinTeam,
     requestPlayersList,
+    onTeamSwitched,
   };
 };

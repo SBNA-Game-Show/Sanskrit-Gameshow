@@ -12,6 +12,7 @@ export interface Game {
   players: Player[];
   hostId: string | null;
   createdAt: Date;
+  buzzedTeamId?: string;
   currentBuzzer?: {
     playerId: string;
     playerName: string;
@@ -40,7 +41,7 @@ export interface Game {
   gameState: {
     activeTeamId: string | null;
     inputEnabled: boolean;
-    lastBuzzingTeam: string | null; // Track who buzzed first for question
+    // lastBuzzingTeam: string | null; // Track who buzzed first for question
     waitingForOpponent: boolean; // True when waiting for opponent after strike
   };
 }

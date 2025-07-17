@@ -161,6 +161,10 @@ function getGameStats() {
   };
 }
 
+
+function getGameByCode(code) {
+  return games[code];
+}
 module.exports = {
   createGame,
   joinGame,
@@ -174,4 +178,5 @@ module.exports = {
   getGameStats,
   games,
   players,
+  getGameByCode, // ✅ export it
 };

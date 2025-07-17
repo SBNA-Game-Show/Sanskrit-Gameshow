@@ -1,13 +1,28 @@
+function calculateScore(answer, question) {
+  if (!answer || !question || !question.answers) return 0;
+
+  const submitted = answer.trim().toLowerCase();
+
+  const matchedAnswer = question.answers.find(
+    (a) => a.text.toLowerCase() === submitted
+  );
+
+  return matchedAnswer ? matchedAnswer.points : 0;
+}
+
 const {
   getGame,
   getPlayer,
   updateGame,
   updatePlayer,
   getCurrentQuestion,
+  getGameByCode, 
 } = require("../services/gameService");
 
 function setupPlayerEvents(socket, io) {
   // Player joins game room
+  console.log("✅ Player socket events registered.");
+
   socket.on("player-join", (data) => {
     const { gameCode, playerId } = data;
     const game = getGame(gameCode);
@@ -19,35 +34,26 @@ function setupPlayerEvents(socket, io) {
       socket.join(gameCode);
       updatePlayer(playerId, { socketId: socket.id });
 
-      // Make sure the player is in the game's players array
       const playerExists = game.players.some((p) => p.id === playerId);
       if (!playerExists) {
         game.players.push(player);
         updateGame(gameCode, game);
-        console.log(
-          `✅ Added player ${player.name} to game ${gameCode}. Total players: ${game.players.length}`
-        );
+        console.log(`✅ Added player ${player.name} to game ${gameCode}. Total players: ${game.players.length}`);
       }
 
-      // Emit to all players in the room, including the host
       io.to(gameCode).emit("player-joined", {
         player: player,
         totalPlayers: game.players.length,
       });
 
-      console.log(
-        `👤 Player ${player.name} joined room ${gameCode}. Total: ${game.players.length}`
-      );
+      console.log(`👤 Player ${player.name} joined room ${gameCode}. Total: ${game.players.length}`);
     } else {
-      console.error(
-        `❌ Player join failed: game=${!!game}, player=${!!player}`
-      );
+      console.error(`❌ Player join failed: game=${!!game}, player=${!!player}`);
     }
   });
 
   socket.on("get-players", ({ gameCode }) => {
     const game = getGame(gameCode);
-  
     if (game) {
       io.to(gameCode).emit("players-list", {
         players: game.players,
@@ -55,8 +61,7 @@ function setupPlayerEvents(socket, io) {
       });
     }
   });
-  
-  // Assign player to team
+
   socket.on("join-team", (data) => {
     const { gameCode, playerId, teamId } = data;
     const game = getGame(gameCode);
@@ -73,37 +78,33 @@ function setupPlayerEvents(socket, io) {
     }
   });
 
-  // Player buzzes in - ENHANCED: Now separate from answer submission
   socket.on("buzz-in", (data) => {
     const { gameCode, playerId } = data;
     const game = getGame(gameCode);
     const player = getPlayer(playerId);
-  
+
     if (!game || !player || game.status !== "active") return;
-  
+
     const teamId = player.teamId;
     if (!teamId) {
       return socket.emit("buzz-rejected", {
         message: "Join a team before buzzing in.",
       });
     }
-  
-    // Only allow 1 team to buzz
+
     if (!game.buzzedTeamId) {
       game.buzzedTeamId = teamId;
       game.gameState.activeTeamId = teamId;
       game.gameState.inputEnabled = true;
-  
+
       io.to(gameCode).emit("player-buzzed", {
         playerId: player.id,
         teamId: player.teamId,
         playerName: player.name,
-        //teamName: team.name,
         timestamp: Date.now(),
         game: game,
       });
-      
-  
+
       console.log(`✅ ${player.name} buzzed in for team ${teamId}`);
     } else {
       socket.emit("buzz-rejected", {
@@ -111,96 +112,112 @@ function setupPlayerEvents(socket, io) {
       });
     }
   });
-  
 
-  // Submit answer - ENHANCED: Now requires buzzer control first
-  socket.on("submit-answer", (data) => {
-    const { gameCode, playerId, answer } = data;
-    const game = getGame(gameCode);
-    const player = getPlayer(playerId);
+  // Pseudo structure assuming you have game.answers and game.buzzedTeamId
+  socket.on("submitAnswer", async ({ gameCode, playerId, answer }) => {
+    console.log("📥 [Socket] Received submitAnswer:", { gameCode, playerId, answer });
   
-    if (!game || !player || game.status !== "active") return;
+    const game = getGameByCode(gameCode);
+    if (!game) return console.warn(`⚠️ No game found for code ${gameCode}`);
+  
+    const player = getPlayer(playerId);
+    if (!player || !player.teamId) return console.warn(`⚠️ Invalid player: ${playerId}`);
   
     const teamId = player.teamId;
-    if (!teamId || game.answers[teamId]) return;
+    if (!game.answers) game.answers = {};
   
-    const currentQuestion = getCurrentQuestion(game);
-    const matchedAnswer = currentQuestion?.answers.find(
-      (a) => a.answer.toLowerCase() === answer.toLowerCase()
-    );
-    const score = matchedAnswer ? matchedAnswer.points : 0;
-  
-    game.answers[teamId] = { answer, score, playerName: player.name };
-    game.answerQueue.push(teamId);
-  
-    io.to(gameCode).emit("answer-revealed", {
-      teamId,
-      answer,
-      score,
-    });
-  
-    // 👇 Move to second team once first team has answered
-    if (game.answerQueue.length === 1) {
-      const secondTeam = game.teams.find((t) => t.id !== game.buzzedTeamId);
-      if (secondTeam) {
-        game.gameState.activeTeamId = secondTeam.id;
-        game.gameState.inputEnabled = true;
-  
-        io.to(gameCode).emit("team-switched", {
-          teamId: secondTeam.id,
-          message: "Your team may now answer!",
-          game: game,
-        });
-      }
+    if (game.answers[teamId]) {
+      console.warn(`❌ Team ${teamId} already submitted an answer.`);
+      return;
     }
   
-    // ✅ After both answered, declare winner
-    if (game.answerQueue.length === 2) {
-      const [teamAId, teamBId] = game.answerQueue;
-      const a = game.answers[teamAId];
-      const b = game.answers[teamBId];
+    const question = getCurrentQuestion(game);
+    const score = calculateScore(answer, question); // You implemented this
+    game.answers[teamId] = { answer, score };
   
-      const winner =
-        a.score > b.score
-          ? game.teams.find((t) => t.id === teamAId)
-          : b.score > a.score
-          ? game.teams.find((t) => t.id === teamBId)
-          : null;
+    console.log(`📝 Answer submitted: Team ${teamId} → "${answer}" (Score: ${score})`);
   
-      io.to(gameCode).emit("round-winner", {
-        winnerTeamId: winner?.id || null,
-        winnerTeamName: winner?.name || "Tie",
-        scores: {
-          [teamAId]: a.score,
-          [teamBId]: b.score,
-        },
-        answers: {
-          [teamAId]: a.answer,
-          [teamBId]: b.answer,
-        },
+    // Check if the other team has answered yet
+    const [teamA, teamB] = game.teams;
+    const otherTeamId = teamA.id === teamId ? teamB.id : teamA.id;
+  
+    if (!game.answers[otherTeamId]) {
+      game.buzzedTeamId = otherTeamId;
+      game.activeTeamId = otherTeamId; // ✅ Switch turn here
+      game.gameState.inputEnabled = true;
+  
+      io.to(gameCode).emit("onPlayerBuzzed", {
+        game,
+        playerId: null,
+        teamId: otherTeamId,
       });
   
-      // Reset for next round
-      game.buzzedTeamId = null;
-      game.answerQueue = [];
-      game.answers = {};
-      game.gameState.inputEnabled = false;
-      game.gameState.activeTeamId = null;
+      io.to(gameCode).emit("team-switched", {
+        currentTeamId: game.activeTeamId,
+      });
+  
+      console.log(`🔔 Switching to Team ${otherTeamId}`);
+    } else {
+      revealAnswersToPlayers(game, io);
     }
+  
+    updateGame(gameCode, game);
   });
   
+  function revealAnswersToPlayers(game, io) {
+    const { answers, teams, code } = game;
+  
+    // Emit individual answers
+    for (const team of teams) {
+      const teamId = team.id;
+      const { score } = answers[teamId] || { score: 0 };
+  
+      io.to(code).emit("onAnswerRevealed", {
+        game,
+        teamId,
+        score,
+      });
+    }
+  
+    const [teamA, teamB] = teams;
+    const scoreA = answers[teamA.id]?.score || 0;
+    const scoreB = answers[teamB.id]?.score || 0;
+  
+    let winner;
+    if (scoreA === scoreB) {
+      winner = "Tie";
+    } else {
+      winner = scoreA > scoreB ? teamA.id : teamB.id;
+    }
+  
+    const winnerName = winner === "Tie"
+      ? "Tie"
+      : teams.find((t) => t.id === winner)?.name || winner;
+  
+    console.log(`🏁 Round Winner: ${winnerName} (TeamA: ${teamA.name} = ${scoreA}, TeamB: ${teamB.name} = ${scoreB})`);
+  
+    game.buzzedTeamId = null;
+    game.answers = {};
+    game.gameState.inputEnabled = false;
+  
+    io.to(code).emit("roundWinner", {
+      game,
+      winnerId: winner === "Tie" ? null : winner,
+      winnerName: winner === "Tie" ? "Tie" : teams.find(t => t.id === winner)?.name,
+    });
+    
+  }
+  
+  
+  
+  
 }
-
-// Helper function to advance to next question
 function advanceToNextRound(game, gameCode, io) {
   game.currentQuestionIndex += 1;
-
   const nextQuestion = getCurrentQuestion(game);
-  if (nextQuestion) {
-    // Set round based on question index
-    game.currentRound = game.currentQuestionIndex + 1;
 
-    // Reset state
+  if (nextQuestion) {
+    game.currentRound = game.currentQuestionIndex + 1;
     game.currentBuzzer = null;
     game.buzzedTeamId = null;
     game.answerQueue = [];
@@ -210,7 +227,6 @@ function advanceToNextRound(game, gameCode, io) {
     game.gameState.lastBuzzingTeam = null;
     game.gameState.waitingForOpponent = false;
 
-    // Reset team strikes
     game.teams.forEach((t) => {
       t.strikes = 0;
       t.active = false;
@@ -218,6 +234,7 @@ function advanceToNextRound(game, gameCode, io) {
 
     const finalGame = updateGame(gameCode, game);
 
+    // Emit to frontend to update round (but allow delay if needed to show winner first)
     io.to(gameCode).emit("next-round", {
       game: finalGame,
       currentQuestion: nextQuestion,
@@ -226,12 +243,11 @@ function advanceToNextRound(game, gameCode, io) {
 
     console.log(`➡️ Moved to Round ${game.currentRound}`);
   } else {
-    // No more questions — game over
+    // Game over: determine winner
     game.status = "finished";
     const winner = game.teams.reduce((prev, current) =>
       prev.score > current.score ? prev : current
     );
-
     const finalGame = updateGame(gameCode, game);
 
     io.to(gameCode).emit("game-over", {
@@ -242,6 +258,5 @@ function advanceToNextRound(game, gameCode, io) {
     console.log(`🏁 Game over — Winner: ${winner.name}`);
   }
 }
-
 
 module.exports = { setupPlayerEvents };

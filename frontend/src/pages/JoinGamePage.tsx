@@ -1,19 +1,20 @@
+// UI UPGRADE TO MATCH FAMILY FEUD STYLE
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import PageLayout from "../components/layout/PageLayout";
-import AnimatedCard from "../components/common/AnimatedCard";
-import JoinGameForm from "../components/forms/JoinGameForm";
-import TeamSelection from "../components/forms/TeamSelection";
-import GameBoard from "../components/game/GameBoard";
-import GameResults from "../components/game/GameResults";
 import PlayerList from "../components/game/PlayerList";
 import PlayerStatus from "../components/game/PlayerStatus";
 import BuzzerButton from "../components/game/BuzzerButton";
 import AnswerInput from "../components/game/AnswerInput";
 import Button from "../components/common/Button";
+import GameBoard from "../components/game/GameBoard";
+import GameResults from "../components/game/GameResults";
+import TeamSelection from "../components/forms/TeamSelection";
+import JoinGameForm from "../components/forms/JoinGameForm";
+
 import { useSocket } from "../hooks/useSocket";
 import gameApi from "../services/gameApi";
-import { Game, Player } from "../types";
+import { Game, Player, Team } from "../types";
 import { ROUTES } from "../utils/constants";
 
 const JoinGamePage: React.FC = () => {
@@ -28,6 +29,8 @@ const JoinGamePage: React.FC = () => {
   const [buzzFeedback, setBuzzFeedback] = useState("");
   const [roundAnswers, setRoundAnswers] = useState<{ teamId: string; score: number }[]>([]);
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
+  const [showAnswers, setShowAnswers] = useState(false);
+  const { socket } = useSocket();
 
   const {
     connect,
@@ -38,11 +41,15 @@ const JoinGamePage: React.FC = () => {
     requestPlayersList,
   } = useSocket({
     onPlayerJoined: ({ player }) => {
-      if (game) {
-        setGame((prev) =>
-          prev ? { ...prev, players: [...prev.players, player] } : null
-        );
-      }
+      setGame((prev) => {
+        if (!prev) return null;
+        const alreadyExists = prev.players.some((p) => p.id === player.id);
+        if (alreadyExists) return prev;
+        return {
+          ...prev,
+          players: [...prev.players, player],
+        };
+      });
     },
     onTeamUpdated: ({ game, playerId, teamId }) => {
       setGame(game);
@@ -55,10 +62,9 @@ const JoinGamePage: React.FC = () => {
       const updatedPlayer = game.players.find((p: Player) => p.id === player?.id);
       if (updatedPlayer) setPlayer(updatedPlayer);
     },
-    onPlayerBuzzed: (data: any) => {
-      if (!data?.game) return;
-      setGame(data.game);
-      if (player && data.playerId === player.id) {
+    onPlayerBuzzed: ({ game, playerId, teamId }) => {
+      setGame(game);
+      if (player?.id === playerId) {
         setHasBuzzed(true);
       }
     },
@@ -73,10 +79,22 @@ const JoinGamePage: React.FC = () => {
               : updated[0].score > updated[1].score
               ? updated[0].teamId
               : updated[1].teamId;
-          setRoundWinner(winner);
+
+          const winnerName =
+            winner === "Tie"
+              ? "Tie"
+              : game.teams.find((t: Team) => t.id === winner)?.name || winner;
+
+          setRoundWinner(winnerName);
+
           setTimeout(() => {
+            setBuzzFeedback("");
+            setHasBuzzed(false);
             setRoundAnswers([]);
             setRoundWinner(null);
+            if (socket) {
+              socket.emit("advanceToNextRound", { gameCode: game.code });
+            }
           }, 4000);
         } else {
           setBuzzFeedback("Opponent team will now answer...");
@@ -89,8 +107,24 @@ const JoinGamePage: React.FC = () => {
       setGame(game);
       setHasBuzzed(false);
       setBuzzFeedback("");
-      setRoundAnswers([]);
       setRoundWinner(null);
+      setRoundAnswers([]);
+      setShowAnswers(false);
+    },
+    onTeamSwitched: ({ currentTeamId }) => {
+      setGame((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          gameState: {
+            ...(prev.gameState || {}),
+            activeTeamId: currentTeamId,
+            inputEnabled: true,
+          },
+        };
+      });
+      setHasBuzzed(false);
+      setBuzzFeedback("");
     },
     onGameOver: ({ game }) => setGame(game),
   });
@@ -106,7 +140,7 @@ const JoinGamePage: React.FC = () => {
 
   const joinGame = async () => {
     if (!gameCode.trim() || !playerName.trim()) {
-      setError("Please enter both game code and your name");
+      setError("Please enter both game code");
       return;
     }
     setIsLoading(true);
@@ -134,14 +168,21 @@ const JoinGamePage: React.FC = () => {
   };
 
   const handleBuzzIn = () => {
-    if (player && game && !hasBuzzed && !game.currentBuzzer) {
+    if (player && game && !hasBuzzed && !game.buzzedTeamId) {
       buzzIn(game.code, player.id);
     }
   };
 
   const handleSubmitAnswer = () => {
     if (player && game && answer.trim()) {
-      submitAnswer(game.code, player.id, answer.trim());
+      const myTeamId = player.teamId;
+      const isMyTeamTurn = game.gameState.activeTeamId === myTeamId;
+      const inputEnabled = game.gameState.inputEnabled;
+      const canSubmit = isMyTeamTurn && inputEnabled;
+      if (canSubmit) {
+        submitAnswer(game.code, player.id, answer.trim());
+        setAnswer("");
+      }
     }
   };
 
@@ -163,54 +204,80 @@ const JoinGamePage: React.FC = () => {
   if (game?.status === "waiting") {
     return (
       <PageLayout gameCode={game.code}>
-        <TeamSelection
-          teams={game.teams}
-          selectedTeamId={player.teamId}
-          onSelectTeam={handleJoinTeam}
-          playerName={player.name}
-        />
-        <PlayerList players={game.players} teams={game.teams} currentPlayerId={player.id} variant="waiting" />
+        <div className="max-w-4xl mx-auto space-y-6">
+          <TeamSelection
+            teams={game.teams}
+            selectedTeamId={player.teamId}
+            onSelectTeam={handleJoinTeam}
+            playerName={player.name}
+          />
+          <PlayerList players={game.players} teams={game.teams} currentPlayerId={player.id} variant="waiting" />
+        </div>
       </PageLayout>
     );
   }
 
   if (game?.status === "active") {
     const myTeam = game.teams.find((t) => t.id === player.teamId);
-    const isMyTeamTurn = game.currentBuzzer?.teamId === player.teamId;
+    const isMyTeamTurn = game.gameState.activeTeamId === player.teamId;
     const canSubmit = isMyTeamTurn && game.gameState.inputEnabled;
 
     return (
       <PageLayout gameCode={game.code} variant="game">
-        <GameBoard game={game} variant="player" />
-        <PlayerStatus playerName={player.name} team={myTeam || null} isActiveTeam={canSubmit} />
-
-        {!game.currentBuzzer && (
-          <BuzzerButton onBuzz={handleBuzzIn} disabled={hasBuzzed || !!game.currentBuzzer} teamName={myTeam?.name} />
-        )}
-
-        {game.currentBuzzer && (
-          <AnswerInput
-            answer={answer}
-            onAnswerChange={setAnswer}
-            onSubmit={handleSubmitAnswer}
-            canSubmit={canSubmit}
-            isMyTeam={isMyTeamTurn}
-            teamName={myTeam?.name}
-            strikes={myTeam?.strikes || 0}
-          />
-        )}
-
-        {buzzFeedback && <p className="text-center text-yellow-300 mt-2">{buzzFeedback}</p>}
-
-        {roundWinner && (
-          <div className="glass-card bg-green-400/10 border border-green-500/50 p-4 mt-4 text-center">
-            <p className="text-green-300 font-semibold text-lg">
-              {roundWinner === "Tie" ? "🤝 It's a tie!" : `🏆 Team ${roundWinner} wins this round!`}
-            </p>
+        <div className="flex flex-col lg:flex-row w-full h-full">
+          <div className="w-full lg:w-1/5 p-4 bg-yellow-100 border-r">
+            <PlayerStatus playerName={player.name} team={myTeam || null} isActiveTeam={canSubmit} />
           </div>
-        )}
 
-        <PlayerList players={game.players} teams={game.teams} currentPlayerId={player.id} variant="game" />
+          <div className="flex-1 p-4 bg-yellow-50">
+            <GameBoard game={game} variant="player" />
+
+            {!game.buzzedTeamId && (
+              <div className="max-w-2xl mx-auto my-4">
+              </div>
+            )}
+
+            {!game.buzzedTeamId && (
+              <div className="flex justify-center">
+                <BuzzerButton
+                  onBuzz={handleBuzzIn}
+                  disabled={hasBuzzed || !!game.buzzedTeamId}
+                  teamName={myTeam?.name}
+                />
+              </div>
+            )}
+
+            {game?.gameState?.activeTeamId && (
+              <div className="max-w-2xl mx-auto mt-4">
+                <AnswerInput
+                  answer={answer}
+                  onAnswerChange={setAnswer}
+                  onSubmit={handleSubmitAnswer}
+                  canSubmit={canSubmit}
+                  isMyTeam={isMyTeamTurn}
+                  teamName={myTeam?.name}
+                  strikes={myTeam?.strikes || 0}
+                />
+              </div>
+            )}
+
+            {buzzFeedback && <p className="text-center text-yellow-400 font-medium mt-2">{buzzFeedback}</p>}
+
+            {roundWinner && (
+              <div className="bg-green-100 border border-green-300 text-center py-4 px-6 rounded-xl shadow mt-4">
+                <p className="text-green-600 text-xl font-semibold">
+                  {roundWinner === "Tie" ? "🤝 It's a tie!" : `🏆 Team ${roundWinner} wins this round!`}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="w-full lg:w-1/5 p-4 bg-yellow-100 border-l">
+          
+            <PlayerList players={game.players} teams={game.teams} currentPlayerId={player.id} variant="game" />
+          
+          </div>
+        </div>
       </PageLayout>
     );
   }
@@ -223,10 +290,22 @@ const JoinGamePage: React.FC = () => {
     );
   }
 
+  if (!game || !game.status) {
+    return (
+      <PageLayout>
+        <p className="text-center text-yellow-200">⏳ Loading game data...</p>
+      </PageLayout>
+    );
+  }
+
   return (
     <PageLayout>
-      <p className="text-center">Loading or unexpected state.</p>
-      <Link to={ROUTES.PLAYERHOME}><Button variant="primary">Go Home</Button></Link>
+      <div className="text-center space-y-4">
+        <p className="text-red-400 text-lg">🚨 Unexpected game state: <strong>{game.status}</strong></p>
+        <Link to={ROUTES.PLAYERHOME}>
+          <Button variant="primary">Go Home</Button>
+        </Link>
+      </div>
     </PageLayout>
   );
 };
