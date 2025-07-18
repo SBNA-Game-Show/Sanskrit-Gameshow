@@ -11,6 +11,9 @@ export interface Game {
   teams: Team[];
   players: Player[];
   hostId: string | null;
+  roundWinner?: string | null; 
+    
+
   createdAt: Date;
   buzzedTeamId?: string;
   currentBuzzer?: {
@@ -27,6 +30,7 @@ export interface Game {
     buzzTimestamp: number | null;
     answerTimeLimit: number;
     answerTimerActive: boolean;
+    
     activeAnswers: {
       text: string;
       points: number;
@@ -36,6 +40,7 @@ export interface Game {
       text: string;
       points: number;
     }[];
+    
   };
   // NEW: Game state tracking
   gameState: {

@@ -38,29 +38,6 @@ const LoginForm: React.FC = () => {
     }));
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setError(null);
-  //   setIsLoading(true);
-
-  //   try {
-  //     const res = await API.post<LoginResponse>('/login', {
-  //       username: formData.username,
-  //       password: formData.password,
-        
-  //     });
-
-  //     localStorage.setItem('token', res.data.token);
-  //     localStorage.setItem('role', res.data.role);
-      
-  //     // ✅ Navigate to the Question page after successful login
-  //     navigate('/');
-  //   } catch (err: any) {
-  //     setError(err.response?.data?.message || 'Login failed');
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setError(null);
@@ -217,10 +194,6 @@ const LoginForm: React.FC = () => {
                 />
                 <span className={`ml-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Remember me</span>
               </label>
-
-              <a href="#" className="text-sm text-red-600 hover:text-red-500 transition-colors">
-                Forgot password?
-              </a>
             </div>
 
             <button
@@ -246,7 +219,7 @@ const LoginForm: React.FC = () => {
           <div className="mt-6 text-center">
             <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               New to Sanskrit Shabd Samvad?{' '}
-              <a href="#" className="text-red-600 hover:text-red-500 font-medium transition-colors">
+              <a href="" className="text-red-600 hover:text-red-500 font-medium transition-colors">
                 Create an account
               </a>
             </p>

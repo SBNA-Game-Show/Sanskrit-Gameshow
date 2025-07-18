@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import io, { Socket } from "socket.io-client";
 
@@ -14,7 +14,6 @@ import Button from "../components/common/Button";
 
 import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
-
 import { Game } from "../types";
 import { getCurrentQuestion } from "../utils/gameHelper";
 import { ROUTES } from "../utils/constants";
@@ -24,28 +23,33 @@ const HostGamePage: React.FC = () => {
   const [game, setGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [controlMessage, setControlMessage] = useState<string>("");
-const [showAnswers, setShowAnswers] = useState(false);
+  const [showAnswers, setShowAnswers] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const { timer } = useTimer(game?.status === "active");
 
-  const setupSocket = React.useCallback((gameCode: string) => {
+  const setupSocket = useCallback((code: string) => {
     if (socketRef.current) socketRef.current.disconnect();
     const socket = io("http://localhost:5001", { forceNew: true });
     socketRef.current = socket;
 
-    const defaultTeams = [
-      { name: "Team Red", members: [] },
-      { name: "Team Blue", members: [] },
-    ];
-
     socket.on("connect", () => {
-      socket.emit("host-join", { gameCode, teams: defaultTeams });
+      socket.emit("host-join", {
+        gameCode: code,
+        teams: [
+          { name: "Team Red", members: [] },
+          { name: "Team Blue", members: [] },
+        ],
+      });
     });
 
     socket.on("host-joined", (gameData) => {
       setGame(gameData);
       setControlMessage("Waiting for players to join...");
-      socket.emit("get-players", { gameCode });
+      socket.emit("get-players", { gameCode: code });
+    });
+
+    socket.on("player-joined", (data) => {
+      setGame((prev) => prev ? { ...prev, players: [...prev.players, data.player] } : null);
     });
 
     socket.on("game-started", (data) => {
@@ -53,10 +57,7 @@ const [showAnswers, setShowAnswers] = useState(false);
       setControlMessage(`Game started! ${data.activeTeam} goes first.`);
     });
 
-    socket.on("player-joined", (data) => {
-      setGame((prev) => prev ? { ...prev, players: [...prev.players, data.player] } : null);
-    });
-
+    socket.on("team-updated", (data) => setGame(data.game));
     socket.on("answer-correct", (data) => {
       setGame(data.game);
       setControlMessage(`✅ ${data.playerName} answered correctly! +${data.pointsAwarded} points`);
@@ -87,15 +88,11 @@ const [showAnswers, setShowAnswers] = useState(false);
       setControlMessage("Game over!");
     });
 
-    socket.on("players-list", (data: any) => {
+    socket.on("players-list", (data) => {
       if (data.players) {
-        setGame((prevGame) => prevGame ? { ...prevGame, players: data.players } : null);
+        setGame((prev) => prev ? { ...prev, players: data.players } : null);
       }
     });
-
-    socket.on("team-updated", (data: any) => setGame(data.game));
-    socket.on("connect_error", () => setControlMessage("Connection error."));
-    socket.on("error", (error) => setControlMessage(`Socket error: ${error.message}`));
 
     return socket;
   }, []);
@@ -109,7 +106,7 @@ const [showAnswers, setShowAnswers] = useState(false);
       setGameCode(response.gameCode);
       setControlMessage(`Game created! Code: ${response.gameCode}`);
       setupSocket(response.gameCode);
-    } catch (error) {
+    } catch {
       setControlMessage("Failed to create game. Check server.");
     }
     setIsLoading(false);
@@ -122,17 +119,20 @@ const [showAnswers, setShowAnswers] = useState(false);
   };
 
   const handleForceNextQuestion = () => {
-    if (gameCode && socketRef.current) socketRef.current.emit("force-next-question", { gameCode });
+    if (gameCode && socketRef.current) {
+      socketRef.current.emit("next-question", { gameCode });
+    }
   };
 
   const handleResetGame = () => {
-    if (gameCode && socketRef.current) socketRef.current.emit("reset-game", { gameCode });
+    if (gameCode && socketRef.current) {
+      socketRef.current.emit("reset-game", { gameCode });
+    }
   };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (game && game.status === "waiting" && socketRef.current) {
-      socketRef.current.emit("get-players", { gameCode });
       interval = setInterval(() => {
         socketRef.current?.emit("get-players", { gameCode });
       }, 3000);
@@ -170,20 +170,16 @@ const [showAnswers, setShowAnswers] = useState(false);
             <Button onClick={handleStartGame} variant="success" size="xl" className="my-4" disabled={game.players.length < 2}>
               🎮 START GAME
             </Button>
-            <PlayerList players={game.players} teams={game.teams} variant="waiting" onAssignTeam={(playerId, teamId) => {
-              socketRef.current?.emit("assign-player-team", { gameCode, playerId, teamId });
-            }} />
+            <PlayerList
+              players={game.players}
+              teams={game.teams}
+              variant="waiting"
+              onAssignTeam={(playerId, teamId) => {
+                socketRef.current?.emit("assign-player-team", { gameCode, playerId, teamId });
+              }}
+            />
           </div>
         </AnimatedCard>
-      </PageLayout>
-    );
-  }
-
-  if (gameCode && !game) {
-    return (
-      <PageLayout>
-        <LoadingSpinner />
-        <p className="text-slate-400 text-center">Loading game data...</p>
       </PageLayout>
     );
   }
@@ -203,11 +199,9 @@ const [showAnswers, setShowAnswers] = useState(false);
             <div className="flex gap-2 justify-center">
               <Button onClick={handleForceNextQuestion} variant="secondary" size="sm">⏭️ Force Next</Button>
               <Button onClick={handleResetGame} variant="secondary" size="sm">🔄 Reset</Button>
-          <div className="text-center mt-6">
-            <Button variant="secondary" onClick={() => setShowAnswers(true)}>
-              Reveal All Answers
-            </Button>
-            </div>
+              <Button variant="secondary" onClick={() => setShowAnswers(true)}>
+                Reveal All Answers
+              </Button>
             </div>
           </div>
         </div>

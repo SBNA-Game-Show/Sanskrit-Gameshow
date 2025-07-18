@@ -9,7 +9,6 @@ import HostGamePage from "./pages/HostGamePage";
 import LoginPage from "./pages/Login";
 import HostHomePage from "./pages/HostHomePage";
 
-import Register from "./components/forms/sanskrit_registration_page"
 // Import constants
 import { ROUTES } from "./utils/constants";
 
@@ -17,7 +16,6 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-<Route path={ROUTES.REGISTER} element={<Register />} />
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         
         <Route path={ROUTES.HOSTHOME} element={<HostHomePage />} />

@@ -19,6 +19,8 @@ interface SocketCallbacks {
   onTeamSwitched?: (data: { currentTeamId: string }) => void;
   onPlayersListReceived?: (data: any) => void;
   onAnswerRejected?: (data: any) => void;
+  onRoundWinner?: (data: { winnerId: string | null; winnerName: string }) => void;
+
 }
 
 export const useSocket = (callbacks: SocketCallbacks = {}) => {
@@ -67,6 +69,9 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       "team-switched": "onTeamSwitched",
       "players-list": "onPlayersListReceived",
       "answer-rejected": "onAnswerRejected",
+      
+      "roundWinner": "onRoundWinner",
+
     };
 
     Object.entries(eventsMap).forEach(([event, cbName]) => {
@@ -91,6 +96,7 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
   const emit = (event: string, payload: any) => {
     socketRef.current?.emit(event, payload);
   };
+  
 
   // 🔌 Emitters
   const hostJoinGame = (code: string, teams: any[]) => {

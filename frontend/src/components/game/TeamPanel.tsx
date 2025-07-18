@@ -11,6 +11,7 @@ interface TeamPanelProps {
   isPlayerTeam?: boolean;
   currentRound?: number;
   roundScore?: number;
+  isActiveTeam?: boolean; // Deprecated, use isActive
   questionsAnswered?: number;
   questionPoints?: number[]; // Array of points earned for each question [q1, q2, q3]
 }
@@ -154,6 +155,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         </div>
       </div>
     </div>
+    
   );
 };
 

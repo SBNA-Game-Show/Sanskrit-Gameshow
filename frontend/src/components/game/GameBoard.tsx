@@ -23,6 +23,7 @@ interface GameBoardProps {
   onIncorrectAnswer?: () => void;
   isHost?: boolean;
   variant?: "host" | "player";
+  revealedAnswers?: number[];
   controlMessage?: string;
   playerAnswer?: string;
 }

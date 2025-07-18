@@ -11,7 +11,7 @@ import GameBoard from "../components/game/GameBoard";
 import GameResults from "../components/game/GameResults";
 import TeamSelection from "../components/forms/TeamSelection";
 import JoinGameForm from "../components/forms/JoinGameForm";
-
+import TeamPanel from "../components/game/TeamPanel";
 import { useSocket } from "../hooks/useSocket";
 import gameApi from "../services/gameApi";
 import { Game, Player, Team } from "../types";
@@ -30,6 +30,8 @@ const JoinGamePage: React.FC = () => {
   const [roundAnswers, setRoundAnswers] = useState<{ teamId: string; score: number }[]>([]);
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
   const [showAnswers, setShowAnswers] = useState(false);
+  const [revealedAnswers, setRevealedAnswers] = useState<number[]>([]);
+
   const { socket } = useSocket();
 
   const {
@@ -51,6 +53,33 @@ const JoinGamePage: React.FC = () => {
         };
       });
     },
+    onRoundWinner: ({ winnerId, winnerName }) => {
+      console.log("🏁 Round winner received:", winnerName);
+      setRoundWinner(winnerName);
+    
+      if (!game) return;
+    
+      const currentQuestion = game.questions?.[game.currentQuestionIndex];
+    
+      if (currentQuestion?.answers) {
+        const updatedAnswers = currentQuestion.answers.map((answer) => ({
+          ...answer,
+          revealed: !!answer.text?.trim(), // mark as revealed if text exists
+        }));
+    
+        const updatedGame = {
+          ...game,
+          questions: game.questions.map((q, i) =>
+            i === game.currentQuestionIndex ? { ...q, answers: updatedAnswers } : q
+          ),
+        };
+    
+        setGame(updatedGame); // <-- This was missing!
+      }
+    },
+    
+      
+    
     onTeamUpdated: ({ game, playerId, teamId }) => {
       setGame(game);
       if (player && player.id === playerId) {
@@ -224,61 +253,75 @@ const JoinGamePage: React.FC = () => {
 
     return (
       <PageLayout gameCode={game.code} variant="game">
-        <div className="flex flex-col lg:flex-row w-full h-full">
-          <div className="w-full lg:w-1/5 p-4 bg-yellow-100 border-r">
-            <PlayerStatus playerName={player.name} team={myTeam || null} isActiveTeam={canSubmit} />
+    <div className="flex flex-col lg:flex-row w-full h-full">
+      {/* LEFT SIDE: Team 0 Panel */}
+      <div className="w-full lg:w-1/5 p-4 bg-yellow-100 border-r">
+        <TeamPanel
+          playerName={player.name}
+          team={game.teams[0]}
+          teamIndex={0}
+          isActive={game.gameState.activeTeamId === game.teams[0].id}
+          isPlayerTeam={player?.teamId === game.teams[0].id}
+          questionsAnswered={roundAnswers.length}
+          questionPoints={roundAnswers.filter(r => r.teamId === game.teams[0].id).map(r => r.score)}
+          currentRound={1}
+          roundScore={game.teams[0].score}
+        />
+      </div>
+
+      {/* CENTER: Game UI */}
+      <div className="flex-1 p-4 bg-yellow-50">
+        <GameBoard game={game} variant="player" />
+
+        {!game.buzzedTeamId && (
+          <div className="flex justify-center my-4">
+            <BuzzerButton
+              onBuzz={handleBuzzIn}
+              disabled={hasBuzzed || !!game.buzzedTeamId}
+              teamName={myTeam?.name}
+            />
           </div>
+        )}
 
-          <div className="flex-1 p-4 bg-yellow-50">
-            <GameBoard game={game} variant="player" />
-
-            {!game.buzzedTeamId && (
-              <div className="max-w-2xl mx-auto my-4">
-              </div>
-            )}
-
-            {!game.buzzedTeamId && (
-              <div className="flex justify-center">
-                <BuzzerButton
-                  onBuzz={handleBuzzIn}
-                  disabled={hasBuzzed || !!game.buzzedTeamId}
-                  teamName={myTeam?.name}
-                />
-              </div>
-            )}
-
-            {game?.gameState?.activeTeamId && (
-              <div className="max-w-2xl mx-auto mt-4">
-                <AnswerInput
-                  answer={answer}
-                  onAnswerChange={setAnswer}
-                  onSubmit={handleSubmitAnswer}
-                  canSubmit={canSubmit}
-                  isMyTeam={isMyTeamTurn}
-                  teamName={myTeam?.name}
-                  strikes={myTeam?.strikes || 0}
-                />
-              </div>
-            )}
-
-            {buzzFeedback && <p className="text-center text-yellow-400 font-medium mt-2">{buzzFeedback}</p>}
-
-            {roundWinner && (
-              <div className="bg-green-100 border border-green-300 text-center py-4 px-6 rounded-xl shadow mt-4">
-                <p className="text-green-600 text-xl font-semibold">
-                  {roundWinner === "Tie" ? "🤝 It's a tie!" : `🏆 Team ${roundWinner} wins this round!`}
-                </p>
-              </div>
-            )}
+        {game?.gameState?.activeTeamId && (
+          <div className="max-w-2xl mx-auto mt-4">
+            <AnswerInput
+              answer={answer}
+              onAnswerChange={setAnswer}
+              onSubmit={handleSubmitAnswer}
+              canSubmit={canSubmit}
+              isMyTeam={isMyTeamTurn}
+              teamName={myTeam?.name}
+            />
           </div>
+        )}
 
-          <div className="w-full lg:w-1/5 p-4 bg-yellow-100 border-l">
-          
-            <PlayerList players={game.players} teams={game.teams} currentPlayerId={player.id} variant="game" />
-          
-          </div>
-        </div>
-      </PageLayout>
+{roundWinner && (
+  <div className="bg-green-100 border border-green-300 text-center py-4 px-6 rounded-xl shadow mt-4">
+    <p className="text-green-600 text-xl font-semibold">
+      {roundWinner === "Tie" ? "🤝 It's a tie!" : `🏆 ${roundWinner} wins this round!`}
+    </p>
+  </div>
+)}
+
+      </div>
+
+      {/* RIGHT SIDE: Team 1 Panel */}
+      <div className="w-full lg:w-1/5 p-4 bg-yellow-100 border-l">
+        <TeamPanel
+          playerName={player.name}
+          team={game.teams[1]}
+          teamIndex={1}
+          isActive={game.gameState.activeTeamId === game.teams[1].id}
+          isPlayerTeam={player?.teamId === game.teams[1].id}
+          questionsAnswered={roundAnswers.length}
+          questionPoints={roundAnswers.filter(r => r.teamId === game.teams[1].id).map(r => r.score)}
+          currentRound={1}
+          roundScore={game.teams[1].score}
+        />
+      </div>
+    </div>
+  </PageLayout>
     );
   }
 
