@@ -32,7 +32,7 @@ export async function createGame() {
     status: "waiting",
     currentQuestionIndex: 0,
     currentRound: 1,
-    questions:JSON.parse(JSON.stringify(q)),
+    questions: JSON.parse(JSON.stringify(q)),
     teams: [
       {
         id: uuidv4(),
