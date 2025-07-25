@@ -45,9 +45,13 @@ router.post("/api/create-game", async (req, res) => {
 
     //Prepare the Questions From FinalQuestion Schema to GameQuestion for the Game
     console.log("Pulling fresh questions from DB...");
-    await prepareGameQuestions();
+    const { updatedTossUpQuestion, updatedQuestions } =
+      await prepareGameQuestions();
 
-    const { gameCode, gameId } = await createGame();
+    const { gameCode, gameId } = await createGame(
+      updatedQuestions,
+      updatedTossUpQuestion
+    );
     if (!gameCode) {
       throw new ApiError(500, "No GameCode Created");
     }

@@ -36,6 +36,8 @@ export interface Game {
       round2: { team1: number; team2: number };
       round3: { team1: number; team2: number };
     };
+
+    tossUpQuestion?: Question; // Toss-up question for round 0
     awaitingAnswer: boolean; // True when a team needs to submit an answer
     canAdvance: boolean; // True when ready to move to next question/round
     // NEW: 3-attempt rule tracking

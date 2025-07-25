@@ -28,7 +28,7 @@ async function getQuestions(collection) {
       "_id question questionCategory questionLevel questionType answers timestamps"
     )
     .sort({ createdAt: 1 })
-    .limit(6);
+    .limit(7);
 
   const advancedInputQuestions = await collection
     .find({
@@ -55,8 +55,8 @@ async function getQuestions(collection) {
     ...advancedInputQuestions,
   ];
 
-  if (inputQuestions.length !== 18) {
-    throw new ApiError(404, "Less than 18 questions in the DB. Game needs 18.");
+  if (inputQuestions.length !== 19) {
+    throw new ApiError(404, "Less than 19 questions in the DB. Game needs 19.");
   }
 
   return inputQuestions;

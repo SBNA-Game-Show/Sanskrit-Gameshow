@@ -147,6 +147,8 @@ export function setupPlayerEvents(socket, io) {
       if (game.tossUpSubmittedTeams.length === 2) {
         setTimeout(() => {
           const currentQuestion = getCurrentQuestion(game);
+          console.log("Question used for Round 0", currentQuestion);
+
           if (currentQuestion) {
             currentQuestion.answers.forEach((a) => (a.revealed = true));
             io.to(gameCode).emit("remaining-cards-revealed", {
@@ -287,8 +289,37 @@ export function setupPlayerEvents(socket, io) {
     const game = getGame(gameCode);
     const player = getPlayer(playerId);
 
-    if (!game || !player || game.currentRound !== 0 || game.status !== "active")
+    // Debug logs for each condition
+    if (!game) {
+      console.log("Error in Player Buzz: game not found", { gameCode });
+    }
+    if (!player) {
+      console.log("Error in Player Buzz: player not found", { playerId });
+    }
+    if (game && game.currentRound !== 0) {
+      console.log("Error in Player Buzz: not round 0", {
+        currentRound: game.currentRound,
+      });
+    }
+    if (game && game.status !== "active") {
+      console.log("Error in Player Buzz: game not active", {
+        status: game.status,
+      });
+    }
+    if (
+      !game ||
+      !player ||
+      game.currentRound !== 0 ||
+      game.status !== "active"
+    ) {
+      console.log("Error in Player Buzz: condition failed", {
+        gameExists: !!game,
+        playerExists: !!player,
+        currentRound: game ? game.currentRound : undefined,
+        status: game ? game.status : undefined,
+      });
       return;
+    }
 
     // Only allow buzzer if no team has buzzed yet
     if (game.buzzedTeamId) {

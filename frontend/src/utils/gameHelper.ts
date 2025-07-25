@@ -8,6 +8,9 @@ export const generateGameCode = (): string => {
 // Get current question from game
 export const getCurrentQuestion = (game: Game | null): Question | null => {
   if (!game) return null;
+  if (game.currentRound === 0) {
+    return game.gameState.tossUpQuestion!;
+  }
   if (game.currentQuestionIndex < game.questions.length) {
     return game.questions[game.currentQuestionIndex];
   }

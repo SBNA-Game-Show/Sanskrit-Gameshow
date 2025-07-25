@@ -52,6 +52,9 @@ export function initializeQuestionData() {
 
 // Get current question based on game state
 export function getCurrentQuestion(game) {
+  if (game.currentRound === 0 && game.gameState.tossUpQuestion) {
+    return game.gameState.tossUpQuestion;
+  }
   if (game.currentQuestionIndex < game.questions.length) {
     return game.questions[game.currentQuestionIndex];
   }
@@ -238,12 +241,13 @@ export function updateTeamActiveStatus(game) {
 }
 
 // Create a new game (SINGLE ATTEMPT + Question Data)
-export async function createGame() {
+export async function createGame(updatedQuestions, tossUpQuestion) {
   const gameCode = generateGameCode();
   const gameId = uuidv4();
 
-  const q = await GameQuestion.find();
-  console.log("Questions Fetched: ", q);
+  console.log("Questions Fetched: ", updatedQuestions);
+
+  console.log("TossUpQuestion Fetched ", tossUpQuestion);
 
   games[gameCode] = {
     id: gameId,
@@ -251,7 +255,7 @@ export async function createGame() {
     status: "waiting",
     currentQuestionIndex: 0,
     currentRound: 0,
-    questions: JSON.parse(JSON.stringify(q)),
+    questions: JSON.parse(JSON.stringify(updatedQuestions)),
     teams: [
       {
         id: uuidv4() + "_team1",
@@ -291,6 +295,7 @@ export async function createGame() {
         round2: { team1: 0, team2: 0 },
         round3: { team1: 0, team2: 0 },
       },
+      tossUpQuestion: JSON.parse(JSON.stringify(tossUpQuestion)),
       tossUpAnswers: [], // Stores both team responses
       tossUpSubmittedTeams: [], // To track who already answered
 
