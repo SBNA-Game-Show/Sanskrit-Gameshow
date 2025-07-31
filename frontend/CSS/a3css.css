@@ -1,0 +1,43 @@
+body {
+    background-color: dodgerblue;
+}
+
+#txtData {
+    font-size: 25px;
+    width: 30%;
+}
+
+#one {
+    background-color: yellow;
+    width: 20%;
+    margin-top: 10px;
+    font-size: 25px;
+}
+
+#result {
+    background-color: white;
+    border: 3px solid black;
+    width: 800px;
+    height: 150px;
+    font-size: 50px;
+}
+
+#centerfied {
+    text-align: center;
+    font-size: 60px;
+}
+
+#resetall {
+    font-size: 25px;
+    background-color:grey;
+}
+
+p {
+    font-size: 25px;
+}
+
+span {
+    font-size: 35px;
+    background-color: green;
+    font-weight: bold;
+}

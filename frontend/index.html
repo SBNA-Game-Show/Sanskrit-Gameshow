@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="CSS/a3css.css">
+    <title>Assignment 3 for Vincent Adem</title>
+  </head>
+  <body>
+    <h1><center>Unit Conversion Application</center></h1>
+    <h1><center>Vincent Adem</center></h1>
+    <hr />
+    <p> <span>Note</span>: To avoid errors, please enter <span>number</span> values only. Click any of the conversion buttons after entering the unit values to convert the specific conversions. </p>
+    <form id="myForm">
+      <input type="text" placeholder="0" id="txtData" />
+      <br>
+      <input type="button" value="Celsius to Fahrenheit" onclick="Cel_Fah();" id="one"/>
+      <input type="button" value="Fahrenheit to Celsius" onclick="Fah_Cel();" id="one"/>
+      <br>
+      <input type="button" value="Feet to Meters" onclick="Feet_Meters();" id="one"/>
+      <input type="button" value="Meters to Feet" onclick="Meters_Feet();" id="one"/>
+      <br>
+      <input type="button" value="Inches to Centimeters" onclick="Inch_Cent();" id="one"/>
+      <input type="button" value="Centimeters to Inches" onclick="Cent_Inch();" id="one"/>
+      <br>
+      <input type="button" value="Pounds to Kilograms" onclick="Poun_Kilo();" id="one"/>
+      <input type="button" value="Kilograms to Pounds" onclick="Kilo_Poun();" id="one"/>
+      <br>
+      <br>
+      <input type="button" onclick="reseter()" value="Reset" id="resetall">
+    </form>
+    <h1>Final Result:</h1>
+    <p id="result"></p>
+    <script src="scripts/Conversion.js"></script>
+  </body>
+</html>
