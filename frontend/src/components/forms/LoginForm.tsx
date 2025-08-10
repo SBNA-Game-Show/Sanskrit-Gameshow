@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import API from '../../services/auth';
 import { LoginCredentials, LoginResponse } from '../../types/auth';
+import { ROUTES } from '../../utils/constants';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -185,14 +186,8 @@ const LoginForm: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="rememberMe"
-                  checked={formData.rememberMe}
-                  onChange={handleInputChange}
-                  className="w-4 h-4 text-red-500 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
-                />
-                <span className={`ml-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Remember me</span>
+                
+             
               </label>
             </div>
 
@@ -215,15 +210,7 @@ const LoginForm: React.FC = () => {
             </button>
           </div>
 
-          {/* Footer */}
-          <div className="mt-6 text-center">
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              New to Sanskrit Shabd Samvad?{' '}
-              <a href="" className="text-red-600 hover:text-red-500 font-medium transition-colors">
-                Create an account
-              </a>
-            </p>
-          </div>
+          
 
 
         </div>

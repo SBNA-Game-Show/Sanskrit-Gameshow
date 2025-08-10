@@ -31,6 +31,7 @@ interface SocketCallbacks {
   // NEW: Card revelation events
   onRemainingCardsRevealed?: (data: any) => void;
   onAnswerOverridden?: (data: any) => void;
+  onAudienceJoined?: (data: any) => void;
 }
 
 export const useSocket = (callbacks: SocketCallbacks = {}) => {
@@ -181,6 +182,10 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       newSocket.on("answer-overridden", callbacks.onAnswerOverridden);
     }
 
+    if (callbacks.onAudienceJoined) {
+      newSocket.on("audience-joined", callbacks.onAudienceJoined);
+    }
+
     socketRef.current = newSocket;
     setSocket(newSocket);
     return newSocket;
@@ -306,6 +311,12 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
     }
   };
 
+  const audienceJoinGame = (gameCode: string) => {
+    if (socketRef.current) {
+      socketRef.current.emit("audience-join", { gameCode });
+    }
+  };
+
   useEffect(() => {
     return () => {
       disconnect();
@@ -328,6 +339,7 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
     resetGame,
     buzzIn,
     requestPlayersList,
+    audienceJoinGame,
     // Player actions
     playerJoinGame,
     submitAnswer,

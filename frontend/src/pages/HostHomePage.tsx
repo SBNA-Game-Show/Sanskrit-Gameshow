@@ -33,10 +33,22 @@ const HomePage: React.FC = () => {
                 </span>
               }
             >
-              
-              <span className="block text-sm text-blue-200 mt-1">
-                Create Room
-              </span>
+              <span className="block text-sm text-blue-200 mt-1">Create Room</span>
+            </Button>
+          </AnimatedCard>
+          <AnimatedCard className="flex-1" delay={400}>
+            <Button
+              onClick={() => navigate(ROUTES.HOSTREJOIN)}
+              variant="secondary"
+              size="xl"
+              className="w-full py-6 text-xl group"
+              icon={
+                <span className="text-3xl mr-3 group-hover:animate-bounce">
+                  🔄
+                </span>
+              }
+            >
+              <span className="block text-sm text-blue-200 mt-1">Join Room</span>
             </Button>
           </AnimatedCard>
         </div>

@@ -39,6 +39,17 @@ const HomePage: React.FC = () => {
               </span>
             </Button>
           </AnimatedCard>
+          <AnimatedCard className="flex-1" delay={600}>
+            <Button
+              onClick={() => navigate(ROUTES.AUDIENCE)}
+              variant="primary"
+              size="xl"
+              className="w-full py-6 text-xl group"
+              icon={<span className="text-3xl mr-3 group-hover:animate-bounce">👀</span>}
+            >
+              <span className="block text-sm text-blue-200 mt-1">Watch as audience</span>
+            </Button>
+          </AnimatedCard>
         </div>
       </div>
     </PageLayout>

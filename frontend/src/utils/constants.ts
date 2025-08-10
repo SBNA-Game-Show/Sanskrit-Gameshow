@@ -11,10 +11,13 @@ export const GAME_CONFIG = {
 
 export const ROUTES = {
   LOGIN: "/",
+  REGISTER: "/register",
   HOSTHOME: "/HostHomePage",
   PLAYERHOME: "/PlayerHomePage",
   HOST: "/host",
+  HOSTREJOIN: "/host/rejoin",
   JOIN: "/join",
+  AUDIENCE: "/audience",
 } as const;
 
 export const GAME_STATUS = {

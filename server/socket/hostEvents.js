@@ -47,9 +47,13 @@ export function setupHostEvents(socket, io) {
       // Join the socket to the game room
       socket.join(gameCode);
 
-      // Send the updated game back to the host
+      // Send the updated game along with state details so a host can rejoin mid-game
       console.log("📤 Emitting host-joined event with game data");
-      socket.emit("host-joined", updatedGame);
+      socket.emit("host-joined", {
+        game: updatedGame,
+        currentQuestion: getCurrentQuestion(updatedGame),
+        activeTeam: updatedGame.gameState.currentTurn,
+      });
 
       console.log(`👑 Host successfully joined game: ${gameCode}`);
     } else {

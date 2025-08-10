@@ -487,6 +487,13 @@ header *,
   color: var(--text-primary);
 }
 
+/* Larger message style for audience notifications */
+.audience-message {
+  font-size: 1rem !important;
+  padding: 1rem !important;
+  margin-top: 0.75rem !important;
+}
+
 /* LARGER HOST CONTROLS FOR BETTER USABILITY */
 .host-controls {
   padding: 0.75rem !important; /* Much larger */

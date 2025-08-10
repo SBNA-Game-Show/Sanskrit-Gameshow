@@ -100,11 +100,11 @@ export const SUCCESS_MESSAGES = {
 
 export const TEAM_DEFAULTS = {
   TEAM_1: {
-    name: "Team 1", // Changed from "Team Red"
+    name: "",
     members: ["", "", "", "", ""],
   },
   TEAM_2: {
-    name: "Team 2", // Changed from "Team Blue"
+    name: "",
     members: ["", "", "", "", ""],
   },
 };

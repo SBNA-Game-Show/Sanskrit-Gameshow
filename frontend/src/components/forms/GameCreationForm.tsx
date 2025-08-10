@@ -2,14 +2,23 @@ import React from "react";
 import { Link } from "react-router-dom";
 import AnimatedCard from "../common/AnimatedCard";
 import Button from "../common/Button";
+import Input from "../common/Input";
 import { ROUTES } from "../../utils/constants";
 
 interface GameCreationFormProps {
+  team1Name: string;
+  team2Name: string;
+  onTeam1Change: (value: string) => void;
+  onTeam2Change: (value: string) => void;
   onCreateGame: () => void;
   isLoading: boolean;
 }
 
 const GameCreationForm: React.FC<GameCreationFormProps> = ({
+  team1Name,
+  team2Name,
+  onTeam1Change,
+  onTeam2Change,
   onCreateGame,
   isLoading,
 }) => {
@@ -25,13 +34,34 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
               Ready to host a buzzer-based quiz competition?
             </p>
             <p className="text-slate-400">
-              Click below to create a new game with Team Red vs Team Blue
+              Enter team names below and create a new game
             </p>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            <Input
+              id="team1"
+              label="Team 1 Name"
+              value={team1Name}
+              onChange={(e) => onTeam1Change(e.target.value)}
+              placeholder="Enter first team name"
+              disabled={isLoading}
+            />
+            <Input
+              id="team2"
+              label="Team 2 Name"
+              value={team2Name}
+              onChange={(e) => onTeam2Change(e.target.value)}
+              placeholder="Enter second team name"
+              disabled={isLoading}
+            />
           </div>
 
           <Button
             onClick={onCreateGame}
-            disabled={isLoading}
+            disabled={
+              isLoading || !team1Name.trim() || !team2Name.trim()
+            }
             variant="primary"
             size="xl"
             loading={isLoading}

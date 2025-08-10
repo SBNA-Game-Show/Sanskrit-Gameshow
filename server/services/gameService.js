@@ -192,12 +192,12 @@ export function calculateTossUpSummary(game) {
       team1: {
         roundScore: team1Answer ? team1Answer.score : 0,
         totalScore: team1 ? team1.roundScores.reduce((sum, s) => sum + s, 0) : 0,
-        teamName: team1 ? team1.name : "Team 1",
+        teamName: team1 ? team1.name : "",
       },
       team2: {
         roundScore: team2Answer ? team2Answer.score : 0,
         totalScore: team2 ? team2.roundScores.reduce((sum, s) => sum + s, 0) : 0,
-        teamName: team2 ? team2.name : "Team 2",
+        teamName: team2 ? team2.name : "",
       },
     },
     questionsAnswered: {
@@ -262,7 +262,7 @@ export function updateTeamActiveStatus(game) {
 }
 
 // Create a new game (SINGLE ATTEMPT + Question Data)
-export async function createGame(updatedQuestions, tossUpQuestion) {
+export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
   const gameCode = generateGameCode();
   const gameId = uuidv4();
 
@@ -280,7 +280,7 @@ export async function createGame(updatedQuestions, tossUpQuestion) {
     teams: [
       {
         id: uuidv4() + "_team1",
-        name: "Team 1",
+        name: teamNames?.team1 || "Team 1",
         score: 0,
         active: false,
         members: [],
@@ -289,7 +289,7 @@ export async function createGame(updatedQuestions, tossUpQuestion) {
       },
       {
         id: uuidv4() + "_team2",
-        name: "Team 2",
+        name: teamNames?.team2 || "Team 2",
         score: 0,
         active: false,
         members: [],

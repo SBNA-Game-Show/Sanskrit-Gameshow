@@ -1,5 +1,6 @@
 import { setupHostEvents } from "./hostEvents.js";
 import { setupPlayerEvents } from "./playerEvents.js";
+import { setupAudienceEvents } from "./audienceEvents.js";
 import { handlePlayerDisconnect } from "../services/gameService.js";
 
 export function setupSocketEvents(io) {
@@ -9,6 +10,7 @@ export function setupSocketEvents(io) {
     // Setup host and player events
     setupHostEvents(socket, io);
     setupPlayerEvents(socket, io);
+    setupAudienceEvents(socket, io);
 
     // Handle disconnection
     socket.on("disconnect", () => {

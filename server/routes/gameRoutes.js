@@ -43,6 +43,8 @@ router.post("/api/create-game", async (req, res) => {
   try {
     console.log("🎮 Create game request received");
 
+    const { teamNames } = req.body;
+
     //Prepare the Questions From FinalQuestion Schema to GameQuestion for the Game
     console.log("Pulling fresh questions from DB...");
     const { updatedTossUpQuestion, updatedQuestions } =
@@ -50,7 +52,8 @@ router.post("/api/create-game", async (req, res) => {
 
     const { gameCode, gameId } = await createGame(
       updatedQuestions,
-      updatedTossUpQuestion
+      updatedTossUpQuestion,
+      teamNames
     );
     if (!gameCode) {
       throw new ApiError(500, "No GameCode Created");

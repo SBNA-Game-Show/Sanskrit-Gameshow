@@ -22,6 +22,7 @@ import gameApi from "../services/gameApi";
 // Import types and constants
 import { Game, Player, RoundSummary, RoundData } from "../types";
 import { ROUTES } from "../utils/constants";
+import { getTeamName } from "../utils/gameHelper";
 
 const JoinGamePage: React.FC = () => {
   const [gameCode, setGameCode] = useState("");
@@ -120,11 +121,8 @@ const JoinGamePage: React.FC = () => {
 
       setGame(data.game);
       if (data.activeTeam) {
-        setGameMessage(
-          `Game started! ${
-            data.activeTeam === "team1" ? "Team 1" : "Team 2"
-          } goes first.`
-        );
+        const teamName = getTeamName(data.game, data.activeTeam);
+        setGameMessage(`Game started! ${teamName} goes first.`);
       } else {
         setGameMessage("Game started! Buzz in for the toss-up question.");
       }
@@ -148,7 +146,7 @@ const JoinGamePage: React.FC = () => {
     onRemainingCardsRevealed: (data: any) => {
       console.log("Remaining cards revealed:", data);
       setGame(data.game);
-      setGameMessage("All cards revealed!");
+      // Do not override the current message when cards are revealed
     },
     onTurnChanged: (data: any) => {
       console.log("Turn changed event received:", data);
@@ -196,11 +194,8 @@ const JoinGamePage: React.FC = () => {
       console.log("Round started event received:", data);
       setGame(data.game);
       setRoundSummary(null);
-      setGameMessage(
-        `Round ${data.round} started! ${
-          data.activeTeam === "team1" ? "Team 1" : "Team 2"
-        } goes first.`
-      );
+      const teamName = getTeamName(data.game, data.activeTeam);
+      setGameMessage(`Round ${data.round} started! ${teamName} goes first.`);
     },
     onGameOver: (data: any) => {
       console.log("Game over event received:", data);
@@ -251,7 +246,9 @@ const JoinGamePage: React.FC = () => {
     onAnswerOverridden: (data: any) => {
       console.log("Answer overridden:", data);
       setGame(data.game);
-      setGameMessage("Answer overridden by host.");
+      setGameMessage(
+        `Host awarded ${data.pointsAwarded} points to ${data.teamName}.`
+      );
     },
     onGameReset: (data: any) => {
       console.log("Game reset received:", data);

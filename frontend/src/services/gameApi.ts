@@ -31,9 +31,14 @@ export const gameApi = {
     return response.data;
   },
 
-  // Create a new game
-  async createGame(): Promise<CreateGameResponse> {
-    const response = await apiClient.post("/api/create-game");
+  // Create a new game with custom team names
+  async createGame(teamNames: {
+    team1: string;
+    team2: string;
+  }): Promise<CreateGameResponse> {
+    const response = await apiClient.post("/api/create-game", {
+      teamNames,
+    });
     return response.data;
   },
 

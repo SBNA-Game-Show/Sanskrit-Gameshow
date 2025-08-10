@@ -3,9 +3,19 @@ export interface LoginCredentials {
     password: string;
   }
   
-  export interface LoginResponse {
+export interface LoginResponse {
     token: string;
     role: string;
     username: string;
+  }
+
+  export interface RegisterCredentials {
+    username: string;
+    password: string;
+    role: string;
+  }
+
+  export interface RegisterResponse {
+    message: string;
   }
   
