@@ -7,8 +7,13 @@ import helmet from "helmet";
 export const setupServer = () => {
   const app = express();
   const server = createServer(app);
+
+  const raw = process.env.CORS_ORIGIN || "http://localhost:3000";
+  const allowedOrigins = raw.split(",").map(s => s.trim()).filter(Boolean);
+  
+  
   const corsOptions = {
-    origin: "http://localhost:3000",
+    origin: "allowedOrigins",
     methods: ["GET", "POST"],
     credentials: true, // <- optional but useful
   };
