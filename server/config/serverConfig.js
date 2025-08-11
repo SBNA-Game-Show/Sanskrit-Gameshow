@@ -13,7 +13,7 @@ export const setupServer = () => {
   
   
   const corsOptions = {
-    origin: "allowedOrigins",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true, // <- optional but useful
   };
@@ -23,7 +23,7 @@ export const setupServer = () => {
 
   // Middleware
   app.use(helmet());
-  app.use(cors());
+  app.use(cors(corsOptions));
   app.use(json());
 
   return { app, server, io };
