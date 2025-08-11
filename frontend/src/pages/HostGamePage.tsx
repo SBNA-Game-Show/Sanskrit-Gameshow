@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import io, { Socket } from "socket.io-client";
+import { GAME_CONFIG } from "../utils/constants";
+
 
 // Import components
 import PageLayout from "../components/layout/PageLayout";
@@ -82,7 +84,7 @@ const HostGamePage: React.FC = () => {
       socketRef.current.disconnect();
     }
 
-    const socket = io("http://localhost:5004", {
+    const socket = io(GAME_CONFIG.SOCKET_URL, {
       forceNew: true,
       reconnection: true,
       reconnectionAttempts: 5,
