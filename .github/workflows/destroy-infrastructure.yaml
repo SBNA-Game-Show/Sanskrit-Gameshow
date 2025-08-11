@@ -38,6 +38,25 @@ jobs:
         working-directory: terraform/ecs
         run: terraform init 
 
+      - name: Pre-drain/force delete ECS service
+        env:
+          ECS_CLUSTER: gameshow-cluster
+          ECS_SERVICE: gameshow-backend-svc
+        run: |
+          set -e
+          # Scale to 0 (best effort)
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --desired-count 0 || true
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" || true
+      
+          # Stop any lingering tasks
+          TASKS=$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --service-name "$ECS_SERVICE" --query 'taskArns[]' --output text)
+          for t in $TASKS; do
+            aws ecs stop-task --cluster "$ECS_CLUSTER" --task "$t" --reason "pre-destroy" || true
+          done
+      
+          # Force delete the service so TF doesn't wait
+          aws ecs delete-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force || true
+
       - name: Terraform destroy (ECS stack)
         working-directory: terraform/ecs
         run: terraform destroy -auto-approve || echo "Nothing to destroy"
