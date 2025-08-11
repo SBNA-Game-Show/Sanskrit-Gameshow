@@ -1,10 +1,10 @@
 
 name: Full stack deployment
 
-#on:
-  #workflow_dispatch:      
-  #push:
-    #branches: [ 404-not-found-deployment-testing ]    
+on:
+  workflow_dispatch:      
+  push:
+    branches: [ 404-not-found-deployment-testing ]    
 
 jobs:
   setup-and-deploy:
@@ -87,3 +87,46 @@ jobs:
               --image-ids file:///tmp/ids.json \
               --region "$AWS_REGION" || true
           fi
+# ─────────────────────────────
+# ECS (EC2): provision + deploy
+# ─────────────────────────────
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Authenticate with Terraform Cloud
+        run: |
+          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory:  terraform/ecs
+
+      - name: Verify Terraform Cloud workspace is connected
+        run: terraform workspace show
+        working-directory:  terraform/ecs
+      
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: terraform/ecs
+
+      - name: Force new ECS deployment to pull :latest
+        env:
+          ECS_CLUSTER: gameshow-cluster
+          ECS_SERVICE: gameshow-backend-svc
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --force-new-deployment
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE"
+
+      - name: Show backend URL from Terraform outputs
+        working-directory: terraform/ecs
+        run: |
+          echo "Public IP:   $(terraform output -raw ec2_public_ip)"
+          echo "Public DNS:  $(terraform output -raw ec2_public_dns)"
+          echo "Hit app at:  $(terraform output -raw hit_app_here)"
+
