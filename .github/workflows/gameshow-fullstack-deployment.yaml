@@ -1,10 +1,10 @@
 
 name: Full stack deployment
 
-#on:
-  #workflow_dispatch:      
-  #push:
-    #branches: [ 404-not-found-deployment-testing ]    
+on:
+  workflow_dispatch:      
+  push:
+    branches: [ 404-not-found-deployment-testing ]    
 
 jobs:
   setup-and-deploy:
@@ -26,6 +26,49 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+
+# ─────────────────────────────
+# S3: create/keep static website bucket
+# ─────────────────────────────
+      - name: Set up Terraform (S3)
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Authenticate with Terraform Cloud
+        run: |
+          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+
+      - name: Terraform init (S3 workspace)
+        working-directory: terraform/s3
+        run: terraform init
+      
+      - name: Verify Terraform Cloud workspace (S3)
+        working-directory: terraform/s3
+        run: terraform workspace show
+
+      - name: Empty S3 bucket before destroy (only if exists)
+        run: |
+          BUCKET_NAME="sanskrit-familyfeud-gameshow-frontend"
+          
+          # Check if the bucket exists
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "✅ Bucket exists. Proceeding to empty it..."
+            aws s3 rm s3://$BUCKET_NAME --recursive
+          else
+            echo "⚠️ Bucket $BUCKET_NAME does not exist. Skipping empty step."
+          fi
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+        working-directory: terraform/s3
+
+      - name: Terraform apply (S3)
+        working-directory: terraform/s3
+        run: terraform apply -auto-approve
+
+      - name: Capture S3 outputs
+        working-directory: terraform/s3
+        run: |
+          echo "S3_BUCKET=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
+          echo "WEBSITE_URL=$(terraform output -raw website_url)" >> $GITHUB_ENV
 # ─────────────────────────────
 # Backend: Builing ECR and Pushing image to ECR
 # ─────────────────────────────
