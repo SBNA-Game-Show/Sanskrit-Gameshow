@@ -64,11 +64,6 @@ jobs:
         working-directory: terraform/s3
         run: terraform apply -auto-approve
 
-      - name: Capture S3 outputs
-        working-directory: terraform/s3
-        run: |
-          echo "S3_BUCKET=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
-          echo "WEBSITE_URL=$(terraform output -raw website_url)" >> $GITHUB_ENV
 # ─────────────────────────────
 # Backend: Builing ECR and Pushing image to ECR
 # ─────────────────────────────
