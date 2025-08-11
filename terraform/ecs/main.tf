@@ -173,6 +173,19 @@ resource "aws_cloudwatch_log_group" "app" {
 data "aws_ecr_repository" "repo" {
   name = local.repo_name
 }
+########################################
+# Look up an existing bucket by name
+########################################
+
+# Look up an existing bucket by name 
+data "aws_s3_bucket" "frontend" {
+  bucket = "sanskrit-familyfeud-gameshow-frontend"  
+}
+
+# Use its website endpoint in the task env
+locals {
+  cors_origin = "http://${data.aws_s3_bucket.frontend.website_endpoint}"
+}
 
 ########################################
 # ECS Task Definition (bridge networking)
@@ -198,10 +211,9 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "PORT",          value = tostring(local.container_port) },
         { name = "MONGODB_URI",   value = "mongodb+srv://SBNAadmin:8PYSMXyZ%40zp4uwF@cluster1-production.v4anhjy.mongodb.net" },
         { name = "DB_NAME",       value = "Data_Scored_Test" },
-        { name = "CORS_ORIGIN",   value = "*" },
         { name = "JWT_SECRET",  value = "seceretkey" },
         { name = "REACT_APP_API_KEY",  value = "H0ylHQmpyATxhhRUV3iMEfQnq1xkZl0uUGN9g26OubSw6Od5H0XwKGCMJhaY7TwL"},
-        { name  = "CORS_ORIGIN", value = "http://${aws_s3_bucket_website_configuration.site.website_endpoint}"}
+        { name  = "CORS_ORIGIN", value = local.cors_origin}
       ]
       logConfiguration = {
         logDriver = "awslogs",
