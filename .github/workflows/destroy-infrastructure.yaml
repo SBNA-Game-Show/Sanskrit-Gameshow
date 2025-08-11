@@ -36,7 +36,7 @@ jobs:
 
       - name: Terraform init (ECS workspace)
         working-directory: terraform/ecs
-        run: terraform init -reconfigure
+        run: terraform init 
 
       - name: Terraform destroy (ECS stack)
         working-directory: terraform/ecs
