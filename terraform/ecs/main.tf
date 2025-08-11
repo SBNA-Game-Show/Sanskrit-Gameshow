@@ -224,7 +224,8 @@ resource "aws_ecs_service" "svc" {
   desired_count   = 1
   launch_type     = "EC2"
   enable_execute_command = true
-
+  deployment_minimum_healthy_percent = 0
+  force_delete                       = true  
 
   depends_on = [aws_instance.ecs_container_instance]
 }
