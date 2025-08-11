@@ -227,3 +227,62 @@ jobs:
           echo "Public DNS:  $(terraform output -raw ec2_public_dns)"
           echo "Hit app at:  $(terraform output -raw hit_app_here)"
 
+
+# ─────────────────────────────
+# Getting the EC2 Public DNS and putting it in .env file
+# ─────────────────────────────
+      - name: Resolve EC2 public DNS
+        id: ec2_dns
+        env:
+          EC2_TAG_NAME: GameshowECSInstance   # matches your Terraform tag
+        run: |
+          # Find the instance by Name tag and running state
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=$EC2_TAG_NAME" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" --output text)
+      
+          echo "INSTANCE_ID=$INSTANCE_ID"
+      
+          # Wait for DNS to appear (fresh instance can take a bit)
+          for i in {1..12}; do
+            DNS=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
+              --query "Reservations[0].Instances[0].PublicDnsName" --output text)
+            if [ -n "$DNS" ] && [ "$DNS" != "None" ]; then break; fi
+            echo "Waiting for public DNS... ($i/12)"
+            sleep 10
+          done
+      
+          # Fallback to public IP if DNS still not set
+          if [ -z "$DNS" ] || [ "$DNS" = "None" ]; then
+            DNS=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
+              --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+          fi
+      
+          echo "EC2_PUBLIC_DNS=$DNS" >> $GITHUB_ENV
+          echo "Backend host resolved to: $DNS"
+      
+      # --- Write CRA .env.production with the backend host ---
+      - name: Write CRA env for frontend build
+        run: |
+          echo "REACT_APP_BACKEND_HOST=http://${EC2_PUBLIC_DNS}:5004" > frontend/.env.production
+          echo "Wrote frontend/.env.production:"
+          cat frontend/.env.production
+
+# ─────────────────────────────
+# Build the Frontend
+# ─────────────────────────────
+      - name: Build frontend (CRA)
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+# ─────────────────────────────
+# Uploading build to S3 Bucket
+# ─────────────────────────────
+          
+      - name: Upload frontend to S3
+        env:
+          S3_BUCKET: sanskrit-familyfeud-gameshow-frontend
+        run: |
+          aws s3 sync frontend/build s3://$S3_BUCKET --delete
+
