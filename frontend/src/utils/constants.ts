@@ -1,6 +1,11 @@
 // Game constants and configuration
+const DEV_DEFAULT = "http://localhost:5004";
+
+export const API_BASE =
+  process.env.REACT_APP_API_BASE || DEV_DEFAULT;
+
 export const GAME_CONFIG = {
-  SOCKET_URL: "http://localhost:5004",
+  SOCKET_URL: process.env.REACT_APP_SOCKET_URL || API_BASE,
   ANSWER_TIME_LIMIT: 30000, // 30 seconds
   MIN_PLAYERS: 2,
   MAX_STRIKES: 3,
