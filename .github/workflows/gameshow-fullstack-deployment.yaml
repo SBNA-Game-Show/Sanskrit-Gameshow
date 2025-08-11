@@ -105,6 +105,12 @@ jobs:
       - name: Verify Terraform Cloud workspace is connected
         run: terraform workspace show
         working-directory:  terraform/ecs
+
+      - name: Terraform destroy (ECS)
+        working-directory: terraform/ecs
+        run: |
+          terraform init
+          terraform destroy -auto-approve || echo "Nothing to destroy"
       
       - name: Terraform Apply
         run: terraform apply -auto-approve
