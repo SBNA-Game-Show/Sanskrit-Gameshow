@@ -144,24 +144,60 @@ jobs:
         run: terraform workspace show
         working-directory:  terraform/ecs
 
-      - name: Pre-drain/force delete ECS service
+      - name: Pre-drain/force delete ECS service (idempotent)
+        shell: bash
         env:
           ECS_CLUSTER: gameshow-cluster
           ECS_SERVICE: gameshow-backend-svc
         run: |
-          set -e
-          # Scale to 0 (best effort)
+          set -euo pipefail
+      
+          echo "Checking ECS cluster: $ECS_CLUSTER"
+      
+          # Does cluster exist?
+          CLUSTER_JSON=$(aws ecs describe-clusters --clusters "$ECS_CLUSTER" --query 'clusters[0]' --output json 2>/dev/null || true)
+          if [ -z "$CLUSTER_JSON" ] || [ "$CLUSTER_JSON" = "null" ]; then
+            echo "Cluster not found. Skipping pre-drain."
+            exit 0
+          fi
+      
+          CLUSTER_STATUS=$(echo "$CLUSTER_JSON" | jq -r '.status')
+          if [ "$CLUSTER_STATUS" != "ACTIVE" ]; then
+            echo "Cluster status is $CLUSTER_STATUS (not ACTIVE). Skipping pre-drain."
+            exit 0
+          fi
+      
+          echo "Checking service: $ECS_SERVICE"
+      
+          # Does service exist?
+          SERVICE_STATUS=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+      
+          if [ "$SERVICE_STATUS" = "MISSING" ] || [ "$SERVICE_STATUS" = "INACTIVE" ] || [ -z "$SERVICE_STATUS" ]; then
+            echo "Service not found/inactive. Skipping pre-drain."
+            exit 0
+          fi
+      
+          echo "Scaling service to 0..."
           aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --desired-count 0 || true
           aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" || true
       
-          # Stop any lingering tasks
-          TASKS=$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --service-name "$ECS_SERVICE" --query 'taskArns[]' --output text)
-          for t in $TASKS; do
-            aws ecs stop-task --cluster "$ECS_CLUSTER" --task "$t" --reason "pre-destroy" || true
-          done
+          echo "Stopping lingering tasks (if any)..."
+          TASKS=$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --service-name "$ECS_SERVICE" \
+            --query 'taskArns[]' --output text 2>/dev/null || true)
+          if [ -n "${TASKS:-}" ]; then
+            for t in $TASKS; do
+              aws ecs stop-task --cluster "$ECS_CLUSTER" --task "$t" --reason "pre-destroy" || true
+            done
+            # Optional: wait for them to stop
+            aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks $TASKS || true
+          fi
       
-          # Force delete the service so TF doesn't wait
+          echo "Force-deleting the service..."
           aws ecs delete-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force || true
+      
+          echo "Pre-drain step completed."
 
       - name: Terraform destroy (ECS stack)
         working-directory: terraform/ecs
