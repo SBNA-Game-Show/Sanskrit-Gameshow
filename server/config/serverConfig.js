@@ -10,7 +10,9 @@ export const setupServer = () => {
 
   const raw = process.env.CORS_ORIGIN || "http://localhost:3000";
   const allowedOrigins = raw.split(",").map(s => s.trim()).filter(Boolean);
-  
+
+  console.log("[BOOT] CORS_ORIGIN env =", process.env.CORS_ORIGIN);
+  console.log("[BOOT] allowedOrigins  =", allowedOrigins);
   
   const corsOptions = {
     origin: allowedOrigins,
