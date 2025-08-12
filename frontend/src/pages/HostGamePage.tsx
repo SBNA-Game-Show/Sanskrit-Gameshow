@@ -22,8 +22,8 @@ import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
 
 // Import types and utils
-import { Game, Team, RoundSummary, RoundData } from "../types";
-import { getCurrentQuestion, getGameWinner, getTeamName } from "../utils/gameHelper";
+import { Game, RoundSummary, RoundData } from "../types"; //Team
+import { getCurrentQuestion, getTeamName } from "../utils/gameHelper"; //getGameWinner
 import { ROUTES } from "../utils/constants";
 
 const HostGamePage: React.FC = () => {
