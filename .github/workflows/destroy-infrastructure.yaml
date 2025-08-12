@@ -27,37 +27,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-#Deleting S3 Bucket
-      - name: Set up Terraform (S3)
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Authenticate with Terraform Cloud
-        run: |
-          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
-
-      - name: Terraform init (S3 workspace)
-        working-directory: terraform/s3
-        run: terraform init
-      
-      - name: Verify Terraform Cloud workspace (S3)
-        working-directory: terraform/s3
-        run: terraform workspace show
-
-      - name: Empty S3 bucket before destroy (only if exists)
-        run: |
-          BUCKET_NAME="sanskrit-familyfeud-gameshow-frontend"
-          
-          # Check if the bucket exists
-          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            echo "✅ Bucket exists. Proceeding to empty it..."
-            aws s3 rm s3://$BUCKET_NAME --recursive
-          else
-            echo "⚠️ Bucket $BUCKET_NAME does not exist. Skipping empty step."
-          fi
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
-        working-directory: terraform/s3
-
 # Deleting ECS
 
       - name: Setup Terraform
@@ -93,3 +62,34 @@ jobs:
       - name: Terraform destroy (ECS stack)
         working-directory: terraform/ecs
         run: terraform destroy -auto-approve || echo "Nothing to destroy"
+
+#Deleting S3 Bucket
+      - name: Set up Terraform (S3)
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Authenticate with Terraform Cloud
+        run: |
+          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+
+      - name: Terraform init (S3 workspace)
+        working-directory: terraform/s3
+        run: terraform init
+      
+      - name: Verify Terraform Cloud workspace (S3)
+        working-directory: terraform/s3
+        run: terraform workspace show
+
+      - name: Empty S3 bucket before destroy (only if exists)
+        run: |
+          BUCKET_NAME="sanskrit-familyfeud-gameshow-frontend"
+          
+          # Check if the bucket exists
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "✅ Bucket exists. Proceeding to empty it..."
+            aws s3 rm s3://$BUCKET_NAME --recursive
+          else
+            echo "⚠️ Bucket $BUCKET_NAME does not exist. Skipping empty step."
+          fi
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+        working-directory: terraform/s3
