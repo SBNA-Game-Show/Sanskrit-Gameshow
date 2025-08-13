@@ -9,11 +9,29 @@ resource "aws_apigatewayv2_api" "this" {
   }
 }
 
+# Find all instances with the tag and running state
+data "aws_instances" "gameshow_ec2" {
+  filter {
+    name   = "tag:Name"
+    values = ["GameshowECSInstance"]
+  }
+  filter {
+    name   = "instance-state-name"
+    values = ["running"]
+  }
+}
+
+# Pick the first running instance and read its details (DNS/IP)
+data "aws_instance" "gameshow_ec2_primary" {
+  instance_id = data.aws_instances.gameshow_ec2.ids[0]
+}
+
+
 resource "aws_apigatewayv2_integration" "backend" {
   api_id                 = aws_apigatewayv2_api.this.id
   integration_type       = "HTTP_PROXY"
   integration_method     = "ANY"
-  integration_uri        = "http://<EC2_PUBLIC_DNS>:5004/{proxy}"
+  integration_uri        = "http://${data.aws_instance.gameshow_ec2_primary.public_dns}:5004/{proxy}"
   payload_format_version = "1.0"
 }
 
