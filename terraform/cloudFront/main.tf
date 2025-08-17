@@ -76,8 +76,8 @@ resource "aws_cloudfront_distribution" "cdn" {
   default_cache_behavior {
     target_origin_id       = "s3-frontend"
     viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD"]
-    cached_methods         = ["GET", "HEAD"]
+    allowed_methods        = ["HEAD", "GET"]
+    cached_methods         = ["HEAD", "GET"]
     compress               = true
     cache_policy_id        = data.aws_cloudfront_cache_policy.caching_optimized.id
   }
@@ -87,8 +87,8 @@ resource "aws_cloudfront_distribution" "cdn" {
     path_pattern             = "/api/*"
     target_origin_id         = "ec2-backend"
     viewer_protocol_policy   = "redirect-to-https"
-    allowed_methods          = ["GET","HEAD","OPTIONS","PUT","POST","PATCH","DELETE"]
-    cached_methods           = ["GET","HEAD","OPTIONS"]
+    allowed_methods          = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
+    cached_methods           = ["HEAD","GET","OPTIONS"]
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
   }
@@ -98,8 +98,8 @@ resource "aws_cloudfront_distribution" "cdn" {
     path_pattern             = "/socket.io/*"
     target_origin_id         = "ec2-backend"
     viewer_protocol_policy   = "redirect-to-https"
-    allowed_methods          = ["GET","HEAD","OPTIONS","POST"]
-    cached_methods           = ["GET","HEAD","OPTIONS"]
+    allowed_methods          = ["HEAD","DELETE","POST","GET","OPTIONS","PUT","PATCH"]
+    cached_methods           = ["HEAD","GET","OPTIONS"]
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
   }
