@@ -266,6 +266,8 @@ jobs:
 # ─────────────────────────────
 # Re-apply ECS so it picks up strict CORs
 #─────────────────────────────
+      - name: Set TF var for CORS
+        run: echo "TF_VAR_cors_origin=https://${CF_DOMAIN}" >> $GITHUB_ENV
 
       - name: Re-apply ECS so it picks CloudFront CORS
         working-directory: terraform/ecs
