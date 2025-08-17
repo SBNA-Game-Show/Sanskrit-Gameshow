@@ -6,36 +6,21 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1" 
-
-#The Local Variables
-locals {
-  frontend_bucket_name = "sanskrit-familyfeud-gameshow-frontend" # The S3 bucket
-  api_name             = "gameshow-http-api"                     # The API Gateway
-  ec2_tag_name         = "GameshowECSInstance"                   # The backend EC2 Instance
+  region = "us-east-1"
 }
 
-# --- S3 frontend bucket lookup ---
+# ---------- Locals / Lookups ----------
+locals {
+  frontend_bucket_name = "sanskrit-familyfeud-gameshow-frontend"
+  ec2_tag_name         = "GameshowECSInstance"
+}
+
+# S3 bucket (frontend)
 data "aws_s3_bucket" "fe" {
   bucket = local.frontend_bucket_name
 }
 
-# --- API Gateway lookup (by name) ---
-data "aws_apigatewayv2_api" "api" {
-  name = local.api_name
-}
-
-data "aws_apigatewayv2_stage" "prod" {
-  api_id = data.aws_apigatewayv2_api.api.id
-  name   = "prod"
-}
-
-# Extract the execute-api domain (remove https:// prefix)
-locals {
-  apigw_domain = regexreplace(data.aws_apigatewayv2_api.api.api_endpoint, "^https?://", "")
-}
-
-# --- EC2 lookup for Socket.IO origin ---
+# Find running EC2 host for backend
 data "aws_instances" "gameshow_ec2" {
   filter { name = "tag:Name";            values = [local.ec2_tag_name] }
   filter { name = "instance-state-name"; values = ["running"] }
@@ -44,12 +29,12 @@ data "aws_instance" "gameshow_ec2_primary" {
   instance_id = data.aws_instances.gameshow_ec2.ids[0]
 }
 
-# --- CloudFront managed policies---
+# Managed CF policies
 data "aws_cloudfront_cache_policy" "caching_optimized" { name = "Managed-CachingOptimized" }
 data "aws_cloudfront_cache_policy" "caching_disabled"  { name = "Managed-CachingDisabled" }
 data "aws_cloudfront_origin_request_policy" "all_viewer" { name = "Managed-AllViewer" }
 
-# --- OAC for private S3 access ---
+# OAC so CF can read private S3
 resource "aws_cloudfront_origin_access_control" "oac" {
   name                              = "gameshow-s3-oac"
   origin_access_control_origin_type = "s3"
@@ -57,7 +42,7 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   signing_protocol                  = "sigv4"
 }
 
-# --- CloudFront distribution with 3 origins ---
+# ---------- CloudFront ----------
 resource "aws_cloudfront_distribution" "cdn" {
   enabled             = true
   default_root_object = "index.html"
@@ -69,33 +54,19 @@ resource "aws_cloudfront_distribution" "cdn" {
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
   }
 
-
-# Origin 2: API Gateway (REST)
+  # Origin 2: EC2 backend (HTTP only; port 5004)
   origins {
-    origin_id   = "apigw-backend"
-    domain_name = local.apigw_domain                  
-    origin_path = "/${data.aws_apigatewayv2_stage.prod.name}"  
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
-# Origin 3: EC2 (Socket.IO passthrough over HTTP)
-  origins {
-    origin_id   = "ec2-realtime"
+    origin_id   = "ec2-backend"
     domain_name = data.aws_instance.gameshow_ec2_primary.public_dns
     custom_origin_config {
       http_port              = 5004
       https_port             = 443
-      origin_protocol_policy = "http-only"  
+      origin_protocol_policy = "http-only"    
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
-# Default behavior: frontend files
+  # Default: static site
   default_cache_behavior {
     target_origin_id       = "s3-frontend"
     viewer_protocol_policy = "redirect-to-https"
@@ -105,24 +76,31 @@ resource "aws_cloudfront_distribution" "cdn" {
     cache_policy_id        = data.aws_cloudfront_cache_policy.caching_optimized.id
   }
 
-  # Socket.IO via EC2 (preserve upgrade)
+  # REST API via EC2 (no cache)
   ordered_cache_behavior {
-    path_pattern             = "/socket.io/*"
-    target_origin_id         = "ec2-realtime"
+    path_pattern             = "/api/*"
+    target_origin_id         = "ec2-backend"
     viewer_protocol_policy   = "redirect-to-https"
-    allowed_methods          = ["GET","HEAD","OPTIONS","POST"] # polling + upgrade
+    allowed_methods          = ["GET","HEAD","OPTIONS","PUT","POST","PATCH","DELETE"]
     cached_methods           = ["GET","HEAD","OPTIONS"]
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
   }
 
-  restrictions {
-    geo_restriction { restriction_type = "none" }
+  # Socket.IO via EC2 (preserve upgrade; no cache)
+  ordered_cache_behavior {
+    path_pattern             = "/socket.io/*"
+    target_origin_id         = "ec2-backend"
+    viewer_protocol_policy   = "redirect-to-https"
+    allowed_methods          = ["GET","HEAD","OPTIONS","POST"]
+    cached_methods           = ["GET","HEAD","OPTIONS"]
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
   }
 
-# Use default CF certificate
+  restrictions { geo_restriction { restriction_type = "none" } }
+
   viewer_certificate { cloudfront_default_certificate = true }
-}
 
   tags = {
     Name        = "GameshowCloudFront"
@@ -130,7 +108,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 }
 
-# S3 bucket policy allowing only this CloudFront distribution
+# Lock S3 to this distribution (OAC)
 resource "aws_s3_bucket_policy" "allow_cf" {
   bucket = data.aws_s3_bucket.fe.id
   policy = jsonencode({
@@ -141,16 +119,12 @@ resource "aws_s3_bucket_policy" "allow_cf" {
       Principal = { Service = "cloudfront.amazonaws.com" },
       Action    = "s3:GetObject",
       Resource  = "arn:aws:s3:::${local.frontend_bucket_name}/*",
-      Condition = {
-        StringEquals = {
-          "AWS:SourceArn" = aws_cloudfront_distribution.cdn.arn
-        }
-      }
+      Condition = { StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.cdn.arn } }
     }]
   })
 }
 
 output "cloudfront_domain" {
   value       = aws_cloudfront_distribution.cdn.domain_name
-  description = "Open https://<this>/ and https://<this>/api/health"
+  description = "App at https://<this>/ ; /api/* and /socket.io/* go to EC2:5004"
 }
