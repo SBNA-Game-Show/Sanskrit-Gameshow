@@ -1,20 +1,18 @@
 name: Destroy Infrastructure
 
-#on:
-  #workflow_dispatch:      
-  #push:
-    #branches: [ 404-not-found-deployment-testing ]   
+on:
+  workflow_dispatch:
+  push: 
+   branches: [ 404-not-found-deployment-testing ]
 
-concurrency:
-  group: ecr-ecs-deploy
-  cancel-in-progress: true
+env:
+  AWS_REGION: us-east-1
+  TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+  ECR_REPO: gameshow-backend
 
 jobs:
-  destroy-ecs:
+  destroy:
     runs-on: ubuntu-latest
-    env:
-      AWS_REGION: us-east-1
-      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
 
     steps:
       - name: Checkout repo
@@ -27,8 +25,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-# Deleting ECS
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
@@ -36,60 +32,81 @@ jobs:
         run: |
           echo 'credentials "app.terraform.io" { token = "${{ secrets.TF_API_TOKEN }}" }' > ~/.terraformrc
 
-      - name: Terraform init (ECS workspace)
-        working-directory: terraform/ecs
-        run: terraform init 
+      # ─────────────────────────────
+      # 1) CloudFront FIRST
+      # ─────────────────────────────
+      - name: Terraform init (CloudFront)
+        working-directory: terraform/cloudFront
+        run: terraform init
 
+      - name: Terraform destroy (CloudFront)
+        working-directory: terraform/cloudFront
+        run: terraform destroy -auto-approve || echo "Nothing to destroy (CloudFront)"
+
+      # ─────────────────────────────
+      # 2) ECS (pre-drain) + destroy
+      # ─────────────────────────────
       - name: Pre-drain/force delete ECS service
+        shell: bash
         env:
           ECS_CLUSTER: gameshow-cluster
           ECS_SERVICE: gameshow-backend-svc
         run: |
-          set -e
-          # Scale to 0 (best effort)
+          set -euo pipefail
           aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --desired-count 0 || true
           aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" || true
-      
-          # Stop any lingering tasks
-          TASKS=$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --service-name "$ECS_SERVICE" --query 'taskArns[]' --output text)
-          for t in $TASKS; do
-            aws ecs stop-task --cluster "$ECS_CLUSTER" --task "$t" --reason "pre-destroy" || true
-          done
-      
-          # Force delete the service so TF doesn't wait
+          TASKS=$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --service-name "$ECS_SERVICE" --query 'taskArns[]' --output text || true)
+          if [ -n "${TASKS:-}" ]; then
+            for t in $TASKS; do aws ecs stop-task --cluster "$ECS_CLUSTER" --task "$t" --reason "destroy" || true; done
+            aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks $TASKS || true
+          fi
           aws ecs delete-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force || true
 
-      - name: Terraform destroy (ECS stack)
+      - name: Terraform init (ECS)
         working-directory: terraform/ecs
-        run: terraform destroy -auto-approve || echo "Nothing to destroy"
+        run: terraform init
 
-#Deleting S3 Bucket
-      - name: Set up Terraform (S3)
-        uses: hashicorp/setup-terraform@v2
+      - name: Terraform destroy (ECS)
+        working-directory: terraform/ecs
+        run: terraform destroy -auto-approve || echo "Nothing to destroy (ECS)"
 
-      - name: Authenticate with Terraform Cloud
+      # ─────────────────────────────
+      # 3) ECR: empty repo then destroy
+      # ─────────────────────────────
+      - name: Empty ECR repository images (ignore if missing)
+        shell: bash
         run: |
-          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+          set -euo pipefail
+          if aws ecr describe-repositories --repository-names "$ECR_REPO" >/dev/null 2>&1; then
+            IDS=$(aws ecr list-images --repository-name "$ECR_REPO" --query 'imageIds[*]' --output json)
+            if [ "$IDS" != "[]" ]; then
+              aws ecr batch-delete-image --repository-name "$ECR_REPO" --image-ids "$IDS" || true
+            fi
+          fi
 
-      - name: Terraform init (S3 workspace)
+      - name: Terraform init (ECR)
+        working-directory: terraform/ecr
+        run: terraform init
+
+      - name: Terraform destroy (ECR)
+        working-directory: terraform/ecr
+        run: terraform destroy -auto-approve || echo "Nothing to destroy (ECR)"
+
+      # ─────────────────────────────
+      # 4) S3 LAST: empty then destroy
+      # ─────────────────────────────
+      - name: Terraform init (S3)
         working-directory: terraform/s3
         run: terraform init
-      
-      - name: Verify Terraform Cloud workspace (S3)
-        working-directory: terraform/s3
-        run: terraform workspace show
 
-      - name: Empty S3 bucket before destroy (only if exists)
+      - name: Empty S3 bucket (ignore if missing)
+        env:
+          BUCKET_NAME: sanskrit-familyfeud-gameshow-frontend
         run: |
-          BUCKET_NAME="sanskrit-familyfeud-gameshow-frontend"
-          
-          # Check if the bucket exists
           if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            echo "✅ Bucket exists. Proceeding to empty it..."
-            aws s3 rm s3://$BUCKET_NAME --recursive
-          else
-            echo "⚠️ Bucket $BUCKET_NAME does not exist. Skipping empty step."
+            aws s3 rm "s3://$BUCKET_NAME" --recursive || true
           fi
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
+
+      - name: Terraform destroy (S3)
         working-directory: terraform/s3
+        run: terraform destroy -auto-approve || echo "Nothing to destroy (S3)"
