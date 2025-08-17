@@ -1,9 +1,9 @@
 name: Destroy Infrastructure
 
-on:
-  workflow_dispatch:
-  push: 
-   branches: [ 404-not-found-deployment-testing ]
+#on:
+  #workflow_dispatch:
+  #push: 
+   #branches: [ 404-not-found-deployment-testing ]
 
 env:
   AWS_REGION: us-east-1
