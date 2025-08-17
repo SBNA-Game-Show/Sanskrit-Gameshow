@@ -177,16 +177,23 @@ data "aws_ecr_repository" "repo" {
 # Look up an existing CloudFront by Tag name
 ########################################
 
+# Fetch all CF distributions (works even if you have none)
 data "aws_cloudfront_distributions" "all" {}
 
 locals {
-  gameshow_cf = one([
+  # Filter distributions by tag Name=GameshowCloudFront
+  cf_matches = [
     for d in data.aws_cloudfront_distributions.all.distributions :
     d if try(d.tags["Name"], "") == "GameshowCloudFront"
-  ])
+  ]
 
-  # CloudFront origin
-  cors_origin = "https://${local.gameshow_cf.domain_name}"
+  # If found, use its domain; if not, null
+  cf_domain = length(local.cf_matches) > 0 ? local.cf_matches[0].domain_name : null
+
+  # Final CORS origin:
+  # - First apply (no CF yet)  -> "*"
+  # - Later (CF exists)        -> "https://<domain>"
+  cors_origin = local.cf_domain != null ? "https://${local.cf_domain}" : "*"
 }
 
 ########################################
