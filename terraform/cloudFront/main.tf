@@ -124,6 +124,12 @@ resource "aws_cloudfront_distribution" "cdn" {
   viewer_certificate { cloudfront_default_certificate = true }
 }
 
+  tags = {
+    Name        = "GameshowCloudFront"
+    Environment = "dev"
+  }
+}
+
 # S3 bucket policy allowing only this CloudFront distribution
 resource "aws_s3_bucket_policy" "allow_cf" {
   bucket = data.aws_s3_bucket.fe.id
