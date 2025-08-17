@@ -174,17 +174,19 @@ data "aws_ecr_repository" "repo" {
   name = local.repo_name
 }
 ########################################
-# Look up an existing bucket by name
+# Look up an existing CloudFront by Tag name
 ########################################
 
-# Look up an existing bucket by name 
-data "aws_s3_bucket" "frontend" {
-  bucket = "sanskrit-familyfeud-gameshow-frontend"  
-}
+data "aws_cloudfront_distributions" "all" {}
 
-# Use its website endpoint in the task env
 locals {
-  cors_origin = "http://${data.aws_s3_bucket.frontend.website_endpoint}"
+  gameshow_cf = one([
+    for d in data.aws_cloudfront_distributions.all.distributions :
+    d if try(d.tags["Name"], "") == "GameshowCloudFront"
+  ])
+
+  # CloudFront origin
+  cors_origin = "https://${local.gameshow_cf.domain_name}"
 }
 
 ########################################
