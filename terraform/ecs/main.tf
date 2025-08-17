@@ -178,12 +178,12 @@ data "aws_ecr_repository" "repo" {
 ########################################
 
 # Fetch all CF distributions (works even if you have none)
-data "aws_cloudfront_distributions" "all" {}
+data "aws_cloudfront_distribution" "all" {}
 
 locals {
   # Filter distributions by tag Name=GameshowCloudFront
   cf_matches = [
-    for d in data.aws_cloudfront_distributions.all.distributions :
+    for d in data.aws_cloudfront_distribution.all.distribution :
     d if try(d.tags["Name"], "") == "GameshowCloudFront"
   ]
 
