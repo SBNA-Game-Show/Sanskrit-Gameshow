@@ -54,14 +54,14 @@ resource "aws_cloudfront_distribution" "cdn" {
   default_root_object = "index.html"
 
   # Origin 1: S3 (frontend)
-  origins {
+  origin {
     origin_id                = "s3-frontend"
     domain_name              = data.aws_s3_bucket.fe.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
   }
 
   # Origin 2: EC2 backend (HTTP only; port 5004)
-  origins {
+  origin {
     origin_id   = "ec2-backend"
     domain_name = data.aws_instance.gameshow_ec2_primary.public_dns
     custom_origin_config {
