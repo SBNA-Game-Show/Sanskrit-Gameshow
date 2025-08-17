@@ -22,8 +22,14 @@ data "aws_s3_bucket" "fe" {
 
 # Find running EC2 host for backend
 data "aws_instances" "gameshow_ec2" {
-  filter { name = "tag:Name";            values = [local.ec2_tag_name] }
-  filter { name = "instance-state-name"; values = ["running"] }
+  filter {
+    name = "tag:Name"            
+    values = [local.ec2_tag_name]
+  }
+  filter {
+    name = "instance-state-name"
+    values = ["running"]
+  }
 }
 data "aws_instance" "gameshow_ec2_primary" {
   instance_id = data.aws_instances.gameshow_ec2.ids[0]
@@ -98,9 +104,15 @@ resource "aws_cloudfront_distribution" "cdn" {
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
   }
 
-  restrictions { geo_restriction { restriction_type = "none" } }
+  restrictions { 
+    geo_restriction { 
+      restriction_type = "none" 
+    } 
+  }
 
-  viewer_certificate { cloudfront_default_certificate = true }
+  viewer_certificate {
+    cloudfront_default_certificate = true 
+  }
 
   tags = {
     Name        = "GameshowCloudFront"
