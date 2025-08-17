@@ -174,26 +174,14 @@ data "aws_ecr_repository" "repo" {
   name = local.repo_name
 }
 ########################################
-# Look up an existing CloudFront by Tag name
+# Variables for cors_origion
 ########################################
 
-# Fetch all CF distributions (works even if you have none)
-data "aws_cloudfront_distribution" "all" {}
-
-locals {
-  # Filter distributions by tag Name=GameshowCloudFront
-  cf_matches = [
-    for d in data.aws_cloudfront_distribution.all.distribution :
-    d if try(d.tags["Name"], "") == "GameshowCloudFront"
-  ]
-
-  # If found, use its domain; if not, null
-  cf_domain = length(local.cf_matches) > 0 ? local.cf_matches[0].domain_name : null
-
-  # Final CORS origin:
-  # - First apply (no CF yet)  -> "*"
-  # - Later (CF exists)        -> "https://<domain>"
-  cors_origin = local.cf_domain != null ? "https://${local.cf_domain}" : "*"
+# variables.tf (or at top of ecs main.tf)
+variable "cors_origin" {
+  type        = string
+  description = "Allowed CORS origin for the backend"
+  default     = "*"   
 }
 
 ########################################
@@ -222,7 +210,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DB_NAME",       value = "Data_Scored_Test" },
         { name = "JWT_SECRET",  value = "seceretkey" },
         { name = "REACT_APP_API_KEY",  value = "H0ylHQmpyATxhhRUV3iMEfQnq1xkZl0uUGN9g26OubSw6Od5H0XwKGCMJhaY7TwL"},
-        { name  = "CORS_ORIGIN", value = local.cors_origin}
+        { name  = "CORS_ORIGIN", value = vars.cors_origin}
       ]
       logConfiguration = {
         logDriver = "awslogs",
