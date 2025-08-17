@@ -1,10 +1,10 @@
 
 name: Full stack deployment
 
-#on:
-  #workflow_dispatch:      
-  #push:
-    #branches: [ 404-not-found-deployment-testing ]    
+on:
+  workflow_dispatch:      
+  push:
+    branches: [ 404-not-found-deployment-testing ]    
 
 jobs:
   setup-and-deploy:
@@ -227,44 +227,57 @@ jobs:
           echo "Public DNS:  $(terraform output -raw ec2_public_dns)"
           echo "Hit app at:  $(terraform output -raw hit_app_here)"
 
+# ─────────────────────────────
+# CloudFront: create/update distribution (S3 + EC2 origins)
+# ─────────────────────────────
+      - name: Set up Terraform (CloudFront)
+        uses: hashicorp/setup-terraform@v2
+      
+      - name: Authenticate with Terraform Cloud
+        run: |
+          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+      
+      - name: Terraform Init (CloudFront)
+        working-directory: terraform/cloudFront
+        run: terraform init
+      
+      - name: Terraform Apply (CloudFront)
+        working-directory: terraform/cloudFront
+        run: terraform apply -auto-approve
+
+      - name: Get CloudFront domain by tag
+        id: cf
+        run: |
+          DIST_IDS=$(aws cloudfront list-distributions --query 'DistributionList.Items[].Id' --output text)
+          for ID in $DIST_IDS; do
+            ARN=$(aws cloudfront get-distribution --id "$ID" --query 'Distribution.ARN' --output text)
+            TAGVAL=$(aws cloudfront list-tags-for-resource --resource "$ARN" \
+              --query 'Tags.Items[?Key==`Name`].Value | [0]' --output text)
+            if [ "$TAGVAL" = "GameshowCloudFront" ]; then
+              CF_DOMAIN=$(aws cloudfront get-distribution --id "$ID" --query 'Distribution.DomainName' --output text)
+              echo "CF_DOMAIN=$CF_DOMAIN" >> $GITHUB_ENV
+              echo "CF_DIST_ID=$ID" >> $GITHUB_ENV
+              echo "Found CF: $CF_DOMAIN (ID: $ID)"
+              exit 0
+            fi
+          done
+          echo "No CloudFront distribution tagged Name=GameshowCloudFront found" >&2
+          exit 1
+# ─────────────────────────────
+# Re-apply ECS so it picks up strict CORs
+#─────────────────────────────
+
+      - name: Re-apply ECS so it picks CloudFront CORS
+        working-directory: terraform/ecs
+        run: terraform apply -auto-approve
 
 # ─────────────────────────────
-# Getting the EC2 Public DNS and putting it in .env file
+# Putting CloudFront URL inside Frontend .env
 # ─────────────────────────────
-      - name: Resolve EC2 public DNS
-        id: ec2_dns
-        env:
-          EC2_TAG_NAME: GameshowECSInstance   # matches your Terraform tag
-        run: |
-          # Find the instance by Name tag and running state
-          INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=$EC2_TAG_NAME" "Name=instance-state-name,Values=running" \
-            --query "Reservations[0].Instances[0].InstanceId" --output text)
-      
-          echo "INSTANCE_ID=$INSTANCE_ID"
-      
-          # Wait for DNS to appear (fresh instance can take a bit)
-          for i in {1..12}; do
-            DNS=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
-              --query "Reservations[0].Instances[0].PublicDnsName" --output text)
-            if [ -n "$DNS" ] && [ "$DNS" != "None" ]; then break; fi
-            echo "Waiting for public DNS... ($i/12)"
-            sleep 10
-          done
-      
-          # Fallback to public IP if DNS still not set
-          if [ -z "$DNS" ] || [ "$DNS" = "None" ]; then
-            DNS=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
-              --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
-          fi
-      
-          echo "EC2_PUBLIC_DNS=$DNS" >> $GITHUB_ENV
-          echo "Backend host resolved to: $DNS"
-      
-      # --- Write CRA .env.production with the backend host ---
       - name: Write CRA env for frontend build
         run: |
-          echo "REACT_APP_BACKEND_HOST=http://${EC2_PUBLIC_DNS}:5004" > frontend/.env.production
+          echo "REACT_APP_BACKEND_HOST=https://${CF_DOMAIN}" > frontend/.env.production
+          echo "REACT_APP_SOCKET_HOST=https://${CF_DOMAIN}" >> frontend/.env.production
           echo "Wrote frontend/.env.production:"
           cat frontend/.env.production
 
@@ -285,4 +298,12 @@ jobs:
           S3_BUCKET: sanskrit-familyfeud-gameshow-frontend
         run: |
           aws s3 sync frontend/build s3://$S3_BUCKET --delete
+
+
+#─────────────────────────
+# Invalidate CloudFront
+#──────────────────────────
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation --distribution-id "${CF_DIST_ID}" --paths "/*"
 
