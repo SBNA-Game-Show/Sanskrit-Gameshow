@@ -210,7 +210,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DB_NAME",       value = "Data_Scored_Test" },
         { name = "JWT_SECRET",  value = "seceretkey" },
         { name = "REACT_APP_API_KEY",  value = "H0ylHQmpyATxhhRUV3iMEfQnq1xkZl0uUGN9g26OubSw6Od5H0XwKGCMJhaY7TwL"},
-        { name  = "CORS_ORIGIN", value = vars.cors_origin}
+        { name  = "CORS_ORIGIN", value = var.cors_origin}
       ]
       logConfiguration = {
         logDriver = "awslogs",
