@@ -1,10 +1,10 @@
 
 name: Full stack deployment
 
-#on:
-  #workflow_dispatch:      
-  #push:
-    #branches: [ 404-not-found-deployment-testing ]    
+on:
+  workflow_dispatch:      
+  push:
+    branches: [ 404-not-found-deployment-testing ]    
 
 jobs:
   setup-and-deploy:
