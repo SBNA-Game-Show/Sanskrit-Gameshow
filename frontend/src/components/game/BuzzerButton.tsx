@@ -20,6 +20,7 @@ const BuzzerButton: React.FC<BuzzerButtonProps> = ({
       </h3>
       <button
         onClick={onBuzz}
+        onTouchStart={onBuzz}
         disabled={disabled || loading}
         className={`w-full text-xl font-bold py-6 px-8 rounded-xl transition-all transform ${
           !disabled && !loading

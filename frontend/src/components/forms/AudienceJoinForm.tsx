@@ -20,7 +20,7 @@ const AudienceJoinForm: React.FC<AudienceJoinFormProps> = ({
   isLoading,
   error,
 }) => {
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onJoin();
     }
@@ -46,7 +46,7 @@ const AudienceJoinForm: React.FC<AudienceJoinFormProps> = ({
               id="gameCode"
               value={gameCode}
               onChange={(e) => onGameCodeChange(e.target.value.toUpperCase())}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Enter 6-digit code"
               label="Game Code"
               variant="center"

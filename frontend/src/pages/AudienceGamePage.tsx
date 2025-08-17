@@ -226,7 +226,7 @@ const AudienceGamePage: React.FC = () => {
     const team2Answered = game.gameState.questionsAnswered.team2 || 0;
     return (
       <PageLayout gameCode={game.code} variant="game">
-        <div className="w-48 flex-shrink-0">
+        <div className="order-2 md:order-none w-full md:w-48 md:flex-shrink-0">
           <TeamPanel
             team={game.teams[0]}
             teamIndex={0}
@@ -238,7 +238,7 @@ const AudienceGamePage: React.FC = () => {
             questionData={getTeamQuestionData("team1")}
           />
         </div>
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
           <TurnIndicator
             currentTeam={game.gameState.currentTurn}
             teams={game.teams}
@@ -258,7 +258,7 @@ const AudienceGamePage: React.FC = () => {
             </div>
           )}
         </div>
-        <div className="w-48 flex-shrink-0">
+        <div className="order-3 md:order-none w-full md:w-48 md:flex-shrink-0">
           <TeamPanel
             team={game.teams[1]}
             teamIndex={1}

@@ -21,13 +21,13 @@ const PageLayout: React.FC<PageLayoutProps> = ({
 }) => {
   const layoutClasses = {
     default: "min-h-screen flex flex-col gradient-bg",
-    game: "h-screen flex flex-col gradient-bg game-bg overflow-hidden",
+    game: "min-h-screen flex flex-col gradient-bg game-bg",
     fullscreen: "h-screen flex flex-col gradient-bg overflow-hidden", // Updated this line
   };
 
   const mainClasses = {
     default: "flex-1 container mx-auto px-4 py-8",
-    game: "flex-1 flex gap-2 p-2 overflow-hidden",
+    game: "flex-1 flex flex-col md:flex-row gap-2 p-2 overflow-auto",
     fullscreen: "flex-1 relative overflow-hidden", // Updated this line
   };
 

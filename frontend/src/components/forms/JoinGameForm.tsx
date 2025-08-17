@@ -24,7 +24,7 @@ const JoinGameForm: React.FC<JoinGameFormProps> = ({
   error,
 }) => {
   const playerName = localStorage.getItem("username") || "Player";
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     localStorage.setItem("playerName", playerName);
     if (e.key === "Enter") {
       onJoinGame();
@@ -58,7 +58,7 @@ const JoinGameForm: React.FC<JoinGameFormProps> = ({
               id="gameCode"
               value={gameCode}
               onChange={(e) => onGameCodeChange(e.target.value.toUpperCase())}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Enter 6-digit code"
               label="Game Code"
               variant="center"
@@ -70,7 +70,7 @@ const JoinGameForm: React.FC<JoinGameFormProps> = ({
               id="playerName"
               value={playerName}
               onChange={(e) => onPlayerNameChange(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Enter your name"
               label="Your Name"
               disabled={isLoading}

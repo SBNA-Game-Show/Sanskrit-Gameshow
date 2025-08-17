@@ -23,7 +23,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
   currentAttempt = 1,
   maxAttempts = 3,
 }) => {
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && canSubmit && answer.trim()) {
       onSubmit();
     }
@@ -49,7 +49,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
         <Input
           value={answer}
           onChange={(e) => onAnswerChange(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder={
             isMyTeam ? "Enter your answer..." : "Wait for your turn..."
           }
@@ -59,7 +59,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({
               : "border-slate-400 bg-slate-50/5 opacity-60"
           }`}
           disabled={!canSubmit}
-          autoFocus={!!canSubmit}
+          autoFocus={canSubmit}
         />
 
         {isMyTeam && (
