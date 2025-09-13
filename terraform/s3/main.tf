@@ -7,7 +7,7 @@ terraform {
 
 locals {
   region      = "us-east-1"
-  bucket_name = "sanskrit-familyfeud-gameshow-frontend"  
+  bucket_name = "sanskrit-familyfeud-gameshow-frontend_2"  
 }
 
 provider "aws" {
