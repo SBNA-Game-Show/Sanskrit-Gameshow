@@ -1,10 +1,10 @@
 
 name: Full stack deployment
 
-on:
-  workflow_dispatch:      
-  push:
-    branches: [ 404_deployment_testing_branch_2 ]    
+#on:
+  #workflow_dispatch:      
+  #push:
+    #branches: [ 404_deployment_testing_branch_2 ]    
 
 jobs:
   setup-and-deploy:
@@ -297,7 +297,7 @@ jobs:
           
       - name: Upload frontend to S3
         env:
-          S3_BUCKET: sanskrit-familyfeud-gameshow-frontend
+          S3_BUCKET: sanskrit-familyfeud-gameshow-frontend-2
         run: |
           aws s3 sync frontend/build s3://$S3_BUCKET --delete
 
