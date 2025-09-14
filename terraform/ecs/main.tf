@@ -207,7 +207,7 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         { name = "PORT",          value = tostring(local.container_port) },
         { name = "MONGODB_URI",   value = "mongodb+srv://SBNAadmin:8PYSMXyZ%40zp4uwF@cluster1-production.v4anhjy.mongodb.net" },
-        { name = "DB_NAME",       value = "Data_Scored_Test" },
+        { name = "DB_NAME",       value = "Data_June_Demo" },
         { name = "JWT_SECRET",  value = "seceretkey" },
         { name = "REACT_APP_API_KEY",  value = "H0ylHQmpyATxhhRUV3iMEfQnq1xkZl0uUGN9g26OubSw6Od5H0XwKGCMJhaY7TwL"},
         { name  = "CORS_ORIGIN", value = var.cors_origin}
