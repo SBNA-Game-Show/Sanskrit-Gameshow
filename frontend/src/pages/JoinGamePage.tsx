@@ -414,7 +414,7 @@ const JoinGamePage: React.FC = () => {
             roundSummary={roundSummary}
             teams={game.teams}
             isHost={false}
-            isGameFinished={game.currentRound >= 3}
+            isGameFinished={game.currentRound >= 4}
           />
         </div>
       </PageLayout>

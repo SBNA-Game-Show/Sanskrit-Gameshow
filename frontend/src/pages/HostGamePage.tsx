@@ -599,7 +599,7 @@ const HostGamePage: React.FC = () => {
             roundSummary={roundSummary}
             teams={game.teams}
             isHost={true}
-            isGameFinished={game.currentRound >= 3}
+            isGameFinished={game.currentRound >= 4}
             onContinueToNextRound={handleContinueToNextRound}
             onBackToHome={() => (window.location.href = ROUTES.HOSTHOME)}
           />

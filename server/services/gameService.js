@@ -636,7 +636,7 @@ export function advanceGameState(gameCode) {
       }
     } else {
       // Both teams finished - round complete
-      if (game.currentRound < 3) {
+      if (game.currentRound < 4) {
         game.status = "round-summary";
         game.gameState.currentTurn = null;
         updateTeamActiveStatus(game);
@@ -692,7 +692,7 @@ export function continueToNextRound(gameCode) {
     team2.roundScores[game.currentRound - 1] = team2.currentRoundScore;
   }
 
-  if (game.currentRound < 3) {
+  if (game.currentRound < 4) {
     startNewRound(game);
     game.status = "active";
     game.gameState.awaitingAnswer = true;
