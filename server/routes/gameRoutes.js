@@ -54,14 +54,16 @@ router.post("/api/create-game", async (req, res) => {
     updatedQuestions.push(
       {
         _id: 1,
-        question: "Name a famous Shakespeare play",
-        questionType: 'Input',
+        question: "What colour is an apple?",
+        questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
         answers: [
-          { _id: 100, answer: "Romeo and Juliet", responseCount: 15, isCorrect: true, rank: 1, score: 10},
-          { _id: 200, answer: "Hamlet", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
-          { _id: 300, answer: "Macbeth", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 100, answer: "Red", responseCount: 15, isCorrect: true, rank: 1, score: 10},
+          { _id: 200, answer: "Blue", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
+          { _id: 300, answer: "Yellow", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 300, answer: "Green", responseCount: 5, isCorrect: true, rank: 4, score: 0},
+          { _id: 300, answer: "Purple", responseCount: 5, isCorrect: true, rank: 5, score: 0},
         ],
         questionNumber: 1,
         teamAssignment: "team1", // Team A
@@ -69,14 +71,16 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 2,
-        question: "Name a famous Shakespeare play",
-        questionType: 'Input',
+        question: "What colour is an apple?",
+        questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
         answers: [
-          { _id: 100, answer: "Romeo and Juliet", responseCount: 15, isCorrect: true, rank: 1, score: 10},
-          { _id: 200, answer: "Hamlet", responseCount: 8, isCorrect: true, rank: 2, score: 8 },
-          { _id: 300, answer: "Macbeth", responseCount: 5, isCorrect: true, rank: 3, score: 6},
+          { _id: 100, answer: "Red", responseCount: 15, isCorrect: true, rank: 1, score: 10},
+          { _id: 200, answer: "Blue", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
+          { _id: 300, answer: "Yellow", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 300, answer: "Green", responseCount: 5, isCorrect: true, rank: 4, score: 0},
+          { _id: 300, answer: "Purple", responseCount: 5, isCorrect: true, rank: 5, score: 0},
         ],
         questionNumber: 2,
         teamAssignment: "team1", // Team A
@@ -84,14 +88,16 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 3,
-        question: "Name a famous Shakespeare play",
-        questionType: 'Input',
+        question: "What colour is an apple?",
+        questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
         answers: [
-          { _id: 100, answer: "Romeo and Juliet", responseCount: 15, isCorrect: true, rank: 1, score: 10},
-          { _id: 200, answer: "Hamlet", responseCount: 8, isCorrect: true, rank: 2, score: 8 },
-          { _id: 300, answer: "Macbeth", responseCount: 5, isCorrect: true, rank: 3, score: 6},
+          { _id: 100, answer: "Red", responseCount: 15, isCorrect: true, rank: 1, score: 10},
+          { _id: 200, answer: "Blue", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
+          { _id: 300, answer: "Yellow", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 300, answer: "Green", responseCount: 5, isCorrect: true, rank: 4, score: 0},
+          { _id: 300, answer: "Purple", responseCount: 5, isCorrect: true, rank: 5, score: 0},
         ],
         questionNumber: 3,
         teamAssignment: "team1", // Team A
@@ -99,14 +105,16 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 4,
-        question: "Name a famous Shakespeare play",
-        questionType: 'Input',
+        question: "What colour is an apple?",
+        questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
         answers: [
-          { _id: 100, answer: "Romeo and Juliet", responseCount: 15, isCorrect: true, rank: 1, score: 10},
-          { _id: 200, answer: "Hamlet", responseCount: 8, isCorrect: true, rank: 2, score: 8 },
-          { _id: 300, answer: "Macbeth", responseCount: 5, isCorrect: true, rank: 3, score: 6},
+          { _id: 100, answer: "Red", responseCount: 15, isCorrect: true, rank: 1, score: 10},
+          { _id: 200, answer: "Blue", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
+          { _id: 300, answer: "Yellow", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 300, answer: "Green", responseCount: 5, isCorrect: true, rank: 4, score: 0},
+          { _id: 300, answer: "Purple", responseCount: 5, isCorrect: true, rank: 5, score: 0},
         ],
         questionNumber: 1,
         teamAssignment: "team2", // Team A
@@ -114,14 +122,16 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 5,
-        question: "Name a famous Shakespeare play",
-        questionType: 'Input',
+        question: "What colour is an apple?",
+        questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
         answers: [
-          { _id: 100, answer: "Romeo and Juliet", responseCount: 15, isCorrect: true, rank: 1, score: 10},
-          { _id: 200, answer: "Hamlet", responseCount: 8, isCorrect: true, rank: 2, score: 8 },
-          { _id: 300, answer: "Macbeth", responseCount: 5, isCorrect: true, rank: 3, score: 6},
+          { _id: 100, answer: "Red", responseCount: 15, isCorrect: true, rank: 1, score: 10},
+          { _id: 200, answer: "Blue", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
+          { _id: 300, answer: "Yellow", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 300, answer: "Green", responseCount: 5, isCorrect: true, rank: 4, score: 0},
+          { _id: 300, answer: "Purple", responseCount: 5, isCorrect: true, rank: 5, score: 0},
         ],
         questionNumber: 2,
         teamAssignment: "team2", // Team A
@@ -129,8 +139,8 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 6,
-        question: "Name a famous Shakespeare play",
-        questionType: 'Input',
+        question: "What colour is an apple?",
+        questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
         answers: [

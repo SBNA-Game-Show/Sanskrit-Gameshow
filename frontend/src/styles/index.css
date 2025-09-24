@@ -348,10 +348,11 @@ header *,
   padding: 0.5rem;
   justify-content: space-evenly !important; /* Distribute tiles evenly */
   align-items: stretch !important; /* Make all tiles same width */
+  min-height: 45vh;
 }
 
 .answer-card {
-  padding: 1.5rem 1rem !important; /* Better proportioned padding */
+  padding: 0.5rem 1rem !important; /* Better proportioned padding */
   border-radius: 12px !important; /* Rounded corners to match question card */
   min-height: 5rem !important; /* Proper height that looks proportional */
   display: flex !important;

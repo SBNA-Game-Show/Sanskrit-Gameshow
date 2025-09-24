@@ -58,6 +58,7 @@ export interface Question {
   questionNumber: number; // Question number within the team's turn (1, 2, or 3)
   questionCategory: string;
   question: string;
+  questionType: string;
   answers: Answer[];
 }
 
