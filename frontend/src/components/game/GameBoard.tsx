@@ -35,6 +35,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
 }) => {
   const currentQuestion = getCurrentQuestion(game);
 
+  if (currentQuestion) {
+    console.log(currentQuestion.answers)
+  }
+  
+
   if (!currentQuestion) {
     return (
       <div className="glass-card p-6 text-center question-card">
@@ -105,17 +110,27 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
         {/* Answer Grid - Vertical Layout */}
         <div className="answer-grid">
-          {currentQuestion.answers.slice(0, 3).map((answer, index) => (
+          {currentQuestion.answers.slice(0, 5).map((answer, index) => (
             <div
               key={index}
               className={`answer-card glass-card transition-all ${
-                answer.revealed
-                  ? "bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
+                currentQuestion.questionType === "MCQ" && answer.revealed && answer.score > 0
+                  ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
+                  : currentQuestion.questionType === "MCQ" && answer.revealed && answer.score <= 0
+                  ? "!bg-gradient-to-r from-red-600/30 to-red-600/30 border-red-400 animate-pulse"
+                  : currentQuestion.questionType === "MCQ"
+                  ? "bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400"
+                  : answer.revealed && answer.score > 0
+                  ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
                   : "border-slate-500/50"
               }`}
             >
               <span className="answer-text">
-                {answer.revealed ? (
+                {currentQuestion.questionType === "MCQ" ? (
+                  <span className="text-black">
+                    {index + 1}. {answer.answer}
+                  </span>
+                ) : answer.revealed ? (
                   <span className="text-black">
                     {index + 1}. {answer.answer}
                   </span>
@@ -176,7 +191,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* Answer Grid - Vertical Layout for Host - Only 3 answers, Host sees all */}
       <div className="answer-grid">
-        {currentQuestion.answers.slice(0, 3).map((answer, index) => (
+        {currentQuestion.answers.slice(0, 5).map((answer, index) => (
           <div
             key={index}
             className={`answer-card glass-card transition-all ${

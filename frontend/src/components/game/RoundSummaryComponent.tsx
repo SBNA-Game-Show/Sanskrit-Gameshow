@@ -240,7 +240,7 @@ const RoundSummaryComponent: React.FC<RoundSummaryProps> = ({
             <div className="flex gap-3 justify-center mt-4">
               {isHost &&
                 !isGameFinished &&
-                round < 3 &&
+                round < 4 &&
                 onContinueToNextRound && (
                   <Button
                     onClick={onContinueToNextRound}
