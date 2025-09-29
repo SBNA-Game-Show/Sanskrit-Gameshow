@@ -144,28 +144,11 @@ router.post("/api/create-game", async (req, res) => {
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
         answers: [
-          { _id: 100, answer: "Romeo and Juliet", responseCount: 15, isCorrect: true, rank: 1, score: 10},
-          { _id: 200, answer: "Hamlet", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
-          { _id: 300, answer: "Macbeth", responseCount: 5, isCorrect: true, rank: 3, score: 0},
-          { _id: 400, answer: "Testing1", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
-          { _id: 500, answer: "Testing2", responseCount: 5, isCorrect: true, rank: 3, score: 0},
-        ],
-        questionNumber: 3,
-        teamAssignment: "team2", // Team A
-        round: 4,
-      },
-            {
-        _id: 7,
-        question: "Whats 1+1?",
-        questionType: 'MCQ',
-        questionCategory: 'Vocabulary',
-        questionLevel: 'Beginner',
-        answers: [
-          { _id: 100, answer: "Two", responseCount: 15, isCorrect: true, rank: 1, score: 10},
-          { _id: 200, answer: "Three", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
-          { _id: 300, answer: "Four", responseCount: 5, isCorrect: true, rank: 3, score: 0},
-          { _id: 400, answer: "Five", responseCount: 5, isCorrect: true, rank: 3, score: 0},
-          { _id: 500, answer: "One", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 100, answer: "Red", responseCount: 15, isCorrect: true, rank: 1, score: 10},
+          { _id: 200, answer: "Blue", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
+          { _id: 300, answer: "Yellow", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 300, answer: "Green", responseCount: 5, isCorrect: true, rank: 4, score: 0},
+          { _id: 300, answer: "Purple", responseCount: 5, isCorrect: true, rank: 5, score: 0},
         ],
         questionNumber: 3,
         teamAssignment: "team2", // Team A

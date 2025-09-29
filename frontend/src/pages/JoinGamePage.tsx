@@ -506,7 +506,7 @@ const JoinGamePage: React.FC = () => {
                 )}
   
                 {/* Toss-up or Answer input */}
-                {game.currentRound === 0 ? (
+                {game.currentRound === 0 || game.currentRound === 4 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
