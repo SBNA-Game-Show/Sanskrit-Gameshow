@@ -11,6 +11,7 @@ interface RoundData {
   round1: QuestionStatus[];
   round2: QuestionStatus[];
   round3: QuestionStatus[];
+  round4: QuestionStatus[];
 }
 
 interface TeamPanelProps {
@@ -52,6 +53,15 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       { firstAttemptCorrect: null, pointsEarned: 0 },
       { firstAttemptCorrect: null, pointsEarned: 0 },
       { firstAttemptCorrect: null, pointsEarned: 0 }
+    ],
+    round4: [
+      { firstAttemptCorrect: null, pointsEarned: 0 },
+      { firstAttemptCorrect: null, pointsEarned: 0 },
+      { firstAttemptCorrect: null, pointsEarned: 0 },
+      { firstAttemptCorrect: null, pointsEarned: 0 },
+      { firstAttemptCorrect: null, pointsEarned: 0 },
+      { firstAttemptCorrect: null, pointsEarned: 0 },
+      { firstAttemptCorrect: null, pointsEarned: 0 }
     ]
   },
   allTeams = [] // NEW: Default empty array
@@ -78,6 +88,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         return questionData.round2;
       case 3:
         return questionData.round3;
+      case 4:
+        return questionData.round4;
       default:
         return questionData.round1;
     }
@@ -237,6 +249,12 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             )}
           </div>
         </div>
+
+          {currentRound === 4 && (
+          <div className="mb-3">
+            {renderRoundSummary(4, questionData.round4)}
+          </div>
+        )}
 
         {/* Push content up and summaries to bottom */}
         <div className="flex-grow"></div>

@@ -54,6 +54,15 @@ const JoinGamePage: React.FC = () => {
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 }
+        ],
+        round4: [
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 }
         ]
       };
     }
@@ -457,6 +466,7 @@ const JoinGamePage: React.FC = () => {
             roundScore={game.teams[0].currentRoundScore}
             questionsAnswered={team1QuestionsAnswered}
             questionData={getTeamQuestionData("team1")}
+            allTeams={game.teams}
           />
         </div>
 
@@ -591,6 +601,7 @@ const JoinGamePage: React.FC = () => {
             roundScore={game.teams[1].currentRoundScore}
             questionsAnswered={team2QuestionsAnswered}
             questionData={getTeamQuestionData("team2")}
+            allTeams={game.teams}
           />
         </div>
       </PageLayout>

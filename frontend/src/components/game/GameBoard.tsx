@@ -53,7 +53,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   // Create round status indicator like in the image
   const RoundStatus = () => (
     <div className="flex items-center gap-2">
-      {[1, 2, 3].map((roundNum) => (
+      {[1, 2, 3, 4].map((roundNum) => (
         <div key={roundNum} className="flex items-center">
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 ${
@@ -66,7 +66,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           >
             {roundNum}
           </div>
-          {roundNum < 3 && (
+          {roundNum < 4 && (
             <div
               className={`w-6 h-0.5 mx-1 ${
                 roundNum < game.currentRound ? "bg-green-500" : "bg-gray-500"
@@ -84,7 +84,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         {/* Keep question visible on mobile by sticking it to the top */}
         <div className="sticky top-0 z-10">
           {/* Question Header - Compact with Round Status */}
-          <div className="glass-card question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+          <div className="question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="font-bold">
@@ -103,7 +103,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           </div>
 
           {/* Question Text - Compact */}
-          <div className="glass-card question-card flex-shrink-0">
+          <div className=" question-card flex-shrink-0">
             <h2 className="text-center">{currentQuestion.question}</h2>
           </div>
         </div>
@@ -165,7 +165,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Keep question visible on mobile by sticking it to the top */}
       <div className="sticky top-0 z-10">
         {/* Question Header with Round Status */}
-        <div className="glass-card question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+        <div className=" question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="font-bold">
@@ -184,7 +184,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         </div>
 
         {/* Question Text */}
-        <div className="glass-card question-card flex-shrink-0">
+        <div className=" question-card flex-shrink-0">
           <h2 className="text-center">{currentQuestion.question}</h2>
         </div>
       </div>

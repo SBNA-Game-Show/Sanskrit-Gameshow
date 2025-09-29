@@ -9,6 +9,7 @@ export interface RoundData {
   round1: QuestionStatus[];
   round2: QuestionStatus[];
   round3: QuestionStatus[];
+  round4: QuestionStatus[];
 }
 
 export interface Game {
@@ -35,6 +36,7 @@ export interface Game {
       round1: { team1: number; team2: number };
       round2: { team1: number; team2: number };
       round3: { team1: number; team2: number };
+      round4: { team1: number; team2: number };
     };
 
     tossUpQuestion?: Question; // Toss-up question for round 0
