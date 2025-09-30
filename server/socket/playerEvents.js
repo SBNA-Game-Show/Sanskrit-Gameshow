@@ -55,9 +55,9 @@ export function setupPlayerEvents(socket, io) {
     const game = getGame(gameCode);
 
     if (game) {
-      console.log(
-        `📋 Host requested players list for ${gameCode}: ${game.players.length} players`
-      );
+      // console.log(
+      //   `📋 Host requested players list for ${gameCode}: ${game.players.length} players`
+      // );
       socket.emit("players-list", {
         players: game.players,
         totalPlayers: game.players.length,
@@ -221,80 +221,200 @@ export function setupPlayerEvents(socket, io) {
       return;
     }
 
-    // ✅ REGULAR ROUNDS
-    const playerTeam = game.teams.find((t) => t.id === player.teamId);
-    if (!playerTeam || !playerTeam.active) {
-      socket.emit("answer-rejected", {
-        reason: "not-your-turn",
-        message: "It's not your team's turn to answer",
-      });
-      return;
-    }
+    if (currentRound === 4) {
+      if (!game.lightningRoundSubmittedTeams) game.lightningRoundSubmittedTeams = [];
 
-    const result = submitAnswer(gameCode, playerId, answer);
+      const teamId = player.teamId;
 
-    if (!result.success) {
-      socket.emit("answer-rejected", {
-        reason: "submission-failed",
-        message: result.message,
-      });
-      return;
-    }
+      const result = submitAnswer(gameCode, playerId, answer);
 
-    if (result.isCorrect) {
-      io.to(gameCode).emit("answer-correct", {
-        ...result,
-        submittedText: answer,
-        singleAttempt: true,
-      });
+      if (!result.success) {
+        socket.emit("answer-rejected", {
+          reason: "submission-failed",
+          message: result.message,
+        });
+        return;
+      }
 
-      if (result.revealRemainingAfterDelay) {
-        setTimeout(() => {
-          const updatedGame = getGame(gameCode);
-          const currentQuestion = getCurrentQuestion(updatedGame);
-          if (currentQuestion) {
-            currentQuestion.answers.forEach((a) => (a.revealed = true));
-            io.to(gameCode).emit("remaining-cards-revealed", {
-              game: updatedGame,
-              currentQuestion,
-            });
-          }
+      if (!result.success) {
+        socket.emit("answer-rejected", {
+          reason: "submission-failed",
+          message: result.message,
+        });
+        return;
+      }
 
+      if (result.isCorrect) {
+        io.to(gameCode).emit("answer-correct", {
+          ...result,
+          submittedText: answer,
+          singleAttempt: true,
+        });
+
+        if (result.revealRemainingAfterDelay) {
           setTimeout(() => {
-            const readyGame = getGame(gameCode);
-            if (readyGame) {
-              readyGame.gameState.canAdvance = true;
-              updateGame(gameCode, readyGame);
-
-              io.to(gameCode).emit("question-complete", {
-                game: readyGame,
-                currentQuestion: getCurrentQuestion(readyGame),
+            const updatedGame = getGame(gameCode);
+            const currentQuestion = getCurrentQuestion(updatedGame);
+            if (currentQuestion) {
+              currentQuestion.answers.forEach((a) => (a.revealed = true));
+              io.to(gameCode).emit("remaining-cards-revealed", {
+                game: updatedGame,
+                currentQuestion,
               });
             }
-          }, 3000);
-        }, 2000);
-      }
-    } else {
-      io.to(gameCode).emit("answer-incorrect", {
-        ...result,
-        submittedText: answer,
-        singleAttempt: true,
-        allCardsRevealed: true,
-      });
 
-      setTimeout(() => {
-        const readyGame = getGame(gameCode);
-        if (readyGame) {
-          readyGame.gameState.canAdvance = true;
-          updateGame(gameCode, readyGame);
+            setTimeout(() => {
+              const readyGame = getGame(gameCode);
+              if (readyGame) {
+                readyGame.gameState.canAdvance = true;
+                updateGame(gameCode, readyGame);
 
-          io.to(gameCode).emit("question-complete", {
-            game: readyGame,
-            currentQuestion: getCurrentQuestion(readyGame),
-          });
+                io.to(gameCode).emit("question-complete", {
+                  game: readyGame,
+                  currentQuestion: getCurrentQuestion(readyGame),
+                });
+              }
+            }, 3000);
+          }, 2000);
         }
-      }, 3000);
+      } else {
+        io.to(gameCode).emit("answer-incorrect", {
+          ...result,
+          submittedText: answer,
+          singleAttempt: true,
+          allCardsRevealed: false,
+        });
+
+        if (game.lightningRoundSubmittedTeams.length === 2) {
+          setTimeout(() => {
+            const currentQuestion = getCurrentQuestion(game);
+
+            if (currentQuestion) {
+              currentQuestion.answers.forEach((a) => (a.revealed = true));
+              io.to(gameCode).emit("remaining-cards-revealed", {
+                game,
+                currentQuestion,
+              });
+            }
+            
+            setTimeout(() => {
+              const readyGame = getGame(gameCode);
+              if (readyGame) {
+                readyGame.gameState.canAdvance = true;
+                updateGame(gameCode, readyGame);
+
+                io.to(gameCode).emit("question-complete", {
+                  game: readyGame,
+                  currentQuestion: getCurrentQuestion(readyGame),
+                });
+              }
+            }, 3000);
+          }, 2000);
+        }
+        else {
+          // ✅ Switch turn to the other team (buzzer logic)
+          const [teamA, teamB] = game.teams;
+          const otherTeamId = teamA.id === teamId ? teamB.id : teamA.id;
+
+          // Keep the original buzzed team for tie-break purposes but switch the
+          // active team to allow the second team to answer.
+          game.activeTeamId = otherTeamId;
+          game.teams.forEach((t) => (t.active = t.id === otherTeamId));
+          game.gameState.inputEnabled = true;
+          game.gameState.currentTurn = otherTeamId.includes("team1")
+            ? "team1"
+            : "team2";
+
+          const updatedGame = updateGame(gameCode, game);
+
+          io.to(gameCode).emit("turn-changed", {
+            game: updatedGame,
+            newActiveTeam: updatedGame.gameState.currentTurn,
+            teamName: updatedGame.teams.find((t) => t.active)?.name || "Unknown",
+            currentQuestion: getCurrentQuestion(updatedGame),
+          });
+
+          console.log(`🔁 Switching to Team ${otherTeamId}`);
+        }
+      }
     }
+    else {
+      // ✅ REGULAR ROUNDS
+      const playerTeam = game.teams.find((t) => t.id === player.teamId);
+      if (!playerTeam || !playerTeam.active) {
+        socket.emit("answer-rejected", {
+          reason: "not-your-turn",
+          message: "It's not your team's turn to answer",
+        });
+        return;
+      }
+
+      const result = submitAnswer(gameCode, playerId, answer);
+
+      if (!result.success) {
+        socket.emit("answer-rejected", {
+          reason: "submission-failed",
+          message: result.message,
+        });
+        return;
+      }
+
+      if (result.isCorrect) {
+        io.to(gameCode).emit("answer-correct", {
+          ...result,
+          submittedText: answer,
+          singleAttempt: true,
+        });
+
+        if (result.revealRemainingAfterDelay) {
+          setTimeout(() => {
+            const updatedGame = getGame(gameCode);
+            const currentQuestion = getCurrentQuestion(updatedGame);
+            if (currentQuestion) {
+              currentQuestion.answers.forEach((a) => (a.revealed = true));
+              io.to(gameCode).emit("remaining-cards-revealed", {
+                game: updatedGame,
+                currentQuestion,
+              });
+            }
+
+            setTimeout(() => {
+              const readyGame = getGame(gameCode);
+              if (readyGame) {
+                readyGame.gameState.canAdvance = true;
+                updateGame(gameCode, readyGame);
+
+                io.to(gameCode).emit("question-complete", {
+                  game: readyGame,
+                  currentQuestion: getCurrentQuestion(readyGame),
+                });
+              }
+            }, 3000);
+          }, 2000);
+        }
+      } else {
+        io.to(gameCode).emit("answer-incorrect", {
+          ...result,
+          submittedText: answer,
+          singleAttempt: true,
+          allCardsRevealed: true,
+        });
+
+        setTimeout(() => {
+          const readyGame = getGame(gameCode);
+          if (readyGame) {
+            readyGame.gameState.canAdvance = true;
+            updateGame(gameCode, readyGame);
+
+            io.to(gameCode).emit("question-complete", {
+              game: readyGame,
+              currentQuestion: getCurrentQuestion(readyGame),
+            });
+          }
+        }, 3000);
+      }
+    }
+    
   });
 
   socket.on("player-buzz", ({ gameCode, playerId }) => {
@@ -308,11 +428,11 @@ export function setupPlayerEvents(socket, io) {
     if (!player) {
       console.log("Error in Player Buzz: player not found", { playerId });
     }
-    if (game && game.currentRound !== 0) {
-      console.log("Error in Player Buzz: not round 0", {
-        currentRound: game.currentRound,
-      });
-    }
+    // if (game && game.currentRound !== 0) {
+    //   console.log("Error in Player Buzz: not round 0", {
+    //     currentRound: game.currentRound,
+    //   });
+    // }
     if (game && game.status !== "active") {
       console.log("Error in Player Buzz: game not active", {
         status: game.status,
@@ -321,7 +441,7 @@ export function setupPlayerEvents(socket, io) {
     if (
       !game ||
       !player ||
-      game.currentRound !== 0 ||
+      // game.currentRound !== 0 ||
       game.status !== "active"
     ) {
       console.log("Error in Player Buzz: condition failed", {

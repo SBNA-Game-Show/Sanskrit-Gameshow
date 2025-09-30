@@ -207,6 +207,8 @@ export function setupHostEvents(socket, io) {
     ) {
       const advancedGame = advanceGameState(gameCode);
       if (advancedGame) {
+        advancedGame.buzzedTeamId = null;
+        advancedGame.lightningRoundSubmittedTeams = [];
         // Reset advancement flag
         advancedGame.gameState.canAdvance = false;
         updateGame(gameCode, advancedGame);
