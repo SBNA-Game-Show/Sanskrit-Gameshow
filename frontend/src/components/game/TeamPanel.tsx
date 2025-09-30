@@ -250,11 +250,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
           </div>
         </div>
 
-          {currentRound === 4 && (
-          <div className="mb-3">
-            {renderRoundSummary(4, questionData.round4)}
-          </div>
-        )}
+
 
         {/* Push content up and summaries to bottom */}
         <div className="flex-grow"></div>
@@ -269,6 +265,12 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         {currentRound >= 3 && (
           <div className="mb-3">
             {renderRoundSummary(2, questionData.round2)}
+          </div>
+        )}
+
+        {currentRound >= 4 && (
+          <div className="mb-3">
+            {renderRoundSummary(3, questionData.round3)}
           </div>
         )}
 

@@ -52,9 +52,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   // Create round status indicator like in the image
   const RoundStatus = () => (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 ml-auto">
       {[1, 2, 3, 4].map((roundNum) => (
-        <div key={roundNum} className="flex items-center">
+        <div key={roundNum} className="flex items-center ">
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 ${
               roundNum < game.currentRound
@@ -86,18 +86,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
           {/* Question Header - Compact with Round Status */}
           <div className="question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
             <div className="flex justify-between items-center">
-              <div>
-                <h2 className="font-bold">
-                  {game.currentRound === 0
-                    ? 'Toss-up Round'
-                    : `Round ${game.currentRound}`} •{' '}
-                  {currentQuestion.questionCategory}
-                </h2>
-                <div className="text-xs text-slate-400">
-                  Question {game.currentRound === 0 ? 1 : game.currentQuestionIndex + 1} of{' '}
-                  {game.currentRound === 0 ? 1 : game.questions.length}
+                <div>
+                  <h2 className="font-bold">
+                    {game.currentRound === 0
+                      ? 'Toss-up Round'
+                      : ""}
+                  </h2>
                 </div>
-              </div>
               <RoundStatus />
             </div>
           </div>
@@ -171,13 +166,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
               <h2 className="font-bold">
                 {game.currentRound === 0
                   ? 'Toss-up Round'
-                  : `Round ${game.currentRound}`} •{' '}
-                {currentQuestion.questionCategory}
+                  : ""}
               </h2>
-              <div className="text-xs text-slate-400">
-                Question {game.currentRound === 0 ? 1 : game.currentQuestionIndex + 1} of{' '}
-                {game.currentRound === 0 ? 1 : game.questions.length}
-              </div>
             </div>
             <RoundStatus />
           </div>
