@@ -671,7 +671,7 @@ const HostGamePage: React.FC = () => {
 
 
           {/* Host Controls - CLEAN VERSION */}
-          <div className="bg-[#FEFEFC] p-3 mt-2">
+          <div className="bg-[#FEFEFC] rounded p-3 mt-2">
             <div className="text-center mb-2">
               <div className="text-sm text-slate-400 mb-2">Host Controls</div>
             </div>

@@ -30,7 +30,7 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
 
   if (variant === "compact") {
     return (
-      <div className="glass-card p-3 mb-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/30">
+      <div className="bg-[#FEFCF0] rounded p-3 mb-4  border-blue-500/30">
         {/* <div className="absolute top-3 right-2 z-10">
           <CountdownTimer seconds={10} size={60} />
         </div> */}

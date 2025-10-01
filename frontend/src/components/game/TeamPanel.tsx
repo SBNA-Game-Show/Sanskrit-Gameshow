@@ -162,10 +162,10 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     const isRoundWinner = didTeamWinRound(roundNum, roundData);
     
     return (
-      <div className={`glass-card p-2 mb-2 transition-all ${
+      <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-2 transition-all ${
         isRoundWinner 
-          ? 'border-4 border-yellow-400 bg-gradient-to-r from-yellow-400/20 to-yellow-500/20 shadow-lg shadow-yellow-400/40' 
-          : 'bg-gradient-to-r from-gray-600/20 to-gray-700/20 border-gray-500/30'
+          ? 'border-4 border-yellow-400  shadow-lg shadow-yellow-400/40' 
+          : ' border-gray-500/30'
       }`}>
         <h5 className="text-xs font-bold text-gray-300 mb-1 text-center">
           Round {roundNum}
@@ -246,7 +246,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
 
         {/* Current Round Question Progress */}
-        <div className={`glass-card p-2 mb-3 bg-gradient-to-r from-red-600/20 to-red-700/20 border-red-500/30 ${currentRound === 4 ? 'pb-3' : ''}`}>
+        <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3  border-red-500/30 ${currentRound === 4 ? 'pb-3' : ''}`}>
           <h4 className="text-sm font-bold text-red-300 mb-2 text-center">
             {currentRound === 0 ? "Toss-up Round" : `Round ${currentRound}`}
           </h4>
