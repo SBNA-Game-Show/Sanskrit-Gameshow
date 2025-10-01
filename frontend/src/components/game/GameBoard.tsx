@@ -3,6 +3,7 @@ import { Game } from "../../types";
 import Button from "../common/Button";
 import Input from "../common/Input";
 import { getCurrentQuestion } from "../../utils/gameHelper";
+import QuestionCard from "./QuestionCard";
 
 interface GameBoardProps {
   game: Game;
@@ -98,9 +99,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
           </div>
 
           {/* Question Text - Compact */}
-          <div className=" question-card flex-shrink-0 bg-[#FEFEFC]">
-            <h2 className="text-center">{currentQuestion.question}</h2>
-          </div>
+          <QuestionCard 
+            key={game.currentQuestionIndex}
+            question={currentQuestion.question} 
+            duration={10000}
+            isTimerActive={game.currentRound === 4}
+          />
         </div>
 
         {/* Answer Grid - Vertical Layout */}
@@ -174,9 +178,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
         </div>
 
         {/* Question Text */}
-        <div className=" question-card flex-shrink-0">
-          <h2 className="text-center">{currentQuestion.question}</h2>
-        </div>
+        <QuestionCard 
+          key={game.currentQuestionIndex}
+          question={currentQuestion.question} 
+          duration={10000}
+          isTimerActive={game.currentRound === 4}
+        />
       </div>
 
       {/* Answer Grid - Vertical Layout for Host - Only 3 answers, Host sees all */}

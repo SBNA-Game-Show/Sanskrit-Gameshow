@@ -26,8 +26,8 @@ interface TeamPanelProps {
   questionsAnswered?: number;
   questionData?: RoundData;
   allTeams?: Team[]; // NEW: All teams data for comparison
-  activeBorderColor?: string,
-  activeBackroundColor?: string
+  activeBorderColor: string;
+  activeBackgroundColor: string;
 }
 
 const TeamPanel: React.FC<TeamPanelProps> = ({
@@ -67,8 +67,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     ]
   },
   allTeams = [], // NEW: Default empty array
-  activeBorderColor = "",
-  activeBackroundColor = ""
+  activeBorderColor,
+  activeBackgroundColor
 }) => {
   const colorClasses = getTeamColorClasses(teamIndex);
 
@@ -191,19 +191,17 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
   return (
     <div
-      className={` p-3 md:h-full flex flex-col transition-all border-gray-300 bg-[#FEFEFC]
-        ${isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""}
-      `}
-      style={
-        isActive ? {
+      className={`glass-card p-3 md:h-full flex flex-col transition-all ${
+        isActive ? `border-2 border-red-500` : "border border-gray-300"
+      } ${
+        isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""
+      }`}
+      style={isActive ? {
+        borderColor: activeBorderColor,
         borderWidth: '2px',
         borderStyle: 'solid',
-        backgroundColor: activeBackroundColor,
-        borderColor: activeBorderColor
-      } : {}
-      
-  
-    }
+        backgroundColor: activeBackgroundColor
+      } : {}}
     >
         {/* Team Name and Round Score (TOP) */}
         <div className="text-center mb-4">

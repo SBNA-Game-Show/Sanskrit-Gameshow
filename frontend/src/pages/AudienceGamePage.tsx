@@ -246,6 +246,8 @@ const AudienceGamePage: React.FC = () => {
             questionsAnswered={team1Answered}
             questionData={getTeamQuestionData("team1")}
             allTeams={game.teams}
+            activeBorderColor="#dc2626"
+            activeBackgroundColor="#ffd6d6ff"
           />
         </div>
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
@@ -279,6 +281,8 @@ const AudienceGamePage: React.FC = () => {
             questionsAnswered={team2Answered}
             questionData={getTeamQuestionData("team2")}
             allTeams={game.teams}
+            activeBorderColor="#264adcff"
+            activeBackgroundColor="#d6e0ffff"
           />
         </div>
       </PageLayout>

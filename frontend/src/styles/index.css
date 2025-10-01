@@ -283,15 +283,13 @@ header *,
 
 /* IMPROVED QUESTION CARD - MUCH LARGER AND BETTER PROPORTIONED */
 .question-card {
-  padding: 1.5rem !important; /* Much larger padding */
   margin-bottom: 0.75rem !important;
   /* background: linear-gradient(135deg, var(--glass), var(--bg-secondary)); */
   border: 2px solid var(--primary) !important;
   border-radius: 12px !important; /* Larger border radius */
   box-shadow: 0 4px 16px rgba(242, 210, 182, 0.3);
   position: relative;
-  min-height: 6rem !important; /* Ensure adequate height */
-  background-color: #FEFEFC;
+  height: 6rem !important; /* Ensure adequate height */
 }
 
 .question-card::before {
