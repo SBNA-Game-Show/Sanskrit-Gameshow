@@ -488,7 +488,7 @@ const JoinGamePage: React.FC = () => {
           <GameBoard game={game} variant="player" />
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
-          <div className="bg-[#FEFEFC] rounded p-4 mt-2">
+          <div className="bg-[#FEFEFC] p-4 mt-2">
             {player.teamId ? (
               <div>
                 {/* Game Status Message */}
