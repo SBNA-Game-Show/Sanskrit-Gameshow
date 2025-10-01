@@ -637,6 +637,8 @@ const HostGamePage: React.FC = () => {
             questionsAnswered={team1QuestionsAnswered}
             questionData={getTeamQuestionData("team1")}
             allTeams={game.teams}
+            activeBorderColor="#dc2626"
+            activeBackroundColor="#ffd6d6ff"
           />
         </div>
 
@@ -669,7 +671,7 @@ const HostGamePage: React.FC = () => {
 
 
           {/* Host Controls - CLEAN VERSION */}
-          <div className="glass-card p-3 mt-2">
+          <div className="bg-[#FEFEFC] p-3 mt-2">
             <div className="text-center mb-2">
               <div className="text-sm text-slate-400 mb-2">Host Controls</div>
             </div>
@@ -725,6 +727,8 @@ const HostGamePage: React.FC = () => {
             questionsAnswered={team2QuestionsAnswered}
             questionData={getTeamQuestionData("team2")}
             allTeams={game.teams}
+            activeBorderColor="#264adcff"
+            activeBackroundColor="#d6e0ffff"
           />
         </div>
       </PageLayout>

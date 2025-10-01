@@ -84,7 +84,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         {/* Keep question visible on mobile by sticking it to the top */}
         <div className="sticky top-0 z-10">
           {/* Question Header - Compact with Round Status */}
-          <div className="question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+          <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
             <div className="flex justify-between items-center">
                 <div>
                   <h2 className="font-bold">
@@ -98,7 +98,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           </div>
 
           {/* Question Text - Compact */}
-          <div className=" question-card flex-shrink-0">
+          <div className=" question-card flex-shrink-0 bg-[#FEFEFC]">
             <h2 className="text-center">{currentQuestion.question}</h2>
           </div>
         </div>
@@ -160,7 +160,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Keep question visible on mobile by sticking it to the top */}
       <div className="sticky top-0 z-10">
         {/* Question Header with Round Status */}
-        <div className=" question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+        <div className=" question-header flex-shrink-0 bg-[#FEFEFC]">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="font-bold">
@@ -238,7 +238,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* Host Control Message */}
       {isHost && (controlMessage || overrideMode || game.gameState.canAdvance) && (
-        <div className="glass-card host-controls">
+        <div className=" host-controls">
           <div className="text-center">
             {overrideMode && (
               <>

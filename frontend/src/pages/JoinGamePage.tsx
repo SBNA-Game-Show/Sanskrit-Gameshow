@@ -467,6 +467,9 @@ const JoinGamePage: React.FC = () => {
             questionsAnswered={team1QuestionsAnswered}
             questionData={getTeamQuestionData("team1")}
             allTeams={game.teams}
+            activeBorderColor="#dc2626"
+            activeBackroundColor="#ffd6d6ff"
+
           />
         </div>
 
@@ -486,7 +489,7 @@ const JoinGamePage: React.FC = () => {
           <GameBoard game={game} variant="player" />
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
-          <div className="glass-card p-4 mt-2">
+          <div className="bg-[#FEFEFC] p-4 mt-2">
             {player.teamId ? (
               <div>
                 {/* Game Status Message */}
@@ -602,6 +605,8 @@ const JoinGamePage: React.FC = () => {
             questionsAnswered={team2QuestionsAnswered}
             questionData={getTeamQuestionData("team2")}
             allTeams={game.teams}
+            activeBorderColor="#264adcff"
+            activeBackroundColor="#d6e0ffff"
           />
         </div>
       </PageLayout>

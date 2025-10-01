@@ -1,6 +1,6 @@
 import React from "react";
 import { Team, Question } from "../../types";
-import CountdownTimer from "./CountdownTimer";
+// import CountdownTimer from "./CountdownTimer";
 interface TurnIndicatorProps {
   currentTeam: "team1" | "team2" | null;
   teams: Team[];
@@ -30,10 +30,10 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
 
   if (variant === "compact") {
     return (
-      <div className="glass-card p-3 mb-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/30">
-        <div className="absolute top-3 right-2 z-10">
+      <div className=" p-3 mb-4 bg-[#FEFEFC]">
+        {/* <div className="absolute top-3 right-2 z-10">
           <CountdownTimer seconds={10} size={60} />
-        </div>
+        </div> */}
 
         <div className="text-center">
           <h3 className="text-lg font-bold text-blue-300 mb-1">

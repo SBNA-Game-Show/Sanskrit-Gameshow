@@ -26,6 +26,8 @@ interface TeamPanelProps {
   questionsAnswered?: number;
   questionData?: RoundData;
   allTeams?: Team[]; // NEW: All teams data for comparison
+  activeBorderColor?: string,
+  activeBackroundColor?: string
 }
 
 const TeamPanel: React.FC<TeamPanelProps> = ({
@@ -64,7 +66,9 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       { firstAttemptCorrect: null, pointsEarned: 0 }
     ]
   },
-  allTeams = [] // NEW: Default empty array
+  allTeams = [], // NEW: Default empty array
+  activeBorderColor = "",
+  activeBackroundColor = ""
 }) => {
   const colorClasses = getTeamColorClasses(teamIndex);
 
@@ -150,6 +154,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     return thisTeamScore > otherTeamScore;
   };
 
+  
+
   // Render round summary with winner highlighting
   const renderRoundSummary = (roundNum: number, roundData: QuestionStatus[]) => {
     const roundTotal = roundData.reduce((sum, q) => sum + q.pointsEarned, 0);
@@ -182,18 +188,22 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
   const currentRoundData = getCurrentRoundData();
 
+
   return (
     <div
-      className={`glass-card p-3 md:h-full flex flex-col transition-all ${
-        isActive ? `border-2 border-red-500` : "border border-gray-300"
-      } ${
-        isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""
-      }`}
-      style={isActive ? {
-        borderColor: '#dc2626',
+      className={` p-3 md:h-full flex flex-col transition-all border-gray-300 bg-[#FEFEFC]
+        ${isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""}
+      `}
+      style={
+        isActive ? {
         borderWidth: '2px',
-        borderStyle: 'solid'
-      } : {}}
+        borderStyle: 'solid',
+        backgroundColor: activeBackroundColor,
+        borderColor: activeBorderColor
+      } : {}
+      
+  
+    }
     >
         {/* Team Name and Round Score (TOP) */}
         <div className="text-center mb-4">
@@ -236,18 +246,35 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
           </div>
         )}
 
+
         {/* Current Round Question Progress */}
-        <div className="glass-card p-2 mb-3 bg-gradient-to-r from-red-600/20 to-red-700/20 border-red-500/30">
+        <div className={`glass-card p-2 mb-3 bg-gradient-to-r from-red-600/20 to-red-700/20 border-red-500/30 ${currentRound === 4 ? 'pb-3' : ''}`}>
           <h4 className="text-sm font-bold text-red-300 mb-2 text-center">
             {currentRound === 0 ? "Toss-up Round" : `Round ${currentRound}`}
           </h4>
           
           {/* Question Progress Indicators */}
-          <div className="flex justify-center gap-1 mb-2">
-            {currentRoundData.map((questionStatus, idx) => 
-              renderQuestionStatus(questionStatus, idx + 1, true)
-            )}
-          </div>
+          {/* uses renderQuestionStatus for 1-4 and 5-7 so its on two rows when its round 4, otherwise the points dont fit in the div*/}
+          {currentRound === 4 ? (
+            <div className="flex flex-col items-center gap-1 mb-2">
+              <div className="flex justify-center gap-1">
+                {currentRoundData.slice(0, 4).map((questionStatus, idx) => 
+                  renderQuestionStatus(questionStatus, idx + 1, true)
+                )}
+              </div>
+              <div className="flex justify-center gap-1">
+                {currentRoundData.slice(4, 7).map((questionStatus, idx) => 
+                  renderQuestionStatus(questionStatus, idx + 5, true)
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center gap-1 mb-2">
+              {currentRoundData.map((questionStatus, idx) => 
+                renderQuestionStatus(questionStatus, idx + 1, true)
+              )}
+            </div>
+          )}
         </div>
 
 
