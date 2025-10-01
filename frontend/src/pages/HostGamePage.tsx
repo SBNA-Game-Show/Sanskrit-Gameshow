@@ -637,6 +637,8 @@ const HostGamePage: React.FC = () => {
             questionsAnswered={team1QuestionsAnswered}
             questionData={getTeamQuestionData("team1")}
             allTeams={game.teams}
+            activeBorderColor="#dc2626"
+            activeBackgroundColor="#ffd6d6ff"
           />
         </div>
 
@@ -725,6 +727,8 @@ const HostGamePage: React.FC = () => {
             questionsAnswered={team2QuestionsAnswered}
             questionData={getTeamQuestionData("team2")}
             allTeams={game.teams}
+            activeBorderColor="#264adcff"
+            activeBackgroundColor="#d6e0ffff"
           />
         </div>
       </PageLayout>
