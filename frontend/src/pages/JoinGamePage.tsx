@@ -518,7 +518,7 @@ const JoinGamePage: React.FC = () => {
                 )}
   
                 {/* Toss-up or Answer input */}
-                {game.currentRound === 0 || game.currentRound === 4 ? (
+                {game.currentRound === 0 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
@@ -563,6 +563,33 @@ const JoinGamePage: React.FC = () => {
                       </div>
                     )
                     
+                  )
+                ) : game.currentRound === 4 ? (
+                  !game.buzzedTeamId ? (
+                    <div className="flex justify-center my-4">
+                      <BuzzerButton
+                        onBuzz={handleBuzzIn}
+                        disabled={hasBuzzed || !!game.buzzedTeamId}
+                        teamName={myTeam?.name}
+                      />
+                    </div>
+                  ) : (
+                    canAnswer ? (
+                      <div className="p-4 bg-blue-500/20 border border-blue-500/50 rounded text-center">
+                        <p className="text-blue-300 font-medium">
+                          Click on an answer card above to submit your answer
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
+                          <p className="text-gray-300 font-medium">
+                            {game.teams.find((t) => t.active)?.name || "Other team"} is answering...
+                          </p>
+                        </div>
+                      </div>
+                    )
                   )
                 ) : isMyTurn ? (
                   <div className="max-w-md mx-auto">
