@@ -191,17 +191,18 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
   return (
     <div
-      className={`glass-card p-3 md:h-full flex flex-col transition-all ${
-        isActive ? `border-2 border-red-500` : "border border-gray-300"
-      } ${
-        isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""
-      }`}
+      className={`rounded p-3 md:h-full flex flex-col transition-all 
+      ${isActive ? `border-2 border-red-500` : "border border-gray-300"} 
+      ${isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""}`}
+
       style={isActive ? {
         borderColor: activeBorderColor,
         borderWidth: '2px',
         borderStyle: 'solid',
-        backgroundColor: activeBackgroundColor
-      } : {}}
+        backgroundColor: activeBackgroundColor ?? "#FFFFFF"
+        } : {
+        backgroundColor: "#FFFFFF"  
+      }}
     >
         {/* Team Name and Round Score (TOP) */}
         <div className="text-center mb-4">
