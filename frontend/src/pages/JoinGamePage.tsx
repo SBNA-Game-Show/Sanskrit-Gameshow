@@ -36,6 +36,11 @@ const JoinGamePage: React.FC = () => {
   const [hasBuzzed, setHasBuzzed] = useState(false);
   const [buzzFeedback, setBuzzFeedback] = useState("");
   const [playerName] = useState(() => localStorage.getItem("username") || "");
+
+  const myTeam = game?.teams.find((team) => team.id === player?.teamId);
+  const isMyTurn = myTeam && myTeam.active;
+  const canAnswer = isMyTurn && player?.teamId;
+
   // Extract question data for teams
   const getTeamQuestionData = (teamKey: "team1" | "team2"): RoundData => {
     if (!game?.gameState?.questionData?.[teamKey]) {
@@ -356,7 +361,7 @@ const JoinGamePage: React.FC = () => {
     }
   };
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = (answer:string) => {
     if (player && game && answer.trim()) {
       console.log("Submitting single attempt answer:", answer.trim());
       submitAnswer(game.code, player.id, answer.trim());
@@ -366,9 +371,14 @@ const JoinGamePage: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && answer.trim()) {
-      handleSubmitAnswer();
+      handleSubmitAnswer(answer.trim());
     }
   };
+
+  const handleSubmitMCQAnswer = (answer: string) => {
+    if (game?.currentRound === 4 && canAnswer)
+    handleSubmitAnswer(answer);
+  }
 
   // Initial render - show join form
   if (!player) {
@@ -441,9 +451,9 @@ const JoinGamePage: React.FC = () => {
 
   // Active game - SINGLE ATTEMPT LAYOUT WITH CLEAN UI
   if (game && game.status === "active") {
-    const myTeam = game.teams.find((team) => team.id === player.teamId);
-    const isMyTurn = myTeam && myTeam.active;
-    const canAnswer = isMyTurn && player.teamId;
+    // const myTeam = game.teams.find((team) => team.id === player.teamId);
+    // const isMyTurn = myTeam && myTeam.active;
+    // const canAnswer = isMyTurn && player.teamId;
 
     // Calculate questions answered for each team in current round
     const team1QuestionsAnswered = game.gameState.questionsAnswered.team1 || 0;
@@ -485,7 +495,7 @@ const JoinGamePage: React.FC = () => {
           />
 
           {/* Game Board */}
-          <GameBoard game={game} variant="player" />
+          <GameBoard game={game} variant="player" onClickAnswerCard={handleSubmitMCQAnswer}/>
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
           <div className="bg-[#FEFEFC] rounded p-4 mt-2">
@@ -531,7 +541,7 @@ const JoinGamePage: React.FC = () => {
                           className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
                         />
                         <button
-                          onClick={handleSubmitAnswer}
+                          onClick={() => handleSubmitAnswer(answer)}
                           disabled={!answer.trim() || !canAnswer}
                           className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
                             canAnswer && answer.trim()
@@ -567,7 +577,7 @@ const JoinGamePage: React.FC = () => {
                       className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
                     />
                     <button
-                      onClick={handleSubmitAnswer}
+                      onClick={() => handleSubmitAnswer(answer)}
                       disabled={!answer.trim() || !canAnswer}
                       className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
                         canAnswer && answer.trim()

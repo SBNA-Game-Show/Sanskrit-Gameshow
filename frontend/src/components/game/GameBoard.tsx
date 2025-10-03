@@ -18,6 +18,7 @@ interface GameBoardProps {
   onOverridePointsChange?: (value: string) => void;
   onCancelOverride?: () => void;
   onConfirmOverride?: () => void;
+  onClickAnswerCard?: (answer:string) => void;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -33,6 +34,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onOverridePointsChange,
   onCancelOverride,
   onConfirmOverride,
+  onClickAnswerCard
 }) => {
   const currentQuestion = getCurrentQuestion(game);
 
@@ -113,6 +115,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           {currentQuestion.answers.slice(0, 5).map((answer, index) => (
             <div
               key={index}
+              onClick={() => onClickAnswerCard?.(answer.answer)}
               className={`answer-card glass-card transition-all ${
                 currentQuestion.questionType === "MCQ" && answer.revealed && answer.score > 0
                   ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
@@ -189,7 +192,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         />
       </div>
 
-      {/* Answer Grid - Vertical Layout for Host - Only 3 answers, Host sees all */}
+      {/* Answer Grid - Vertical Layout for Host */}
       <div className="answer-grid">
         {currentQuestion.answers.slice(0, 5).map((answer, index) => (
           <div
