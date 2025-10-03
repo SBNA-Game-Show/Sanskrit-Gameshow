@@ -199,6 +199,13 @@ export function setupHostEvents(socket, io) {
     const { gameCode } = data;
     const game = getGame(gameCode);
 
+    if (game.currentRound === 4) {
+      game.gameState.canAdvance = true;
+      game.teams.forEach((team) => {
+        team.active = false;
+      })
+    }
+
     if (
       game &&
       game.hostId === socket.id &&

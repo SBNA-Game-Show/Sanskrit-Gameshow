@@ -841,6 +841,12 @@ export function continueToNextRound(gameCode) {
     game.status = "active";
     game.gameState.awaitingAnswer = true;
     game.gameState.canAdvance = false;
+
+    if (game.currentRound === 4) {
+      game.teams.forEach((team) => {
+        team.active = false;
+      })
+    }
   } else {
     game.status = "finished";
   }

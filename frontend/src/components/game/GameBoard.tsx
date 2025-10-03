@@ -36,9 +36,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
 }) => {
   const currentQuestion = getCurrentQuestion(game);
 
-  if (currentQuestion) {
-    console.log(currentQuestion.answers)
-  }
+  // if (currentQuestion) {
+  //   console.log(currentQuestion.answers)
+  // }
   
 
   if (!currentQuestion) {
@@ -101,6 +101,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           {/* Question Text - Compact */}
           <QuestionCard 
             key={game.currentQuestionIndex}
+            game={game}
             question={currentQuestion.question} 
             duration={10000}
             isTimerActive={game.currentRound === 4}
@@ -180,9 +181,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
         {/* Question Text */}
         <QuestionCard 
           key={game.currentQuestionIndex}
+          game={game}
           question={currentQuestion.question} 
           duration={10000}
           isTimerActive={game.currentRound === 4}
+          onNextQuestion={onNextQuestion}
         />
       </div>
 
