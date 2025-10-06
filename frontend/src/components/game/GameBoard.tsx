@@ -3,6 +3,7 @@ import { Game } from "../../types";
 import Button from "../common/Button";
 import Input from "../common/Input";
 import { getCurrentQuestion } from "../../utils/gameHelper";
+import QuestionCard from "./QuestionCard";
 
 interface GameBoardProps {
   game: Game;
@@ -17,6 +18,7 @@ interface GameBoardProps {
   onOverridePointsChange?: (value: string) => void;
   onCancelOverride?: () => void;
   onConfirmOverride?: () => void;
+  onClickAnswerCard?: (answer:string) => void;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -32,12 +34,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onOverridePointsChange,
   onCancelOverride,
   onConfirmOverride,
+  onClickAnswerCard
 }) => {
   const currentQuestion = getCurrentQuestion(game);
 
-  if (currentQuestion) {
-    console.log(currentQuestion.answers)
-  }
+  // if (currentQuestion) {
+  //   console.log(currentQuestion.answers)
+  // }
   
 
   if (!currentQuestion) {
@@ -52,9 +55,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   // Create round status indicator like in the image
   const RoundStatus = () => (
-    <div className="flex items-center gap-2">
-      {[1, 2, 3].map((roundNum) => (
-        <div key={roundNum} className="flex items-center">
+    <div className="flex items-center gap-2 ml-auto">
+      {[1, 2, 3, 4].map((roundNum) => (
+        <div key={roundNum} className="flex items-center ">
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 ${
               roundNum < game.currentRound
@@ -66,7 +69,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           >
             {roundNum}
           </div>
-          {roundNum < 3 && (
+          {roundNum < 4 && (
             <div
               className={`w-6 h-0.5 mx-1 ${
                 roundNum < game.currentRound ? "bg-green-500" : "bg-gray-500"
@@ -84,28 +87,27 @@ const GameBoard: React.FC<GameBoardProps> = ({
         {/* Keep question visible on mobile by sticking it to the top */}
         <div className="sticky top-0 z-10">
           {/* Question Header - Compact with Round Status */}
-          <div className="glass-card question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+          <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
             <div className="flex justify-between items-center">
-              <div>
-                <h2 className="font-bold">
-                  {game.currentRound === 0
-                    ? 'Toss-up Round'
-                    : `Round ${game.currentRound}`} •{' '}
-                  {currentQuestion.questionCategory}
-                </h2>
-                <div className="text-xs text-slate-400">
-                  Question {game.currentRound === 0 ? 1 : game.currentQuestionIndex + 1} of{' '}
-                  {game.currentRound === 0 ? 1 : game.questions.length}
+                <div>
+                  <h2 className="font-bold">
+                    {game.currentRound === 0
+                      ? 'Toss-up Round'
+                      : ""}
+                  </h2>
                 </div>
-              </div>
               <RoundStatus />
             </div>
           </div>
 
           {/* Question Text - Compact */}
-          <div className="glass-card question-card flex-shrink-0">
-            <h2 className="text-center">{currentQuestion.question}</h2>
-          </div>
+          <QuestionCard 
+            key={game.currentQuestionIndex}
+            game={game}
+            question={currentQuestion.question} 
+            duration={10000}
+            isTimerActive={game.currentRound === 4}
+          />
         </div>
 
         {/* Answer Grid - Vertical Layout */}
@@ -113,6 +115,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           {currentQuestion.answers.slice(0, 5).map((answer, index) => (
             <div
               key={index}
+              onClick={() => onClickAnswerCard?.(answer.answer)}
               className={`answer-card glass-card transition-all ${
                 currentQuestion.questionType === "MCQ" && answer.revealed && answer.score > 0
                   ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
@@ -165,31 +168,31 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Keep question visible on mobile by sticking it to the top */}
       <div className="sticky top-0 z-10">
         {/* Question Header with Round Status */}
-        <div className="glass-card question-header flex-shrink-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+        <div className=" question-header flex-shrink-0 bg-[#FEFEFC]">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="font-bold">
                 {game.currentRound === 0
                   ? 'Toss-up Round'
-                  : `Round ${game.currentRound}`} •{' '}
-                {currentQuestion.questionCategory}
+                  : ""}
               </h2>
-              <div className="text-xs text-slate-400">
-                Question {game.currentRound === 0 ? 1 : game.currentQuestionIndex + 1} of{' '}
-                {game.currentRound === 0 ? 1 : game.questions.length}
-              </div>
             </div>
             <RoundStatus />
           </div>
         </div>
 
         {/* Question Text */}
-        <div className="glass-card question-card flex-shrink-0">
-          <h2 className="text-center">{currentQuestion.question}</h2>
-        </div>
+        <QuestionCard 
+          key={game.currentQuestionIndex}
+          game={game}
+          question={currentQuestion.question} 
+          duration={10000}
+          isTimerActive={game.currentRound === 4}
+          onNextQuestion={onNextQuestion}
+        />
       </div>
 
-      {/* Answer Grid - Vertical Layout for Host - Only 3 answers, Host sees all */}
+      {/* Answer Grid - Vertical Layout for Host */}
       <div className="answer-grid">
         {currentQuestion.answers.slice(0, 5).map((answer, index) => (
           <div
@@ -248,7 +251,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* Host Control Message */}
       {isHost && (controlMessage || overrideMode || game.gameState.canAdvance) && (
-        <div className="glass-card host-controls">
+        <div className=" host-controls">
           <div className="text-center">
             {overrideMode && (
               <>

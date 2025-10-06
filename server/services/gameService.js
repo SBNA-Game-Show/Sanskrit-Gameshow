@@ -29,6 +29,15 @@ export function initializeQuestionData() {
         { firstAttemptCorrect: null, pointsEarned: 0 },
         { firstAttemptCorrect: null, pointsEarned: 0 },
       ],
+      round4: [
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+      ],
     },
     team2: {
       round1: [
@@ -42,6 +51,15 @@ export function initializeQuestionData() {
         { firstAttemptCorrect: null, pointsEarned: 0 },
       ],
       round3: [
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+      ],
+      round4: [
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
+        { firstAttemptCorrect: null, pointsEarned: 0 },
         { firstAttemptCorrect: null, pointsEarned: 0 },
         { firstAttemptCorrect: null, pointsEarned: 0 },
         { firstAttemptCorrect: null, pointsEarned: 0 },
@@ -823,6 +841,12 @@ export function continueToNextRound(gameCode) {
     game.status = "active";
     game.gameState.awaitingAnswer = true;
     game.gameState.canAdvance = false;
+
+    if (game.currentRound === 4) {
+      game.teams.forEach((team) => {
+        team.active = false;
+      })
+    }
   } else {
     game.status = "finished";
   }

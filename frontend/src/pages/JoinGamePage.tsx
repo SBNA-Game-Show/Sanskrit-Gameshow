@@ -36,6 +36,11 @@ const JoinGamePage: React.FC = () => {
   const [hasBuzzed, setHasBuzzed] = useState(false);
   //const [buzzFeedback, setBuzzFeedback] = useState("");
   const [playerName] = useState(() => localStorage.getItem("username") || "");
+
+  const myTeam = game?.teams.find((team) => team.id === player?.teamId);
+  const isMyTurn = myTeam && myTeam.active;
+  const canAnswer = isMyTurn && player?.teamId;
+
   // Extract question data for teams
   const getTeamQuestionData = (teamKey: "team1" | "team2"): RoundData => {
     if (!game?.gameState?.questionData?.[teamKey]) {
@@ -51,6 +56,15 @@ const JoinGamePage: React.FC = () => {
           { firstAttemptCorrect: null, pointsEarned: 0 }
         ],
         round3: [
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 }
+        ],
+        round4: [
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 }
@@ -347,7 +361,7 @@ const JoinGamePage: React.FC = () => {
     }
   };
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = (answer:string) => {
     if (player && game && answer.trim()) {
       console.log("Submitting single attempt answer:", answer.trim());
       submitAnswer(game.code, player.id, answer.trim());
@@ -357,9 +371,14 @@ const JoinGamePage: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && answer.trim()) {
-      handleSubmitAnswer();
+      handleSubmitAnswer(answer.trim());
     }
   };
+
+  const handleSubmitMCQAnswer = (answer: string) => {
+    if (game?.currentRound === 4 && canAnswer)
+    handleSubmitAnswer(answer);
+  }
 
   // Initial render - show join form
   if (!player) {
@@ -432,9 +451,9 @@ const JoinGamePage: React.FC = () => {
 
   // Active game - SINGLE ATTEMPT LAYOUT WITH CLEAN UI
   if (game && game.status === "active") {
-    const myTeam = game.teams.find((team) => team.id === player.teamId);
-    const isMyTurn = myTeam && myTeam.active;
-    const canAnswer = isMyTurn && player.teamId;
+    // const myTeam = game.teams.find((team) => team.id === player.teamId);
+    // const isMyTurn = myTeam && myTeam.active;
+    // const canAnswer = isMyTurn && player.teamId;
 
     // Calculate questions answered for each team in current round
     const team1QuestionsAnswered = game.gameState.questionsAnswered.team1 || 0;
@@ -457,6 +476,9 @@ const JoinGamePage: React.FC = () => {
             roundScore={game.teams[0].currentRoundScore}
             questionsAnswered={team1QuestionsAnswered}
             questionData={getTeamQuestionData("team1")}
+            allTeams={game.teams}
+            activeBorderColor="#dc2626"
+            activeBackgroundColor="#ffd6d6ff"
           />
         </div>
 
@@ -473,10 +495,10 @@ const JoinGamePage: React.FC = () => {
           />
 
           {/* Game Board */}
-          <GameBoard game={game} variant="player" />
+          <GameBoard game={game} variant="player" onClickAnswerCard={handleSubmitMCQAnswer}/>
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
-          <div className="glass-card p-4 mt-2">
+          <div className="bg-[#FEFEFC] rounded p-4 mt-2">
             {player.teamId ? (
               <div>
                 {/* Game Status Message */}
@@ -496,7 +518,7 @@ const JoinGamePage: React.FC = () => {
                 )}
   
                 {/* Toss-up or Answer input */}
-                {game.currentRound === 0 || game.currentRound === 4 ? (
+                {game.currentRound === 0 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
@@ -506,29 +528,68 @@ const JoinGamePage: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <div className="max-w-md mx-auto">
-                      <input
-                        type="text"
-                        value={answer}
-                        onChange={(e) => setAnswer(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Type your answer here..."
-                        disabled={!canAnswer}
-                        autoFocus={true}
-                        className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
+                    canAnswer ? (
+                      <div className="max-w-md mx-auto">
+                        <input
+                          type="text"
+                          value={answer}
+                          onChange={(e) => setAnswer(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          placeholder="Type your answer here..."
+                          disabled={!canAnswer}
+                          autoFocus={true}
+                          className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
+                        />
+                        <button
+                          onClick={() => handleSubmitAnswer(answer)}
+                          disabled={!answer.trim() || !canAnswer}
+                          className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
+                            canAnswer && answer.trim()
+                              ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-105 active:scale-95"
+                              : "bg-gray-500 text-gray-300 cursor-not-allowed opacity-60"
+                          }`}
+                        >
+                          {answer.trim() ? "Submit Answer" : "Type an answer..."}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
+                          <p className="text-gray-300 font-medium">
+                            {game.teams.find((t) => t.active)?.name || "Other team"} is answering...
+                          </p>
+                        </div>
+                      </div>
+                    )
+                    
+                  )
+                ) : game.currentRound === 4 ? (
+                  !game.buzzedTeamId ? (
+                    <div className="flex justify-center my-4">
+                      <BuzzerButton
+                        onBuzz={handleBuzzIn}
+                        disabled={hasBuzzed || !!game.buzzedTeamId}
+                        teamName={myTeam?.name}
                       />
-                      <button
-                        onClick={handleSubmitAnswer}
-                        disabled={!answer.trim() || !canAnswer}
-                        className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
-                          canAnswer && answer.trim()
-                            ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-105 active:scale-95"
-                            : "bg-gray-500 text-gray-300 cursor-not-allowed opacity-60"
-                        }`}
-                      >
-                        {answer.trim() ? "Submit Answer" : "Type an answer..."}
-                      </button>
                     </div>
+                  ) : (
+                    canAnswer ? (
+                      <div className="p-4 bg-blue-500/20 border border-blue-500/50 rounded text-center">
+                        <p className="text-blue-300 font-medium">
+                          Click on an answer card above to submit your answer
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
+                          <p className="text-gray-300 font-medium">
+                            {game.teams.find((t) => t.active)?.name || "Other team"} is answering...
+                          </p>
+                        </div>
+                      </div>
+                    )
                   )
                 ) : isMyTurn ? (
                   <div className="max-w-md mx-auto">
@@ -543,7 +604,7 @@ const JoinGamePage: React.FC = () => {
                       className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
                     />
                     <button
-                      onClick={handleSubmitAnswer}
+                      onClick={() => handleSubmitAnswer(answer)}
                       disabled={!answer.trim() || !canAnswer}
                       className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
                         canAnswer && answer.trim()
@@ -591,6 +652,9 @@ const JoinGamePage: React.FC = () => {
             roundScore={game.teams[1].currentRoundScore}
             questionsAnswered={team2QuestionsAnswered}
             questionData={getTeamQuestionData("team2")}
+            allTeams={game.teams}
+            activeBorderColor="#264adcff"
+            activeBackgroundColor="#d6e0ffff"
           />
         </div>
       </PageLayout>
