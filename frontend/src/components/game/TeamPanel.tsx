@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Team } from "../../types";
 import { getTeamColorClasses, getTeamRoundTotal } from "../../utils/gameHelper";
 
 interface QuestionStatus {
-  firstAttemptCorrect: boolean | null; // true = correct, false = incorrect, null = not attempted
+  firstAttemptCorrect: boolean | null;
   pointsEarned: number;
 }
 
@@ -25,7 +25,7 @@ interface TeamPanelProps {
   roundScore?: number;
   questionsAnswered?: number;
   questionData?: RoundData;
-  allTeams?: Team[]; // NEW: All teams data for comparison
+  allTeams?: Team[];
   activeBorderColor: string;
   activeBackgroundColor: string;
 }
@@ -66,13 +66,13 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       { firstAttemptCorrect: null, pointsEarned: 0 }
     ]
   },
-  allTeams = [], // NEW: Default empty array
+  allTeams = [],
   activeBorderColor,
   activeBackgroundColor
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const colorClasses = getTeamColorClasses(teamIndex);
 
-  // Get current round data
   const getCurrentRoundData = () => {
     if (currentRound === 0) {
       const answered = questionsAnswered > 0;
@@ -99,7 +99,6 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     }
   };
 
-  // Render question status with score instead of ✓/✗
   const renderQuestionStatus = (questionStatus: QuestionStatus, questionNumber: number, isCurrentRoundActive: boolean = false) => {
     let display = "";
     let bgColor = "";
@@ -137,26 +136,17 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     );
   };
 
-  // Check if this team won a specific round by comparing scores
   const didTeamWinRound = (roundNum: number, roundData: QuestionStatus[]) => {
-    if (allTeams.length < 2) return false; // Need at least 2 teams to compare
+    if (allTeams.length < 2) return false;
     
     const thisTeamScore = roundData.reduce((sum, q) => sum + q.pointsEarned, 0);
-    
-    // Find the other team (not this team)
     const otherTeam = allTeams.find(t => t.id !== team.id);
     if (!otherTeam) return false;
     
-    // Get other team's score for this round from their roundScores array
     const otherTeamScore = otherTeam.roundScores ? otherTeam.roundScores[roundNum - 1] || 0 : 0;
-    
-    // This team wins if their score is higher
     return thisTeamScore > otherTeamScore;
   };
 
-  
-
-  // Render round summary with winner highlighting
   const renderRoundSummary = (roundNum: number, roundData: QuestionStatus[]) => {
     const roundTotal = roundData.reduce((sum, q) => sum + q.pointsEarned, 0);
     const isRoundWinner = didTeamWinRound(roundNum, roundData);
@@ -164,8 +154,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     return (
       <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-2 transition-all ${
         isRoundWinner 
-          ? 'border-4 border-yellow-400  shadow-lg shadow-yellow-400/40' 
-          : ' border-gray-500/30'
+          ? 'border-4 border-yellow-400 shadow-lg shadow-yellow-400/40' 
+          : 'border-gray-500/30'
       }`}>
         <h5 className="text-xs font-bold text-gray-300 mb-1 text-center">
           Round {roundNum}
@@ -188,127 +178,276 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
   const currentRoundData = getCurrentRoundData();
 
-
-  return (
+  // Mobile compact view
+  const mobileCompactView = (
     <div
-      className={`rounded p-3 md:h-full flex flex-col transition-all 
-      ${isActive ? `border-2 border-red-500` : "border border-gray-300"} 
-      ${isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""}`}
-
+      className={`relative rounded p-3 transition-all ${
+        isActive ? `border-2` : "border border-gray-300"
+      } ${isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""}`}
       style={isActive ? {
         borderColor: activeBorderColor,
         borderWidth: '2px',
         borderStyle: 'solid',
         backgroundColor: activeBackgroundColor ?? "#FFFFFF"
-        } : {
+      } : {
+        backgroundColor: "#FFFFFF"
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <h3 className="text-sm font-bold mb-1 flex items-center gap-1">
+            {team.name}
+            {isPlayerTeam && <span className="text-yellow-400 text-xs">👤</span>}
+          </h3>
+          <div className="text-xl font-bold text-gray-900">
+            {getTeamRoundTotal(team)} pts
+          </div>
+        </div>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="ml-2 p-2 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <svg
+            className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Expanded overlay */}
+      {isExpanded && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setIsExpanded(false)}
+          />
+          <div className="fixed inset-x-4 top-20 bottom-20 bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                {team.name}
+                {isPlayerTeam && <span className="text-yellow-400">👤</span>}
+              </h3>
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {isPlayerTeam && playerName && (
+              <div className="text-xs text-yellow-600 mb-2 font-medium">
+                {playerName}
+              </div>
+            )}
+
+            <div className={`text-2xl font-bold mb-4 ${colorClasses.primary}`}>
+              {team.currentRoundScore || 0}
+            </div>
+
+            {showMembers && team.members && team.members.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-xs font-semibold text-slate-400 mb-2">
+                  Team Members
+                </h4>
+                <div className="space-y-1">
+                  {team.members
+                    .filter((member) => member.trim() !== "")
+                    .map((member, idx) => (
+                      <div
+                        key={idx}
+                        className="text-xs glass-card p-1 flex items-center gap-1"
+                      >
+                        {idx === 0 && <span className="text-yellow-400">👑</span>}
+                        {member}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${currentRound === 4 ? 'pb-3' : ''}`}>
+              <h4 className="text-sm font-bold text-red-300 mb-2 text-center">
+                {currentRound === 0 ? "Toss-up Round" : `Round ${currentRound}`}
+              </h4>
+              
+              {currentRound === 4 ? (
+                <div className="flex flex-col items-center gap-1 mb-2">
+                  <div className="flex justify-center gap-1">
+                    {currentRoundData.slice(0, 4).map((questionStatus, idx) => 
+                      renderQuestionStatus(questionStatus, idx + 1, true)
+                    )}
+                  </div>
+                  <div className="flex justify-center gap-1">
+                    {currentRoundData.slice(4, 7).map((questionStatus, idx) => 
+                      renderQuestionStatus(questionStatus, idx + 5, true)
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-center gap-1 mb-2">
+                  {currentRoundData.map((questionStatus, idx) => 
+                    renderQuestionStatus(questionStatus, idx + 1, true)
+                  )}
+                </div>
+              )}
+            </div>
+
+            {currentRound >= 2 && (
+              <div className="mb-3">
+                {renderRoundSummary(1, questionData.round1)}
+              </div>
+            )}
+            
+            {currentRound >= 3 && (
+              <div className="mb-3">
+                {renderRoundSummary(2, questionData.round2)}
+              </div>
+            )}
+
+            {currentRound >= 4 && (
+              <div className="mb-3">
+                {renderRoundSummary(3, questionData.round3)}
+              </div>
+            )}
+
+            <div className="bg-white text-black rounded px-2 py-1 text-center border-2 border-gray-300">
+              <div className="text-xl font-bold">
+                {getTeamRoundTotal(team)}
+              </div>
+              <div className="text-xs">Total Score</div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  // Desktop view (original)
+  const desktopView = (
+    <div
+      className={`rounded p-3 h-full flex flex-col transition-all 
+      ${isActive ? `border-2 border-red-500` : "border border-gray-300"} 
+      ${isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""}`}
+      style={isActive ? {
+        borderColor: activeBorderColor,
+        borderWidth: '2px',
+        borderStyle: 'solid',
+        backgroundColor: activeBackgroundColor ?? "#FFFFFF"
+      } : {
         backgroundColor: "#FFFFFF"  
       }}
     >
-        {/* Team Name and Round Score (TOP) */}
-        <div className="text-center mb-4">
-          <h3 className="text-lg font-bold mb-2 flex items-center justify-center gap-2">
-            {team.name}
-            {isPlayerTeam && <span className="text-yellow-400">👤</span>}
-          </h3>
-          {isPlayerTeam && playerName && (
-            <div className="text-xs text-yellow-300 mb-2 font-medium">
-              {playerName}
-            </div>
-          )}
-          {/* Round Score at the TOP */}
-          <div
-            className={`text-2xl font-bold mb-1 animate-score ${colorClasses.primary}`}
-          >
-            {team.currentRoundScore || 0}
-          </div>
-        </div>
-
-        {/* Team Members (only show if showMembers is true) */}
-        {showMembers && team.members && team.members.length > 0 && (
-          <div className="mb-4">
-            <h4 className="text-xs font-semibold text-slate-400 mb-2">
-              Team Members
-            </h4>
-            <div className="space-y-1">
-              {team.members
-                .filter((member) => member.trim() !== "")
-                .map((member, idx) => (
-                  <div
-                    key={idx}
-                    className="text-xs glass-card p-1 flex items-center gap-1"
-                  >
-                    {idx === 0 && <span className="text-yellow-400">👑</span>}
-                    {member}
-                  </div>
-                ))}
-            </div>
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-bold mb-2 flex items-center justify-center gap-2">
+          {team.name}
+          {isPlayerTeam && <span className="text-yellow-400">👤</span>}
+        </h3>
+        {isPlayerTeam && playerName && (
+          <div className="text-xs text-yellow-300 mb-2 font-medium">
+            {playerName}
           </div>
         )}
+        <div
+          className={`text-2xl font-bold mb-1 animate-score ${colorClasses.primary}`}
+        >
+          {team.currentRoundScore || 0}
+        </div>
+      </div>
 
-
-        {/* Current Round Question Progress */}
-        <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3  border-red-500/30 ${currentRound === 4 ? 'pb-3' : ''}`}>
-          <h4 className="text-sm font-bold text-red-300 mb-2 text-center">
-            {currentRound === 0 ? "Toss-up Round" : `Round ${currentRound}`}
+      {showMembers && team.members && team.members.length > 0 && (
+        <div className="mb-4">
+          <h4 className="text-xs font-semibold text-slate-400 mb-2">
+            Team Members
           </h4>
-          
-          {/* Question Progress Indicators */}
-          {/* uses renderQuestionStatus for 1-4 and 5-7 so its on two rows when its round 4, otherwise the points dont fit in the div*/}
-          {currentRound === 4 ? (
-            <div className="flex flex-col items-center gap-1 mb-2">
-              <div className="flex justify-center gap-1">
-                {currentRoundData.slice(0, 4).map((questionStatus, idx) => 
-                  renderQuestionStatus(questionStatus, idx + 1, true)
-                )}
-              </div>
-              <div className="flex justify-center gap-1">
-                {currentRoundData.slice(4, 7).map((questionStatus, idx) => 
-                  renderQuestionStatus(questionStatus, idx + 5, true)
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center gap-1 mb-2">
-              {currentRoundData.map((questionStatus, idx) => 
+          <div className="space-y-1">
+            {team.members
+              .filter((member) => member.trim() !== "")
+              .map((member, idx) => (
+                <div
+                  key={idx}
+                  className="text-xs glass-card p-1 flex items-center gap-1"
+                >
+                  {idx === 0 && <span className="text-yellow-400">👑</span>}
+                  {member}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${currentRound === 4 ? 'pb-3' : ''}`}>
+        <h4 className="text-sm font-bold text-red-300 mb-2 text-center">
+          {currentRound === 0 ? "Toss-up Round" : `Round ${currentRound}`}
+        </h4>
+        
+        {currentRound === 4 ? (
+          <div className="flex flex-col items-center gap-1 mb-2">
+            <div className="flex justify-center gap-1">
+              {currentRoundData.slice(0, 4).map((questionStatus, idx) => 
                 renderQuestionStatus(questionStatus, idx + 1, true)
               )}
             </div>
-          )}
-        </div>
-
-
-
-        {/* Push content up and summaries to bottom */}
-        <div className="flex-grow"></div>
-
-        {/* Previous Round Summaries */}
-        {currentRound >= 2 && (
-          <div className="mb-3">
-            {renderRoundSummary(1, questionData.round1)}
+            <div className="flex justify-center gap-1">
+              {currentRoundData.slice(4, 7).map((questionStatus, idx) => 
+                renderQuestionStatus(questionStatus, idx + 5, true)
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center gap-1 mb-2">
+            {currentRoundData.map((questionStatus, idx) => 
+              renderQuestionStatus(questionStatus, idx + 1, true)
+            )}
           </div>
         )}
-        
-        {currentRound >= 3 && (
-          <div className="mb-3">
-            {renderRoundSummary(2, questionData.round2)}
-          </div>
-        )}
-
-        {currentRound >= 4 && (
-          <div className="mb-3">
-            {renderRoundSummary(3, questionData.round3)}
-          </div>
-        )}
-
-        {/* Total Game Score Display (BOTTOM) */}
-        <div className="bg-white text-black rounded px-2 py-1 text-center">
-          <div className="text-xl font-bold">
-            {getTeamRoundTotal(team)}
-          </div>
-          <div className="text-xs">Total Score</div>
-        </div>
       </div>
-    );
-  };
+
+      <div className="flex-grow"></div>
+
+      {currentRound >= 2 && (
+        <div className="mb-3">
+          {renderRoundSummary(1, questionData.round1)}
+        </div>
+      )}
+      
+      {currentRound >= 3 && (
+        <div className="mb-3">
+          {renderRoundSummary(2, questionData.round2)}
+        </div>
+      )}
+
+      {currentRound >= 4 && (
+        <div className="mb-3">
+          {renderRoundSummary(3, questionData.round3)}
+        </div>
+      )}
+
+      <div className="bg-white text-black rounded px-2 py-1 text-center">
+        <div className="text-xl font-bold">
+          {getTeamRoundTotal(team)}
+        </div>
+        <div className="text-xs">Total Score</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="block md:hidden">
+        {mobileCompactView}
+      </div>
+      <div className="hidden md:block h-full">
+        {desktopView}
+      </div>
+    </>
+  );
+};
 
 export default TeamPanel;
