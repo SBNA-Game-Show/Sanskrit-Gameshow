@@ -245,6 +245,7 @@ export function setupPlayerEvents(socket, io) {
       }
 
       if (result.isCorrect) {
+        game.pauseTimer = true;
         io.to(gameCode).emit("answer-correct", {
           ...result,
           submittedText: answer,
@@ -262,22 +263,12 @@ export function setupPlayerEvents(socket, io) {
                 currentQuestion,
               });
             }
-
-            setTimeout(() => {
-              const readyGame = getGame(gameCode);
-              if (readyGame) {
-                readyGame.gameState.canAdvance = true;
-                updateGame(gameCode, readyGame);
-
-                io.to(gameCode).emit("question-complete", {
-                  game: readyGame,
-                  currentQuestion: getCurrentQuestion(readyGame),
-                });
-              }
-            }, 3000);
           }, 2000);
         }
       } else {
+        if (game.lightningRoundSubmittedTeams.length === 2) {
+          game.pauseTimer = true;
+        }
         io.to(gameCode).emit("answer-incorrect", {
           ...result,
           submittedText: answer,
@@ -286,6 +277,7 @@ export function setupPlayerEvents(socket, io) {
         });
 
         if (game.lightningRoundSubmittedTeams.length === 2) {
+          
           setTimeout(() => {
             const currentQuestion = getCurrentQuestion(game);
 
@@ -296,19 +288,6 @@ export function setupPlayerEvents(socket, io) {
                 currentQuestion,
               });
             }
-            
-            setTimeout(() => {
-              const readyGame = getGame(gameCode);
-              if (readyGame) {
-                readyGame.gameState.canAdvance = true;
-                updateGame(gameCode, readyGame);
-
-                io.to(gameCode).emit("question-complete", {
-                  game: readyGame,
-                  currentQuestion: getCurrentQuestion(readyGame),
-                });
-              }
-            }, 3000);
           }, 2000);
         }
         else {
