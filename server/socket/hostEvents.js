@@ -201,6 +201,7 @@ export function setupHostEvents(socket, io) {
 
     if (game.currentRound === 4) {
       game.gameState.canAdvance = true;
+      game.pauseTimer = false;
       game.teams.forEach((team) => {
         team.active = false;
       })
@@ -223,6 +224,28 @@ export function setupHostEvents(socket, io) {
         handleGameStateAdvancement(gameCode, advancedGame, io, {
           game: advancedGame,
           teamName: "Host",
+        });
+      }
+    }
+  });
+
+  socket.on("pause-timer", (data) => {
+    const { gameCode } = data;
+    const game = getGame(gameCode);
+
+    if (game && game.hostId === socket.id && game.status === "active") {
+      const currentQuestion = getCurrentQuestion(game);
+
+      if (currentQuestion) {
+        // Reveal all answers
+        currentQuestion.answers.forEach((a) => (a.revealed = true));
+        game.pauseTimer = true;
+        updateGame(gameCode, game);
+
+        io.to(gameCode).emit("answers-revealed", {
+          game,
+          currentQuestion,
+          byHost: true,
         });
       }
     }
