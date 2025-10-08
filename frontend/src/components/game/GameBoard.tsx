@@ -10,6 +10,7 @@ interface GameBoardProps {
   onRevealAnswer?: (answerIndex: number) => void;
   onSelectAnswer?: (answerIndex: number) => void;
   onNextQuestion?: () => void;
+  onPauseTimer?: () => void;
   isHost?: boolean;
   variant?: "host" | "player";
   controlMessage?: string;
@@ -26,6 +27,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onRevealAnswer,
   onSelectAnswer,
   onNextQuestion,
+  onPauseTimer,
   isHost = false,
   variant = "host",
   controlMessage,
@@ -188,7 +190,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           question={currentQuestion.question} 
           duration={10000}
           isTimerActive={game.currentRound === 4}
-          onNextQuestion={onNextQuestion}
+          onPauseTimer={onPauseTimer}
         />
       </div>
 

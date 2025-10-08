@@ -358,6 +358,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
       tossUpAnswers: [], // Stores both team responses
       tossUpSubmittedTeams: [], // To track who already answered
       lightningRoundSubmittedTeams: [],
+      pauseTimer: false,
 
       awaitingAnswer: false,
       canAdvance: false,
@@ -576,67 +577,79 @@ export function submitAnswer(gameCode, playerId, answerText) {
       };
     }
 
-   const matchingAnswer = checkAnswerMatch(answerText, currentQuestion.answers);
+    const matchingAnswer = checkAnswerMatch(answerText, currentQuestion.answers);
 
-// ✅ Clone answer so we don’t mutate shared DB object
-const safeAnswer = matchingAnswer ? { ...matchingAnswer } : null;
+    game.lightningRoundSubmittedTeams.push(player.teamId);
 
-game.lightningRoundSubmittedTeams.push(player.teamId);
+    let result = {
+      success: true,
+      isCorrect: false,
+      pointsAwarded: 0,
+      matchingAnswer: null,
+      playerName: player.name,
+      teamName: playerTeam.name,
+      teamId: playerTeam.id,
+      game: null,
+      shouldAdvance: true,
+      revealAllCards: false,
+      revealRemainingAfterDelay: false,
+      submittedText: answerText,
+      singleAttempt: true,
+    };
+    
+    if (matchingAnswer) {
+      //console.log(matchingAnswer)
+      matchingAnswer.revealed = true;
+      const points = matchingAnswer.score * game.currentRound;
 
-let result = {
-  success: true,
-  isCorrect: false,
-  pointsAwarded: 0,
-  matchingAnswer: safeAnswer,
-  playerName: player.name,
-  teamName: playerTeam.name,
-  teamId: playerTeam.id,
-  game: null,
-  shouldAdvance: true,
-  revealAllCards: false,
-  revealRemainingAfterDelay: false,
-  submittedText: answerText,
-  singleAttempt: true,
-};
+      playerTeam.score += points;
+      playerTeam.currentRoundScore += points;
 
-if (safeAnswer) {
-  safeAnswer.revealed = true; // ✅ reveal only in this team’s copy
-  const points = safeAnswer.score * game.currentRound;
+      if (matchingAnswer.score <= 0) {
+        result.isCorrect = false;
+      }
+      else {
+        result.isCorrect = true;
+      }
+      
+      result.pointsAwarded = points;
+      result.matchingAnswer = matchingAnswer;
+      result.revealRemainingAfterDelay = true; // Reveal remaining cards after 2 seconds
 
-  playerTeam.score += points;
-  playerTeam.currentRoundScore += points;
+      // Update question data
+      const teamKey = game.gameState.currentTurn;
+      const currentRound = game.currentRound;
+      const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
+      updateQuestionData(
+        game,
+        teamKey,
+        currentRound,
+        questionNumber,
+        true,
+        points
+      );
 
-  result.isCorrect = true;
-  result.pointsAwarded = points;
-  result.matchingAnswer = safeAnswer;
-  result.revealRemainingAfterDelay = true;
+      console.log(
+        `✅ Correct answer: "${answerText}" = "${matchingAnswer.answer}" (+${points} pts) - Will reveal remaining cards after 2s`
+      );
+    } else {
+      // Wrong answer
+      result.isCorrect = false;
+      result.revealAllCards = false;
 
-  const teamKey = game.gameState.currentTurn;
-  const currentRound = game.currentRound;
-  const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
+      // Update question data for wrong attempt
+      const teamKey = game.gameState.currentTurn;
+      const currentRound = game.currentRound;
+      const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
+      updateQuestionData(game, teamKey, currentRound, questionNumber, false, 0);
 
-  updateQuestionData(game, teamKey, currentRound, questionNumber, true, points);
+      console.log(
+        `❌ Wrong answer: "${answerText}" - All cards revealed, moving to next question`
+      );
+    }
 
-  console.log(
-    `✅ Correct answer: "${answerText}" = "${safeAnswer.answer}" (+${points} pts)`
-  );
-} else {
-  // ❌ Wrong answer - no reveal to other team
-  result.isCorrect = false;
-  result.revealAllCards = false;
-
-  const teamKey = game.gameState.currentTurn;
-  const currentRound = game.currentRound;
-  const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
-
-  updateQuestionData(game, teamKey, currentRound, questionNumber, false, 0);
-
-  console.log(`❌ Wrong answer: "${answerText}"`);
-}
-result.revealRemainingAfterDelay = false; // handled in playerEvents only
-result.game = games[gameCode];
-return result;
-
+    result.game = games[gameCode];
+    return result;
   }
 
   // ✅ REGULAR ROUND LOGIC
@@ -726,7 +739,7 @@ export function advanceGameState(gameCode) {
   // Increment questions answered count
   game.gameState.questionsAnswered[currentTeam] += 1;
 
-  if (game.currentQuestionIndex === 23) {
+  if (game.currentQuestionIndex === 24) {
     // Game finished
     const roundKey = `round${game.currentRound}`;
     const team1 = game.teams.find((t) => t.id.includes("team1"));

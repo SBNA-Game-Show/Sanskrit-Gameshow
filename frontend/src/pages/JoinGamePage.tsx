@@ -461,8 +461,50 @@ const JoinGamePage: React.FC = () => {
 
     return (
       <PageLayout gameCode={game.code} variant="game">
-        {/* Left Team Panel with Question Data */}
-        <div className="w-full md:w-48 md:flex-shrink-0">
+        {/* Mobile: Team panels container at bottom */}
+        <div className="order-2 md:hidden w-full flex gap-2">
+          <div className="w-1/2">
+            <TeamPanel
+              team={game.teams[0]}
+              teamIndex={0}
+              isActive={game.teams[0]?.active}
+              showMembers={false}
+              playerName={
+                player.teamId === game.teams[0].id ? player.name : undefined
+              }
+              isPlayerTeam={player.teamId === game.teams[0].id}
+              currentRound={game.currentRound}
+              roundScore={game.teams[0].currentRoundScore}
+              questionsAnswered={team1QuestionsAnswered}
+              questionData={getTeamQuestionData("team1")}
+              allTeams={game.teams}
+              activeBorderColor="#dc2626"
+              activeBackgroundColor="#ffd6d6ff"
+            />
+          </div>
+          <div className="w-1/2">
+            <TeamPanel
+              team={game.teams[1]}
+              teamIndex={1}
+              isActive={game.teams[1]?.active}
+              showMembers={false}
+              playerName={
+                player.teamId === game.teams[1].id ? player.name : undefined
+              }
+              isPlayerTeam={player.teamId === game.teams[1].id}
+              currentRound={game.currentRound}
+              roundScore={game.teams[1].currentRoundScore}
+              questionsAnswered={team2QuestionsAnswered}
+              questionData={getTeamQuestionData("team2")}
+              allTeams={game.teams}
+              activeBorderColor="#264adcff"
+              activeBackgroundColor="#d6e0ffff"
+            />
+          </div>
+        </div>
+
+        {/* Desktop: Left Team Panel */}
+        <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
             team={game.teams[0]}
             teamIndex={0}
@@ -483,7 +525,7 @@ const JoinGamePage: React.FC = () => {
         </div>
 
         {/* Center Game Area */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
           {/* Turn Indicator */}
           <TurnIndicator
             currentTeam={game.gameState.currentTurn}
@@ -637,8 +679,8 @@ const JoinGamePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Team Panel with Question Data */}
-        <div className="w-full md:w-48 md:flex-shrink-0">
+        {/* Desktop: Right Team Panel */}
+        <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
             team={game.teams[1]}
             teamIndex={1}

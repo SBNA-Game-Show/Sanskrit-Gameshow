@@ -51,6 +51,8 @@ export interface Game {
       team2: RoundData; // Question status for team 2
     };
   };
+
+  pauseTimer: boolean; // Property for pausing the timer in the lightning round
 }
 
 export interface Question {
