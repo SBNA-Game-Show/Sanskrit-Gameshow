@@ -7,7 +7,7 @@ interface QuestionCardProps {
   question: string;
   duration: number;
   isTimerActive: boolean;
-  onNextQuestion?: () => void;
+  onPauseTimer?: () => void;
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -15,7 +15,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   duration,
   isTimerActive,
-  onNextQuestion,
+  onPauseTimer,
 }) => {
 
   const [progress, setProgress] = useState(100);
@@ -25,19 +25,23 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   const timerSpeedModifierRef = useRef(1);
   const timerColorRef = useRef("bg-green-200")
 
-  game?.teams.forEach((team) => {
-    if (team.active && game.currentRound === 4) {
-      timerSpeedModifierRef.current = 0.75;
-      timerColorRef.current = "bg-yellow-100";
-      return;
-    }
-  })
+  if (game?.pauseTimer ) {
+    timerSpeedModifierRef.current = 0;
+    timerColorRef.current = "bg-gray-100"; 
+  }
+  else {
+    game?.teams.forEach((team) => {
+      if (team.active && game.currentRound === 4) {
+        timerSpeedModifierRef.current = 0.75;
+        timerColorRef.current = "bg-yellow-100";
+        return;
+      }
+    })
+  }
+  
 
   if (progress <= 0 && canAdvanceRef.current) {
-
-    // FUNCTION TO AUTOMATICALLY ADVANCE TO THE NEXT QUESTION
-    // currently commented out for testing purposes
-    // onNextQuestion?.();
+    onPauseTimer?.();
     canAdvanceRef.current = false;
   }
 
@@ -63,7 +67,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
 
       return () => clearInterval(timer);
     }
-  }, [])
+  }, [isTimerActive, duration])
 
   return (
     <>

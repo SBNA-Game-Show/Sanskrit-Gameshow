@@ -54,7 +54,7 @@ router.post("/api/create-game", async (req, res) => {
     updatedQuestions.push(
       {
         _id: 1,
-        question: "What colour is an apple?",
+        question: "Q1. What colour is an apple?",
         questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
@@ -71,7 +71,7 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 2,
-        question: "What colour is an apple?",
+        question: "Q2. What colour is an apple?",
         questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
@@ -88,7 +88,7 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 3,
-        question: "What colour is an apple?",
+        question: "Q3. What colour is an apple?",
         questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
@@ -105,7 +105,7 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 4,
-        question: "What colour is an apple?",
+        question: "Q4. What colour is an apple?",
         questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
@@ -122,7 +122,7 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 5,
-        question: "What colour is an apple?",
+        question: "Q5. What colour is an apple?",
         questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
@@ -139,7 +139,7 @@ router.post("/api/create-game", async (req, res) => {
       },
       {
         _id: 6,
-        question: "What colour is an apple?",
+        question: "Q6. What colour is an apple?",
         questionType: 'MCQ',
         questionCategory: 'Vocabulary',
         questionLevel: 'Beginner',
@@ -151,6 +151,23 @@ router.post("/api/create-game", async (req, res) => {
           { _id: 300, answer: "Purple", responseCount: 5, isCorrect: true, rank: 5, score: 0},
         ],
         questionNumber: 3,
+        teamAssignment: "team2", // Team A
+        round: 4,
+      },
+      {
+        _id: 7,
+        question: "Q7. What colour is an apple?",
+        questionType: 'MCQ',
+        questionCategory: 'Vocabulary',
+        questionLevel: 'Beginner',
+        answers: [
+          { _id: 100, answer: "Red", responseCount: 15, isCorrect: true, rank: 1, score: 10},
+          { _id: 200, answer: "Blue", responseCount: 8, isCorrect: true, rank: 2, score: 0 },
+          { _id: 300, answer: "Yellow", responseCount: 5, isCorrect: true, rank: 3, score: 0},
+          { _id: 300, answer: "Green", responseCount: 5, isCorrect: true, rank: 4, score: 0},
+          { _id: 300, answer: "Purple", responseCount: 5, isCorrect: true, rank: 5, score: 0},
+        ],
+        questionNumber: 4,
         teamAssignment: "team2", // Team A
         round: 4,
       }

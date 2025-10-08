@@ -349,6 +349,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
       tossUpAnswers: [], // Stores both team responses
       tossUpSubmittedTeams: [], // To track who already answered
       lightningRoundSubmittedTeams: [],
+      pauseTimer: false,
 
       awaitingAnswer: false,
       canAdvance: false,
@@ -623,7 +624,7 @@ export function submitAnswer(gameCode, playerId, answerText) {
         `✅ Correct answer: "${answerText}" = "${matchingAnswer.answer}" (+${points} pts) - Will reveal remaining cards after 2s`
       );
     } else {
-      // Wrong answer - REVEAL ALL CARDS IMMEDIATELY
+      // Wrong answer
       result.isCorrect = false;
       result.revealAllCards = false;
 
@@ -729,7 +730,7 @@ export function advanceGameState(gameCode) {
   // Increment questions answered count
   game.gameState.questionsAnswered[currentTeam] += 1;
 
-  if (game.currentQuestionIndex === 23) {
+  if (game.currentQuestionIndex === 24) {
     // Game finished
     const roundKey = `round${game.currentRound}`;
     const team1 = game.teams.find((t) => t.id.includes("team1"));

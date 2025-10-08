@@ -212,6 +212,12 @@ const HostGamePage: React.FC = () => {
       console.log("👁️ Remaining cards revealed:", data);
       setGame(data.game);
       // Preserve the previous message instead of showing a new one
+
+      if (data.game.currentRound === 4) {
+        setTimeout(() => {
+          socket.emit("advance-question", { gameCode });
+        }, 2500)
+      }
     });
 
     socket.on("turn-changed", (data) => {
@@ -309,6 +315,12 @@ const HostGamePage: React.FC = () => {
       setGame(data.game);
       setControlMessage("All answers have been revealed!");
       setOverrideMode(false);
+
+      if (data.game.currentRound === 4) {
+        setTimeout(() => {
+          socket.emit("advance-question", { gameCode });
+        }, 2500)
+      }
     });
 
     socket.on("answer-overridden", (data) => {
@@ -424,6 +436,12 @@ const HostGamePage: React.FC = () => {
       socketRef.current.emit("advance-question", { gameCode });
     }
   };
+
+  const handlePauseTimer = () => {
+    if (gameCode && socketRef.current) {
+      socketRef.current.emit("pause-timer", { gameCode });
+    }
+  }
 
   const handleOverrideAnswer = () => {
     if (pendingOverride) {
@@ -669,6 +687,7 @@ const HostGamePage: React.FC = () => {
             onConfirmOverride={handleConfirmOverride}
             onSelectAnswer={handleSelectOverride}
             onNextQuestion={handleNextQuestion}
+            onPauseTimer={handlePauseTimer}
           />
 
 
@@ -688,7 +707,7 @@ const HostGamePage: React.FC = () => {
                 ➡️ Next Question
               </Button> */}
               <Button
-                onClick={handleForceNextQuestion}
+                onClick={game.currentRound === 4 ? handlePauseTimer : handleForceNextQuestion}
                 variant="secondary"
                 size="sm"
                 className="text-xs py-1 px-3"
