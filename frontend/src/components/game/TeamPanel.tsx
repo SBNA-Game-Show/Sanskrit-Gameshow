@@ -200,7 +200,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             {isPlayerTeam && <span className="text-yellow-400 text-xs">👤</span>}
           </h3>
           <div className="text-xl font-bold text-gray-900">
-            {getTeamRoundTotal(team)} pts
+            {team.currentRoundScore || 0} pts
           </div>
         </div>
         <button
@@ -227,7 +227,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
           />
           <div className="fixed inset-x-4 top-20 bottom-20 bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold flex items-center gap-2">
+              <h3 className="text-lg text-center font-bold flex items-center gap-2">
                 {team.name}
                 {isPlayerTeam && <span className="text-yellow-400">👤</span>}
               </h3>
@@ -242,12 +242,12 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             </div>
 
             {isPlayerTeam && playerName && (
-              <div className="text-xs text-yellow-600 mb-2 font-medium">
+              <div className="text-xs text-yellow-600 mb-2 font-medium text-center">
                 {playerName}
               </div>
             )}
 
-            <div className={`text-2xl font-bold mb-4 ${colorClasses.primary}`}>
+            <div className={`text-2xl font-bold mb-4 ${colorClasses.primary} text-center`}>
               {team.currentRoundScore || 0}
             </div>
 
