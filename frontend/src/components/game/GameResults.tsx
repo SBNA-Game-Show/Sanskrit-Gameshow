@@ -110,7 +110,7 @@ const GameResults: React.FC<GameResultsProps> = ({
 
                       {/* Round breakdown for this team */}
                       <div className="space-y-2 mb-4">
-                        {[1, 2, 3].map((round) => {
+                        {[1, 2, 3, 4].map((round) => {
                           const roundIndex = round - 1;
                           const roundScore = team.roundScores[roundIndex] || 0;
                           const roundWinner = getRoundWinner(roundIndex);

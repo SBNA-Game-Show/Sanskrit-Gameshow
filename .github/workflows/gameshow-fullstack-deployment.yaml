@@ -1,0 +1,311 @@
+
+name: Full stack deployment
+
+on:
+  workflow_dispatch:      
+  push:
+    branches: [ 404_deployment_testing_branch_2 ]    
+
+jobs:
+  setup-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+      ECR_REPO: gameshow-backend
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+
+# ─────────────────────────────
+# S3: create/keep static website bucket
+# ─────────────────────────────
+      - name: Set up Terraform (S3)
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Authenticate with Terraform Cloud
+        run: |
+          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+
+      - name: Terraform init (S3 workspace)
+        working-directory: terraform/s3
+        run: terraform init
+      
+      - name: Verify Terraform Cloud workspace (S3)
+        working-directory: terraform/s3
+        run: terraform workspace show
+
+      - name: Empty S3 bucket before destroy (only if exists)
+        run: |
+          BUCKET_NAME="sanskrit-familyfeud-gameshow-frontend-2"
+          
+          # Check if the bucket exists
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "✅ Bucket exists. Proceeding to empty it..."
+            aws s3 rm s3://$BUCKET_NAME --recursive
+          else
+            echo "⚠️ Bucket $BUCKET_NAME does not exist. Skipping empty step."
+          fi
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+        working-directory: terraform/s3
+
+      - name: Terraform apply (S3)
+        working-directory: terraform/s3
+        run: terraform apply -auto-approve
+
+# ─────────────────────────────
+# Backend: Builing ECR and Pushing image to ECR
+# ─────────────────────────────
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Authenticate with Terraform Cloud
+        run: |
+          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory:  terraform/ecr
+
+      - name: Verify Terraform Cloud workspace is connected
+        run: terraform workspace show
+        working-directory:  terraform/ecr
+      
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: terraform/ecr
+
+      # Get ECR repo URI
+      - name: Get ECR repo URI
+        id: ecr_uri
+        run: |
+          REPO_URL=$(aws ecr describe-repositories \
+            --repository-names "$ECR_REPO" \
+            --query 'repositories[0].repositoryUri' \
+            --output text --region "$AWS_REGION")
+          echo "REPO_URL=$REPO_URL" >> $GITHUB_ENV
+
+      # Login to ECR
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | docker login --username AWS --password-stdin "${REPO_URL%%/*}"
+
+      # Build & push backend image from ./server 
+      - name: Build & push :latest
+        run: |
+          docker build -t $ECR_REPO:latest server
+          docker tag $ECR_REPO:latest "$REPO_URL:latest"
+          docker push "$REPO_URL:latest"
+
+      # Immediately delete untagged leftovers
+      - name: Delete untagged images (optional)
+        run: |
+          UNTAGS=$(aws ecr list-images \
+            --repository-name "$ECR_REPO" \
+            --filter tagStatus=UNTAGGED \
+            --query 'imageIds[*]' \
+            --output json --region "$AWS_REGION")
+          if [ "$UNTAGS" != "[]" ]; then
+            echo "$UNTAGS" > /tmp/ids.json
+            aws ecr batch-delete-image \
+              --repository-name "$ECR_REPO" \
+              --image-ids file:///tmp/ids.json \
+              --region "$AWS_REGION" || true
+          fi
+# ─────────────────────────────
+# ECS (EC2): provision + deploy
+# ─────────────────────────────
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Authenticate with Terraform Cloud
+        run: |
+          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory:  terraform/ecs
+
+      - name: Verify Terraform Cloud workspace is connected
+        run: terraform workspace show
+        working-directory:  terraform/ecs
+
+      - name: Pre-drain/force delete ECS service (idempotent)
+        shell: bash
+        env:
+          ECS_CLUSTER: gameshow-cluster
+          ECS_SERVICE: gameshow-backend-svc
+        run: |
+          set -euo pipefail
+      
+          echo "Checking ECS cluster: $ECS_CLUSTER"
+      
+          # Does cluster exist?
+          CLUSTER_JSON=$(aws ecs describe-clusters --clusters "$ECS_CLUSTER" --query 'clusters[0]' --output json 2>/dev/null || true)
+          if [ -z "$CLUSTER_JSON" ] || [ "$CLUSTER_JSON" = "null" ]; then
+            echo "Cluster not found. Skipping pre-drain."
+            exit 0
+          fi
+      
+          CLUSTER_STATUS=$(echo "$CLUSTER_JSON" | jq -r '.status')
+          if [ "$CLUSTER_STATUS" != "ACTIVE" ]; then
+            echo "Cluster status is $CLUSTER_STATUS (not ACTIVE). Skipping pre-drain."
+            exit 0
+          fi
+      
+          echo "Checking service: $ECS_SERVICE"
+      
+          # Does service exist?
+          SERVICE_STATUS=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+      
+          if [ "$SERVICE_STATUS" = "MISSING" ] || [ "$SERVICE_STATUS" = "INACTIVE" ] || [ -z "$SERVICE_STATUS" ]; then
+            echo "Service not found/inactive. Skipping pre-drain."
+            exit 0
+          fi
+      
+          echo "Scaling service to 0..."
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --desired-count 0 || true
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" || true
+      
+          echo "Stopping lingering tasks (if any)..."
+          TASKS=$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --service-name "$ECS_SERVICE" \
+            --query 'taskArns[]' --output text 2>/dev/null || true)
+          if [ -n "${TASKS:-}" ]; then
+            for t in $TASKS; do
+              aws ecs stop-task --cluster "$ECS_CLUSTER" --task "$t" --reason "pre-destroy" || true
+            done
+            # Optional: wait for them to stop
+            aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks $TASKS || true
+          fi
+      
+          echo "Force-deleting the service..."
+          aws ecs delete-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force || true
+      
+          echo "Pre-drain step completed."
+
+      - name: Terraform destroy (ECS stack)
+        working-directory: terraform/ecs
+        run: terraform destroy -auto-approve || echo "Nothing to destroy"
+      
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: terraform/ecs
+
+      - name: Force new ECS deployment to pull :latest
+        env:
+          ECS_CLUSTER: gameshow-cluster
+          ECS_SERVICE: gameshow-backend-svc
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --force-new-deployment
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE"
+
+      - name: Show backend URL from Terraform outputs
+        working-directory: terraform/ecs
+        run: |
+          echo "Public IP:   $(terraform output -raw ec2_public_ip)"
+          echo "Public DNS:  $(terraform output -raw ec2_public_dns)"
+          echo "Hit app at:  $(terraform output -raw hit_app_here)"
+
+# ─────────────────────────────
+# CloudFront: create/update distribution (S3 + EC2 origins)
+# ─────────────────────────────
+      - name: Set up Terraform (CloudFront)
+        uses: hashicorp/setup-terraform@v2
+      
+      - name: Authenticate with Terraform Cloud
+        run: |
+          echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc
+      
+      - name: Terraform Init (CloudFront)
+        working-directory: terraform/cloudFront
+        run: terraform init
+      
+      - name: Terraform Apply (CloudFront)
+        working-directory: terraform/cloudFront
+        run: terraform apply -auto-approve
+
+      - name: Get CloudFront domain by tag
+        id: cf
+        run: |
+          DIST_IDS=$(aws cloudfront list-distributions --query 'DistributionList.Items[].Id' --output text)
+          for ID in $DIST_IDS; do
+            ARN=$(aws cloudfront get-distribution --id "$ID" --query 'Distribution.ARN' --output text)
+            TAGVAL=$(aws cloudfront list-tags-for-resource --resource "$ARN" \
+              --query 'Tags.Items[?Key==`Name`].Value | [0]' --output text)
+            if [ "$TAGVAL" = "GameshowCloudFront" ]; then
+              CF_DOMAIN=$(aws cloudfront get-distribution --id "$ID" --query 'Distribution.DomainName' --output text)
+              echo "CF_DOMAIN=$CF_DOMAIN" >> $GITHUB_ENV
+              echo "CF_DIST_ID=$ID" >> $GITHUB_ENV
+              echo "Found CF: $CF_DOMAIN (ID: $ID)"
+              exit 0
+            fi
+          done
+          echo "No CloudFront distribution tagged Name=GameshowCloudFront found" >&2
+          exit 1
+# ─────────────────────────────
+# Re-apply ECS so it picks up strict CORs
+#─────────────────────────────
+      - name: Set TF var for CORS
+        run: echo "TF_VAR_cors_origin=https://${CF_DOMAIN}" >> $GITHUB_ENV
+
+      - name: Re-apply ECS so it picks CloudFront CORS
+        working-directory: terraform/ecs
+        run: terraform apply -auto-approve
+
+# ─────────────────────────────
+# Putting CloudFront URL inside Frontend .env
+# ─────────────────────────────
+      - name: Write CRA env for frontend build
+        run: |
+          echo "REACT_APP_BACKEND_HOST=https://${CF_DOMAIN}" > frontend/.env.production
+          echo "REACT_APP_SOCKET_HOST=https://${CF_DOMAIN}" >> frontend/.env.production
+          echo "Wrote frontend/.env.production:"
+          cat frontend/.env.production
+
+# ─────────────────────────────
+# Build the Frontend
+# ─────────────────────────────
+      - name: Build frontend (CRA)
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+# ─────────────────────────────
+# Uploading build to S3 Bucket
+# ─────────────────────────────
+          
+      - name: Upload frontend to S3
+        env:
+          S3_BUCKET: sanskrit-familyfeud-gameshow-frontend-2
+        run: |
+          aws s3 sync frontend/build s3://$S3_BUCKET --delete
+
+
+#─────────────────────────
+# Invalidate CloudFront
+#──────────────────────────
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation --distribution-id "${CF_DIST_ID}" --paths "/*"
+

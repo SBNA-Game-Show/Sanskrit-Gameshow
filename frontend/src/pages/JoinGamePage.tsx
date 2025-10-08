@@ -34,7 +34,7 @@ const JoinGamePage: React.FC = () => {
   const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
   const [gameMessage, setGameMessage] = useState("");
   const [hasBuzzed, setHasBuzzed] = useState(false);
-  const [buzzFeedback, setBuzzFeedback] = useState("");
+  //const [buzzFeedback, setBuzzFeedback] = useState("");
   const [playerName] = useState(() => localStorage.getItem("username") || "");
 
   const myTeam = game?.teams.find((team) => team.id === player?.teamId);

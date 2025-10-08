@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import io, { Socket } from "socket.io-client";
+import { GAME_CONFIG } from "../utils/constants";
+
 
 // Import components
 import PageLayout from "../components/layout/PageLayout";
@@ -20,8 +22,8 @@ import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
 
 // Import types and utils
-import { Game, Team, RoundSummary, RoundData } from "../types";
-import { getCurrentQuestion, getGameWinner, getTeamName } from "../utils/gameHelper";
+import { Game, RoundSummary, RoundData } from "../types"; //Team
+import { getCurrentQuestion, getTeamName } from "../utils/gameHelper"; //getGameWinner
 import { ROUTES } from "../utils/constants";
 
 const HostGamePage: React.FC = () => {
@@ -91,7 +93,7 @@ const HostGamePage: React.FC = () => {
       socketRef.current.disconnect();
     }
 
-    const socket = io("http://localhost:5004", {
+    const socket = io(GAME_CONFIG.SOCKET_URL, {
       forceNew: true,
       reconnection: true,
       reconnectionAttempts: 5,

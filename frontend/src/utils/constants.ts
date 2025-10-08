@@ -1,6 +1,11 @@
 // Game constants and configuration
+export const BACKEND_HOST =
+  process.env.REACT_APP_BACKEND_HOST || "http://localhost:5004";
+
+export const API_BASE = `${BACKEND_HOST}`;
+
 export const GAME_CONFIG = {
-  SOCKET_URL: "http://localhost:5004",
+  SOCKET_URL: BACKEND_HOST,
   ANSWER_TIME_LIMIT: 30000, // 30 seconds
   MIN_PLAYERS: 2,
   MAX_STRIKES: 3,

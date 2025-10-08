@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; //Removed Link
 import API from '../../services/auth';
 import { LoginCredentials, LoginResponse } from '../../types/auth';
-import { ROUTES } from '../../utils/constants';
+//import { ROUTES } from '../../utils/constants';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -209,7 +209,11 @@ const LoginForm: React.FC = () => {
               )}
             </button>
           </div>
-
+          {error && (
+            <div className="mt-3 text-center text-red-500">
+              {error}
+            </div>
+          )}
           
 
 
