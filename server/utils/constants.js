@@ -128,8 +128,9 @@ export const TURN_SYSTEM = {
 
 // Enums for question Type
 export const QUESTION_TYPE = Object.freeze({
-  MCQ: "Mcq",
+  MCQ: "MCQ",
   INPUT: "Input",
+  BUZZER: "Buzzer", 
 });
 
 // Enums for question Category
@@ -139,7 +140,12 @@ export const QUESTION_CATEGORY = Object.freeze({
   GRAMMAR: "Grammar",
   CULTURE: "Culture",
   HISTORY: "History",
+  SCIENCE: "Science",
+  MUSIC: "Music", 
+  NATURE: "Nature", 
+  GEOGRAPHY: "Geography", 
 });
+
 
 // Enums for question Level
 export const QUESTION_LEVEL = Object.freeze({

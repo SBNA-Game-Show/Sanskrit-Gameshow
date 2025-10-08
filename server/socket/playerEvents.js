@@ -66,21 +66,34 @@ export function setupPlayerEvents(socket, io) {
   });
 
   // Assign player to team
-  socket.on("join-team", (data) => {
-    const { gameCode, playerId, teamId } = data;
-    const game = getGame(gameCode);
-    const player = getPlayer(playerId);
+socket.on("join-team", (data) => {
+  const { gameCode, playerId, teamId } = data;
+  const game = getGame(gameCode);
+  const player = getPlayer(playerId);
 
-    if (game && player) {
-      updatePlayer(playerId, { teamId });
+  if (!game || !player) {
+    console.error(`❌ join-team failed: game=${!!game}, player=${!!player}`);
+    return;
+  }
 
-      io.to(gameCode).emit("team-updated", {
-        playerId,
-        teamId,
-        game,
-      });
-    }
+  // ✅ Update player’s team info
+  updatePlayer(playerId, { teamId });
+
+  // ✅ Join both the game and private team room
+  socket.join(gameCode);
+  socket.join(teamId);
+
+  console.log(`👥 Player ${player.name} joined team room: ${teamId}`);
+  console.log(`📡 ${player.name} is now in rooms:`, socket.rooms);
+
+  // Notify everyone in the game room that a player joined
+  io.to(gameCode).emit("team-updated", {
+    playerId,
+    teamId,
+    game,
   });
+});
+
 
   // UPDATED: Submit answer with SINGLE ATTEMPT system
   // UPDATED: Submit answer with SINGLE ATTEMPT system
@@ -147,7 +160,7 @@ export function setupPlayerEvents(socket, io) {
       if (game.tossUpSubmittedTeams.length === 2) {
         setTimeout(() => {
           const currentQuestion = getCurrentQuestion(game);
-          console.log("Question used for Round 0", currentQuestion);
+         
 
           if (currentQuestion) {
             currentQuestion.answers.forEach((a) => (a.revealed = true));
@@ -221,123 +234,102 @@ export function setupPlayerEvents(socket, io) {
       return;
     }
 
-    if (currentRound === 4) {
-      if (!game.lightningRoundSubmittedTeams) game.lightningRoundSubmittedTeams = [];
+      if (currentRound === 4) {
+  if (!game.lightningRoundSubmittedTeams) game.lightningRoundSubmittedTeams = [];
 
-      const teamId = player.teamId;
+  const teamId = player.teamId;
+  const playerTeam = game.teams.find((t) => t.id === teamId);
+  const [teamA, teamB] = game.teams;
+  const otherTeamId = teamA.id === teamId ? teamB.id : teamA.id;
 
-      const result = submitAnswer(gameCode, playerId, answer);
+  const result = submitAnswer(gameCode, playerId, answer);
+  if (!result.success) {
+    socket.emit("answer-rejected", {
+      reason: "submission-failed",
+      message: result.message,
+    });
+    return;
+  }
 
-      if (!result.success) {
-        socket.emit("answer-rejected", {
-          reason: "submission-failed",
-          message: result.message,
+  // (A) Update scoreboard for everyone (no card reveal)
+  io.to(gameCode).emit("score-updated", {
+    teams: game.teams.map(({ id, name, score }) => ({ id, name, score })),
+  });
+
+  // (B) PRIVATE reveal of the full board to the answering team (right or wrong)
+  const q = getCurrentQuestion(game);
+  if (q) {
+    const privateView = {
+      ...q,
+      answers: q.answers.map((a) => ({ ...a, revealed: true })),
+    };
+    io.to(teamId).emit("remaining-cards-revealed", {
+      game,
+      currentQuestion: privateView,
+    });
+    console.log(`🔒 Revealed ALL answers privately to ${playerTeam?.name}`);
+  }
+
+  // (C) Send the correctness result ONLY to the answering team
+  io.to(teamId).emit(result.isCorrect ? "answer-correct" : "answer-incorrect", {
+    ...result,
+    submittedText: answer,
+    singleAttempt: true,
+    revealRemainingAfterDelay: false, // don't let client auto-reveal globally
+    allCardsRevealed: false,
+  });
+
+  // (D) Let the other team know an answer was given (no reveal)
+  io.to(otherTeamId).emit("opponent-answered", {
+    message: `${playerTeam?.name || "Opponent"} has answered.`,
+    hideAnswers: true,
+  });
+
+  // (E) If BOTH teams answered, now do the global reveal + allow next question
+  if (game.lightningRoundSubmittedTeams.length === 2) {
+    setTimeout(() => {
+      const updatedGame = getGame(gameCode);
+      const q2 = getCurrentQuestion(updatedGame);
+      if (q2) {
+        q2.answers.forEach((a) => (a.revealed = true));
+        io.to(gameCode).emit("remaining-cards-revealed", {
+          game: updatedGame,
+          currentQuestion: q2,
         });
-        return;
       }
-
-      if (!result.success) {
-        socket.emit("answer-rejected", {
-          reason: "submission-failed",
-          message: result.message,
-        });
-        return;
-      }
-
-      if (result.isCorrect) {
-        io.to(gameCode).emit("answer-correct", {
-          ...result,
-          submittedText: answer,
-          singleAttempt: true,
-        });
-
-        if (result.revealRemainingAfterDelay) {
-          setTimeout(() => {
-            const updatedGame = getGame(gameCode);
-            const currentQuestion = getCurrentQuestion(updatedGame);
-            if (currentQuestion) {
-              currentQuestion.answers.forEach((a) => (a.revealed = true));
-              io.to(gameCode).emit("remaining-cards-revealed", {
-                game: updatedGame,
-                currentQuestion,
-              });
-            }
-
-            setTimeout(() => {
-              const readyGame = getGame(gameCode);
-              if (readyGame) {
-                readyGame.gameState.canAdvance = true;
-                updateGame(gameCode, readyGame);
-
-                io.to(gameCode).emit("question-complete", {
-                  game: readyGame,
-                  currentQuestion: getCurrentQuestion(readyGame),
-                });
-              }
-            }, 3000);
-          }, 2000);
-        }
-      } else {
-        io.to(gameCode).emit("answer-incorrect", {
-          ...result,
-          submittedText: answer,
-          singleAttempt: true,
-          allCardsRevealed: false,
-        });
-
-        if (game.lightningRoundSubmittedTeams.length === 2) {
-          setTimeout(() => {
-            const currentQuestion = getCurrentQuestion(game);
-
-            if (currentQuestion) {
-              currentQuestion.answers.forEach((a) => (a.revealed = true));
-              io.to(gameCode).emit("remaining-cards-revealed", {
-                game,
-                currentQuestion,
-              });
-            }
-            
-            setTimeout(() => {
-              const readyGame = getGame(gameCode);
-              if (readyGame) {
-                readyGame.gameState.canAdvance = true;
-                updateGame(gameCode, readyGame);
-
-                io.to(gameCode).emit("question-complete", {
-                  game: readyGame,
-                  currentQuestion: getCurrentQuestion(readyGame),
-                });
-              }
-            }, 3000);
-          }, 2000);
-        }
-        else {
-          // ✅ Switch turn to the other team (buzzer logic)
-          const [teamA, teamB] = game.teams;
-          const otherTeamId = teamA.id === teamId ? teamB.id : teamA.id;
-
-          // Keep the original buzzed team for tie-break purposes but switch the
-          // active team to allow the second team to answer.
-          game.activeTeamId = otherTeamId;
-          game.teams.forEach((t) => (t.active = t.id === otherTeamId));
-          game.gameState.inputEnabled = true;
-          game.gameState.currentTurn = otherTeamId.includes("team1")
-            ? "team1"
-            : "team2";
-
-          const updatedGame = updateGame(gameCode, game);
-
-          io.to(gameCode).emit("turn-changed", {
-            game: updatedGame,
-            newActiveTeam: updatedGame.gameState.currentTurn,
-            teamName: updatedGame.teams.find((t) => t.active)?.name || "Unknown",
-            currentQuestion: getCurrentQuestion(updatedGame),
+      setTimeout(() => {
+        const ready = getGame(gameCode);
+        if (ready) {
+          ready.gameState.canAdvance = true;
+          updateGame(gameCode, ready);
+          io.to(gameCode).emit("question-complete", {
+            game: ready,
+            currentQuestion: getCurrentQuestion(ready),
           });
-
-          console.log(`🔁 Switching to Team ${otherTeamId}`);
         }
-      }
-    }
+      }, 3000);
+    }, 1000);
+  } else {
+    // Only one team has answered -> switch turn to the other team on the SAME question
+    game.activeTeamId = otherTeamId;
+    game.teams.forEach((t) => (t.active = t.id === otherTeamId));
+    game.gameState.inputEnabled = true;
+    game.gameState.currentTurn = otherTeamId.includes("team1") ? "team1" : "team2";
+
+    const updatedGame = updateGame(gameCode, game);
+    io.to(gameCode).emit("turn-changed", {
+      game: updatedGame,
+      newActiveTeam: updatedGame.gameState.currentTurn,
+      teamName: updatedGame.teams.find((t) => t.active)?.name || "Unknown",
+      currentQuestion: getCurrentQuestion(updatedGame),
+    });
+    console.log(`🔁 Switching to ${updatedGame.teams.find((t) => t.active)?.name} for their Lightning attempt`);
+  }
+
+  return; // important: stop processing here for round 4
+}
+
+    
     else {
       // ✅ REGULAR ROUNDS
       const playerTeam = game.teams.find((t) => t.id === player.teamId);
@@ -360,11 +352,21 @@ export function setupPlayerEvents(socket, io) {
       }
 
       if (result.isCorrect) {
-        io.to(gameCode).emit("answer-correct", {
-          ...result,
-          submittedText: answer,
-          singleAttempt: true,
-        });
+  // Only show correct reveal to the team that answered
+  io.to(player.teamId).emit("answer-correct", {
+    ...result,
+    submittedText: answer,
+    singleAttempt: true,
+  });
+
+  // Inform other team that the question is being answered (no reveal)
+  const [teamA, teamB] = game.teams;
+  const otherTeamId = teamA.id === player.teamId ? teamB.id : teamA.id;
+  io.to(otherTeamId).emit("opponent-answered", {
+    message: `${playerTeam.name} has answered the question.`,
+    hideAnswers: true,
+  });
+
 
         if (result.revealRemainingAfterDelay) {
           setTimeout(() => {

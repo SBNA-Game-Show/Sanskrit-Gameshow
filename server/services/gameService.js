@@ -267,11 +267,20 @@ function startNewRound(game) {
       );
     }
   }
-  else {
-    //this would be (4-1)*6 = 18
-    //this is so that round 4 always starts at the correct question index
-    game.currentQuestionIndex = (game.currentRound - 1) * 6;
+else {
+  // ⚡ Lightning Round (Round 4) fix
+  const firstLightningQuestion = game.questions.find(q => q.round === 4);
+  if (firstLightningQuestion) {
+    game.currentQuestionIndex = game.questions.findIndex(
+      q => q._id === firstLightningQuestion._id
+    );
+    console.log(`⚡ Lightning Round started at index ${game.currentQuestionIndex}`);
+  } else {
+    console.error("⚠️ No Lightning Round questions found in game.questions!");
+    game.currentQuestionIndex = 0; // safe fallback
   }
+}
+
 
   // Update team active status
   updateTeamActiveStatus(game);
@@ -567,79 +576,67 @@ export function submitAnswer(gameCode, playerId, answerText) {
       };
     }
 
-    const matchingAnswer = checkAnswerMatch(answerText, currentQuestion.answers);
+   const matchingAnswer = checkAnswerMatch(answerText, currentQuestion.answers);
 
-    game.lightningRoundSubmittedTeams.push(player.teamId);
+// ✅ Clone answer so we don’t mutate shared DB object
+const safeAnswer = matchingAnswer ? { ...matchingAnswer } : null;
 
-    let result = {
-      success: true,
-      isCorrect: false,
-      pointsAwarded: 0,
-      matchingAnswer: null,
-      playerName: player.name,
-      teamName: playerTeam.name,
-      teamId: playerTeam.id,
-      game: null,
-      shouldAdvance: true,
-      revealAllCards: false,
-      revealRemainingAfterDelay: false,
-      submittedText: answerText,
-      singleAttempt: true,
-    };
-    
-    if (matchingAnswer) {
-      //console.log(matchingAnswer)
-      matchingAnswer.revealed = true;
-      const points = matchingAnswer.score * game.currentRound;
+game.lightningRoundSubmittedTeams.push(player.teamId);
 
-      playerTeam.score += points;
-      playerTeam.currentRoundScore += points;
+let result = {
+  success: true,
+  isCorrect: false,
+  pointsAwarded: 0,
+  matchingAnswer: safeAnswer,
+  playerName: player.name,
+  teamName: playerTeam.name,
+  teamId: playerTeam.id,
+  game: null,
+  shouldAdvance: true,
+  revealAllCards: false,
+  revealRemainingAfterDelay: false,
+  submittedText: answerText,
+  singleAttempt: true,
+};
 
-      if (matchingAnswer.score <= 0) {
-        result.isCorrect = false;
-      }
-      else {
-        result.isCorrect = true;
-      }
-      
-      result.pointsAwarded = points;
-      result.matchingAnswer = matchingAnswer;
-      result.revealRemainingAfterDelay = true; // Reveal remaining cards after 2 seconds
+if (safeAnswer) {
+  safeAnswer.revealed = true; // ✅ reveal only in this team’s copy
+  const points = safeAnswer.score * game.currentRound;
 
-      // Update question data
-      const teamKey = game.gameState.currentTurn;
-      const currentRound = game.currentRound;
-      const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
-      updateQuestionData(
-        game,
-        teamKey,
-        currentRound,
-        questionNumber,
-        true,
-        points
-      );
+  playerTeam.score += points;
+  playerTeam.currentRoundScore += points;
 
-      console.log(
-        `✅ Correct answer: "${answerText}" = "${matchingAnswer.answer}" (+${points} pts) - Will reveal remaining cards after 2s`
-      );
-    } else {
-      // Wrong answer - REVEAL ALL CARDS IMMEDIATELY
-      result.isCorrect = false;
-      result.revealAllCards = false;
+  result.isCorrect = true;
+  result.pointsAwarded = points;
+  result.matchingAnswer = safeAnswer;
+  result.revealRemainingAfterDelay = true;
 
-      // Update question data for wrong attempt
-      const teamKey = game.gameState.currentTurn;
-      const currentRound = game.currentRound;
-      const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
-      updateQuestionData(game, teamKey, currentRound, questionNumber, false, 0);
+  const teamKey = game.gameState.currentTurn;
+  const currentRound = game.currentRound;
+  const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
 
-      console.log(
-        `❌ Wrong answer: "${answerText}" - All cards revealed, moving to next question`
-      );
-    }
+  updateQuestionData(game, teamKey, currentRound, questionNumber, true, points);
 
-    result.game = games[gameCode];
-    return result;
+  console.log(
+    `✅ Correct answer: "${answerText}" = "${safeAnswer.answer}" (+${points} pts)`
+  );
+} else {
+  // ❌ Wrong answer - no reveal to other team
+  result.isCorrect = false;
+  result.revealAllCards = false;
+
+  const teamKey = game.gameState.currentTurn;
+  const currentRound = game.currentRound;
+  const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
+
+  updateQuestionData(game, teamKey, currentRound, questionNumber, false, 0);
+
+  console.log(`❌ Wrong answer: "${answerText}"`);
+}
+result.revealRemainingAfterDelay = false; // handled in playerEvents only
+result.game = games[gameCode];
+return result;
+
   }
 
   // ✅ REGULAR ROUND LOGIC
