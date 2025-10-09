@@ -4,6 +4,18 @@ import { QUESTION_LEVEL } from "../utils/constants.js";
 import { SCHEMA_MODELS } from "../utils/enums.js";
 import { getQuestions } from "./questionService.js";
 
+function shuffleAnswers(array) {
+  const arr = [...array]
+
+  // Use Fisher-Yates shuffle
+  for (let i = arr.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr;
+}
+
 export async function prepareGameQuestions() {
   const { inputQuestions, mcqQuestions } = await getQuestions(SCHEMA_MODELS.FINALQUESTION);
 
@@ -56,10 +68,14 @@ export async function prepareGameQuestions() {
   // --- Add Round 4 Lightning Questions ---
   const updatedMcqQuestions = mcqQuestions.map((q, index) => ({
     ...q,
+    answers: shuffleAnswers(q.answers),
     round: 4,
     questionNumber: index + 1,
     teamAssignment: "shared",
   }));
+
+  console.log("sdf")
+  console.log(updatedMcqQuestions)
 
   // --- Save into GameQuestion collection ---
   await GameQuestion.deleteMany();
