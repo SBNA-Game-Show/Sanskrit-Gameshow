@@ -17,7 +17,6 @@ const gameQuestionSchema = new Schema(
     _id: { type: String },
     question: { type: String, required: true, trim: true },
     round: { type: Number },
-    isLightningRound: { type: Boolean, default: false }, 
     questionType: {
       type: String,
       enum: Object.values(QUESTION_TYPE),
