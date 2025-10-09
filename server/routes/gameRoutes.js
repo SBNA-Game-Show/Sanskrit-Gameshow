@@ -39,7 +39,6 @@ router.get("/", (req, res) => {
 // Host clicks a button to create a new game. Questions are loaded
 // for the game object before game is created. Full Game Data object can
 // be found in gameService.js
-// lol
 router.post("/api/create-game", async (req, res) => {
   try {
     console.log("🎮 Create game request received");
