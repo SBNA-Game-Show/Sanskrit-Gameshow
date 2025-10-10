@@ -207,6 +207,12 @@ export function setupHostEvents(socket, io) {
       })
     }
 
+    // Reset active team id
+    const activeTeam = game.teams.find( team => team.active);
+    if (activeTeam) {
+      game.activeTeamId = activeTeam.id
+    }
+
     if (
       game &&
       game.hostId === socket.id &&

@@ -200,12 +200,25 @@ const GameBoard: React.FC<GameBoardProps> = ({
           <div
             key={index}
             className={`answer-card glass-card transition-all ${
-              answer.revealed
-                ? "bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
-                : "hover:border-blue-400"
-            } ${
-              isHost && (!answer.revealed || overrideMode) ? "cursor-pointer" : ""
+              currentQuestion.questionType === "MCQ" && answer.revealed && answer.score > 0
+                ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
+                : currentQuestion.questionType === "MCQ" && answer.revealed && answer.score <= 0
+                ? "!bg-gradient-to-r from-red-600/30 to-red-600/30 border-red-400 animate-pulse"
+                : currentQuestion.questionType === "MCQ"
+                ? "bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400"
+                : answer.revealed && answer.score > 0
+                ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
+                : "border-slate-500/50"
             }`}
+
+            // className={`answer-card glass-card transition-all ${
+            //   answer.revealed
+            //     ? "bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
+            //     : "hover:border-blue-400"
+            // } ${
+            //   isHost && (!answer.revealed || overrideMode) ? "cursor-pointer" : ""
+            // }`}
+            
             onClick={() => {
               if (overrideMode) {
                 onSelectAnswer?.(index);

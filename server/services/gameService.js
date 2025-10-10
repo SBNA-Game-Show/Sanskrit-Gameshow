@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { GameQuestion } from "../models/gameQuestion.model.js";
+import fs from "fs";
 
 // In-memory storage
 export let games = {};
@@ -566,7 +566,8 @@ export function submitAnswer(gameCode, playerId, answerText) {
     return response;
   }
 
-  if (game.currentRound === 4) {
+  // LIGHTNING ROUND LOGIC
+  if (game.currentRound === 4) { 
     if (!game.lightningRoundSubmittedTeams) game.lightningRoundSubmittedTeams = [];
 
     if (game.lightningRoundSubmittedTeams.includes(player.teamId)) {
@@ -598,13 +599,13 @@ export function submitAnswer(gameCode, playerId, answerText) {
     };
     
     if (matchingAnswer) {
-      //console.log(matchingAnswer)
       matchingAnswer.revealed = true;
       const points = matchingAnswer.score * game.currentRound;
 
       playerTeam.score += points;
       playerTeam.currentRoundScore += points;
 
+      // Matching answers worth 0 points are considered incorrect
       if (matchingAnswer.score <= 0) {
         result.isCorrect = false;
       }
@@ -629,25 +630,17 @@ export function submitAnswer(gameCode, playerId, answerText) {
         points
       );
 
-      console.log(
+      if (result.isCorrect) {
+        console.log(
         `✅ Correct answer: "${answerText}" = "${matchingAnswer.answer}" (+${points} pts) - Will reveal remaining cards after 2s`
-      );
-    } else {
-      // Wrong answer
-      result.isCorrect = false;
-      result.revealAllCards = false;
-
-      // Update question data for wrong attempt
-      const teamKey = game.gameState.currentTurn;
-      const currentRound = game.currentRound;
-      const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
-      updateQuestionData(game, teamKey, currentRound, questionNumber, false, 0);
-
-      console.log(
-        `❌ Wrong answer: "${answerText}" - All cards revealed, moving to next question`
-      );
-    }
-
+        );
+      }
+      else {
+        console.log(
+        `❌ Wrong answer: "${answerText}" `
+        );
+      }
+    } 
     result.game = games[gameCode];
     return result;
   }
@@ -899,6 +892,8 @@ export function getPlayer(playerId) {
 // Update game
 export function updateGame(gameCode, updates) {
   if (games[gameCode]) {
+    const jsonString = JSON.stringify(games[gameCode], null, 2);
+    fs.writeFileSync("../gameObjectLog.json", jsonString);
     // console.log(games[gameCode].gameState.currentTurn);
     Object.assign(games[gameCode], updates);
     return games[gameCode];

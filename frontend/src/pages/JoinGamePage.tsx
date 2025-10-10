@@ -633,7 +633,7 @@ const JoinGamePage: React.FC = () => {
                       </div>
                     )
                   )
-                ) : isMyTurn ? (
+                ) : isMyTurn && game?.activeTeamId ? (
                   <div className="max-w-md mx-auto">
                     <input
                       type="text"

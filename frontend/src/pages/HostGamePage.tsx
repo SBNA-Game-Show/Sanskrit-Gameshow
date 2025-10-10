@@ -708,6 +708,7 @@ const HostGamePage: React.FC = () => {
               </Button> */}
               <Button
                 onClick={game.currentRound === 4 ? handlePauseTimer : handleForceNextQuestion}
+                disabled={game.currentRound === 4 && game.pauseTimer}
                 variant="secondary"
                 size="sm"
                 className="text-xs py-1 px-3"

@@ -95,7 +95,6 @@ export function setupPlayerEvents(socket, io) {
   });
 
   // UPDATED: Submit answer with SINGLE ATTEMPT system
-  // UPDATED: Submit answer with SINGLE ATTEMPT system
   socket.on("submit-answer", (data) => {
     const { gameCode, playerId, answer } = data;
     const game = getGame(gameCode);
@@ -332,6 +331,8 @@ export function setupPlayerEvents(socket, io) {
       }
 
       const result = submitAnswer(gameCode, playerId, answer);
+      //Setting activeTeamId to null prevents usage of input field after submitting answer
+      game.activeTeamId = null;
 
       if (!result.success) {
         socket.emit("answer-rejected", {
@@ -342,8 +343,7 @@ export function setupPlayerEvents(socket, io) {
       }
 
       if (result.isCorrect) {
-        // Only show correct reveal to the team that answered
-        io.to(player.teamId).emit("answer-correct", {
+        io.to(gameCode).emit("answer-correct", {
           ...result,
           submittedText: answer,
           singleAttempt: true,
