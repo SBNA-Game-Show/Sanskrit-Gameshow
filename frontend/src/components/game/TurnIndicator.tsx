@@ -40,7 +40,7 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
             🎯 {activeTeam?.name}'s Turn
           </h3>
           <p className="text-sm text-slate-300">
-            Question {questionNumber} of {round === 0 ? 1 : 3} •{' '}
+            Question {questionNumber} of {round === 0 ? 1 : round === 4 ? 7 : 3} •{' '}
             {round === 0 ? 'Toss-up Round' : `Round ${round}`}
           </p>
           <p className="text-xs text-slate-400 mt-1">
