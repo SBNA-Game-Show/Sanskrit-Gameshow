@@ -69,7 +69,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 : "bg-gray-600 text-gray-300 border-gray-500"
             }`}
           >
-            {roundNum}
+            {roundNum===4 ? 'LR': roundNum}
           </div>
           {roundNum < 4 && (
             <div

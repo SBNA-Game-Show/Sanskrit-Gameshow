@@ -286,7 +286,7 @@ const RoundSummaryComponent: React.FC<RoundSummaryProps> = ({
                             : "bg-slate-300 text-slate-500"
                         }`}
                       >
-                        {roundNum}
+                        {roundNum===4 ? 'LR': roundNum}
                       </div>
                       {roundNum < 4 && (
                         <div
