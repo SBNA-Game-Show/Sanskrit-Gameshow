@@ -774,6 +774,11 @@ export function advanceGameState(gameCode) {
       // Move to next lightning round question
       game.currentQuestionIndex = nextQuestionIndex;
     }
+
+      
+      game.gameState.questionsAnswered.team1 += 1;
+      game.gameState.questionsAnswered.team2 += 1;
+      
   } else {
     // Original logic for rounds 1-3
     const currentTeam = game.gameState.currentTurn;
