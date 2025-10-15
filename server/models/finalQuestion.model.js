@@ -19,8 +19,6 @@ const finalQuestionSchema = new Schema(
       enum: Object.values(QUESTION_CATEGORY),
       required: false,
     },
-     isLightningRound: { type: Boolean, default: false },
-    round: { type: Number, default: 1 },
     questionLevel: {
       type: String,
       enum: Object.values(QUESTION_LEVEL),
