@@ -8,28 +8,47 @@ import { QUESTION_LEVEL, QUESTION_TYPE } from "../utils/constants.js";
 async function getQuestions(collection) {
   try {
     // --- Round 1: Beginner Input Questions ---
-    const beginnerInputQuestions = await collection.aggregate([
-      { $match: { questionType: QUESTION_TYPE.INPUT, questionLevel: QUESTION_LEVEL.BEGINNER } },
-      { $sample: { size: 6 } }
-    ])
+    const beginnerInputQuestions = await collection.find({
+      questionType: QUESTION_TYPE.INPUT,
+      used: { $ne: true },
+      questionLevel: QUESTION_LEVEL.BEGINNER,
+    })
+      .select("_id question questionCategory questionLevel questionType answers timestamps")
+      .sort({ createdAt: 1 })
+      .limit(6);
 
     // --- Round 2: Intermediate Input Questions ---
-    const intermediateInputQuestions = await collection.aggregate([
-      { $match: { questionType: QUESTION_TYPE.INPUT, questionLevel: QUESTION_LEVEL.INTERMEDIATE } },
-      { $sample: { size: 7 } }
-    ])
+    const intermediateInputQuestions = await collection.find({
+      questionType: QUESTION_TYPE.INPUT,
+      used: { $ne: true },
+      questionLevel: QUESTION_LEVEL.INTERMEDIATE,
+    })
+      .select("_id question questionCategory questionLevel questionType answers timestamps")
+      .sort({ createdAt: 1 })
+      .limit(7);
 
     // --- Round 3: Advanced Input Questions ---
-    const advancedInputQuestions = await collection.aggregate([
-      { $match: { questionType: QUESTION_TYPE.INPUT, questionLevel: QUESTION_LEVEL.ADVANCED } },
-      { $sample: { size: 6 } }
-    ])
+    const advancedInputQuestions = await collection.find({
+      questionType: QUESTION_TYPE.INPUT,
+      used: { $ne: true },
+      questionLevel: QUESTION_LEVEL.ADVANCED,
+    })
+      .select("_id question questionCategory questionLevel questionType answers timestamps")
+      .sort({ createdAt: 1 })
+      .limit(6);
+// --- Round 4 (Lightning / MCQ) ---
+const lightningQuestions = await collection
+  .find({
+    // match MCQ regardless of casing or missing round/isLightningRound fields
+    questionType: { $in: [QUESTION_TYPE.MCQ, "MCQ", "Mcq", "mcq"] },
+  })
+  .select("_id question questionCategory questionLevel questionType answers")
+  .sort({ createdAt: 1, _id: 1 })
+  .limit(7);
 
-    // --- Round 4 (Lightning / MCQ) ---
-    const mcqQuestions = await collection.aggregate([
-      { $match: { questionType: QUESTION_TYPE.MCQ } },
-      { $sample: { size: 7 } }
-    ])
+    // 🧩 Debug output to confirm data fetch
+    console.log("⚡ [DB] Lightning questions found:", lightningQuestions.length);
+    console.log("⚡ [DB] Lightning titles:", lightningQuestions.map(q => q.question));
 
     // --- Merge Input Rounds ---
     const inputQuestions = [
@@ -44,7 +63,7 @@ async function getQuestions(collection) {
       throw new ApiError(404, "Less than 19 questions in the DB. Game needs 19.");
     }
 
-    return { inputQuestions, mcqQuestions };
+    return { inputQuestions, lightningQuestions };
 
   } catch (error) {
     console.error("❌ Error in getQuestions():", error);

@@ -340,14 +340,6 @@ const HostGamePage: React.FC = () => {
       setOverrideMode(false);
     });
 
-    socket.on("skipped-to-lightning-round", (data) => {
-      console.log("Game skipped to lightning round:", data);
-      setGame(data.game);
-      setRoundSummary(null);
-      setControlMessage(data.message || "Skipped to the lightning round.");
-      setOverrideMode(false);
-    });
-
     socket.on("connect_error", (error) => {
       console.error("❌ Socket connection error:", error);
       setControlMessage("Connection error. Please try again.");
@@ -507,12 +499,6 @@ const HostGamePage: React.FC = () => {
       socketRef.current.emit("reset-game", { gameCode });
     }
   };
-
-  const handleSkipToLightningRound = () => {
-    if (gameCode && socketRef.current) {
-      socketRef.current.emit("skip-to-lightning-round", { gameCode });
-    }
-  }
 
   // Request updated player list periodically when in waiting state
   useEffect(() => {
@@ -756,7 +742,6 @@ const HostGamePage: React.FC = () => {
               </Button> */}
               <Button
                 onClick={game.currentRound === 4 ? handlePauseTimer : handleForceNextQuestion}
-                disabled={game.currentRound === 4 && game.pauseTimer}
                 variant="secondary"
                 size="sm"
                 className="text-xs py-1 px-3"
@@ -780,14 +765,6 @@ const HostGamePage: React.FC = () => {
                 className="text-xs py-1 px-3"
               >
                 🔄 Reset
-              </Button>
-              <Button
-                onClick={handleSkipToLightningRound}
-                variant="secondary"
-                size="sm"
-                className="text-xs py-1 px-3"
-              >
-                🔄 Skip
               </Button>
             </div>
           </div>

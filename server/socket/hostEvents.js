@@ -207,12 +207,6 @@ export function setupHostEvents(socket, io) {
       })
     }
 
-    // Reset active team id
-    const activeTeam = game.teams.find( team => team.active);
-    if (activeTeam) {
-      game.activeTeamId = activeTeam.id
-    }
-
     if (
       game &&
       game.hostId === socket.id &&
@@ -400,65 +394,6 @@ export function setupHostEvents(socket, io) {
       console.log(`🔄 Game reset successfully with question data: ${gameCode}`);
     }
   });
-
-  socket.on("skip-to-lightning-round", (data) => {
-    const { gameCode } = data;
-    const game = getGame(gameCode);
-
-    if (game && game.hostId === socket.id) {
-      console.log(`🔄 Host resetting game: ${gameCode}`);
-
-      // Reset game to initial state but keep players
-      const resetUpdates = {
-        status: "active",
-        currentQuestionIndex: 18,
-        currentRound: 4,
-        teams: game.teams.map(team => ({ ...team, active: false })),
-        gameState: {
-          ...game.gameState,
-          currentTurn: null,
-          questionsAnswered: { team1: 0, team2: 0 },
-          roundScores: {
-            round1: { team1: 0, team2: 0 },
-            round2: { team1: 0, team2: 0 },
-            round3: { team1: 0, team2: 0 },
-          },
-          awaitingAnswer: false,
-          canAdvance: false,
-          currentQuestionAttempts: 0,
-          maxAttemptsPerQuestion: 3,
-          questionData: initializeQuestionData(), // Reset question data
-          tossUpQuestion: game.gameState.tossUpQuestion
-            ? JSON.parse(JSON.stringify(game.gameState.tossUpQuestion))
-            : undefined,
-          tossUpAnswers: [],
-          tossUpSubmittedTeams: [],
-        },
-      };
-
-      game.buzzedTeamId = null;
-      game.activeTeamId = null;
-      game.tossUpWinner = null;
-      game.tossUpAnswers = [];
-      game.tossUpSubmittedTeams = [];
-      game.lightningRoundSubmittedTeams = [],
-      game.pauseTimer = false,
-
-      // Reset all question answers
-      game.questions.forEach((question) => {
-        question.answers.forEach((answer) => {
-          answer.revealed = false;
-        });
-      });
-
-      const resetGame = updateGame(gameCode, resetUpdates);
-
-      io.to(gameCode).emit("skipped-to-lightning-round", {
-        game: resetGame,
-        message: "Game has been reset by the host",
-      });
-    }
-  })
 
   // Get current game state (for host dashboard)
   socket.on("get-game-state", (data) => {

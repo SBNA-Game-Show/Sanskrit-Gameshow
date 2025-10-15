@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import fs from "fs";
+import { GameQuestion } from "../models/gameQuestion.model.js";
 
 // In-memory storage
 export let games = {};
@@ -566,8 +566,6 @@ export function submitAnswer(gameCode, playerId, answerText) {
     return response;
   }
 
-  // LIGHTNING ROUND LOGIC
-  if (game.currentRound === 4) { 
   // ✅ LIGHTNING ROUND LOGIC (Round 4)
   if (game.currentRound === 4) {
     if (!game.lightningRoundSubmittedTeams) game.lightningRoundSubmittedTeams = [];
@@ -943,8 +941,6 @@ export function getPlayer(playerId) {
 // Update game
 export function updateGame(gameCode, updates) {
   if (games[gameCode]) {
-    const jsonString = JSON.stringify(games[gameCode], null, 2);
-    fs.writeFileSync("../gameObjectLog.json", jsonString);
     // console.log(games[gameCode].gameState.currentTurn);
     Object.assign(games[gameCode], updates);
     return games[gameCode];

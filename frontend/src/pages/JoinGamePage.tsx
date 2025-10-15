@@ -270,12 +270,6 @@ const JoinGamePage: React.FC = () => {
       setRoundSummary(null);
       setGameMessage(data.message || "Game has been reset.");
     },
-    onSkippedToLightningRound: (data: any) => {
-      console.log("Game reset received:", data);
-      setGame(data.game);
-      setRoundSummary(null);
-      setGameMessage(data.message || "Game has been reset.");
-    }
   });
 
   // Periodically request updated player list from server
@@ -639,7 +633,7 @@ const JoinGamePage: React.FC = () => {
                       </div>
                     )
                   )
-                ) : isMyTurn && game?.activeTeamId ? (
+                ) : isMyTurn ? (
                   <div className="max-w-md mx-auto">
                     <input
                       type="text"
