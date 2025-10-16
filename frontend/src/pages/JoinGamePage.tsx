@@ -547,6 +547,8 @@ const JoinGamePage: React.FC = () => {
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
           <div className="bg-[#FEFEFC] rounded p-4 mt-2">
+
+            {/* START OF PLAYER INPUT FIELDS (answer input, buzzer, etc) */}
             {player.teamId ? (
               <div>
                 {/* Game Status Message */}
@@ -565,18 +567,18 @@ const JoinGamePage: React.FC = () => {
                   </div>
                 )}
   
-                {/* Toss-up or Answer input */}
+                {/* TOSS UP ROUND */}
                 {game.currentRound === 0 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
                         onBuzz={handleBuzzIn}
-                        disabled={hasBuzzed || !!game.buzzedTeamId}
+                        disabled={hasBuzzed || !!game.buzzedTeamId || game.gameState.canAdvance}
                         teamName={myTeam?.name}
                       />
                     </div>
                   ) : (
-                    canAnswer ? (
+                    canAnswer && game?.activeTeamId ? (
                       <div className="max-w-md mx-auto">
                         <input
                           type="text"
@@ -612,12 +614,14 @@ const JoinGamePage: React.FC = () => {
                     )
                     
                   )
-                ) : game.currentRound === 4 ? (
+                ) : 
+                // LIGHTNING ROUND
+                game.currentRound === 4 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
                         onBuzz={handleBuzzIn}
-                        disabled={hasBuzzed || !!game.buzzedTeamId}
+                        disabled={hasBuzzed || !!game.buzzedTeamId || game.pauseTimer}
                         teamName={myTeam?.name}
                       />
                     </div>
@@ -639,7 +643,9 @@ const JoinGamePage: React.FC = () => {
                       </div>
                     )
                   )
-                ) : isMyTurn && game?.activeTeamId ? (
+                ) : 
+                // STANDARD ROUNDS
+                isMyTurn && game?.activeTeamId ? (
                   <div className="max-w-md mx-auto">
                     <input
                       type="text"
@@ -682,6 +688,8 @@ const JoinGamePage: React.FC = () => {
                 </p>
               </div>
             )}
+            {/* END OF PLAYER INPUT FIELDS */}
+
           </div>
         </div>
 

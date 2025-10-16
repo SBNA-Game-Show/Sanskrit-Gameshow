@@ -4,6 +4,7 @@ import {
   startGame,
   continueToNextRound,
   getCurrentQuestion,
+  calculateTossUpSummary,
   calculateRoundSummary,
   initializeQuestionData,
   updateQuestionData,
@@ -107,6 +108,39 @@ export function setupHostEvents(socket, io) {
     }
   });
 
+  // Continue to the toss up round summary screen
+  socket.on("complete-toss-up-round", (data) => {
+    const { gameCode } = data;
+    const game = getGame(gameCode);
+
+    if (game && game.hostId === socket.id) {
+      const summary = calculateTossUpSummary(game);
+      console.log(summary);
+      game.status = "round-summary";
+
+      // activeTeamId must be set from null to the starting teamId
+      // Set the first team that buzzed in as the default starting team
+      // If buzzedTeamId is falsy set team one as default
+      if (!summary.tossUpWinner) {
+        if (game.buzzedTeamId) {
+          game.activeTeamId = game.buzzedTeamId;
+        }
+        else {
+          game.activeTeamId = game.teams[0].id;
+        }
+      } 
+      // Else, set activeTeamId to the winner team id
+      else {
+        game.activeTeamId = summary.tossUpWinner.teamId;
+      }
+
+      io.to(gameCode).emit("round-complete", {
+        game,
+        roundSummary: summary,
+        isGameFinished: false,
+      });
+    }
+  });
 
   // Continue to next round (from round summary screen)
   socket.on("continue-to-next-round", (data) => {
@@ -183,6 +217,7 @@ export function setupHostEvents(socket, io) {
 
         // Allow host to manually advance like a normal question
         game.gameState.canAdvance = true;
+        game.activeTeamId = null;
         const updatedGame = updateGame(gameCode, game);
 
         io.to(gameCode).emit("question-complete", {
