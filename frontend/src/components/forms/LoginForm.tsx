@@ -133,6 +133,7 @@ const LoginForm: React.FC = () => {
               </label>
               <div className="relative">
                 <input
+                  data-testid="username-input"
                   type="text"
                   id="username"
                   name="username"
@@ -156,6 +157,7 @@ const LoginForm: React.FC = () => {
               </label>
               <div className="relative">
                 <input
+                  data-testid="password-input"
                   type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
