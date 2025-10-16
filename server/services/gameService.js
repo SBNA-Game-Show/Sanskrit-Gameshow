@@ -322,7 +322,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
         score: 0,
         active: false,
         members: [],
-        roundScores: [0, 0, 0],
+        roundScores: [0, 0, 0, 0],
         currentRoundScore: 0,
       },
       {
@@ -331,7 +331,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
         score: 0,
         active: false,
         members: [],
-        roundScores: [0, 0, 0],
+        roundScores: [0, 0, 0, 0],
         currentRoundScore: 0,
       },
     ],
@@ -353,6 +353,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
         round1: { team1: 0, team2: 0 },
         round2: { team1: 0, team2: 0 },
         round3: { team1: 0, team2: 0 },
+        round4: { team1: 0, team2: 0 },
       },
       tossUpQuestion: JSON.parse(JSON.stringify(tossUpQuestion)),
       tossUpAnswers: [], // Stores both team responses

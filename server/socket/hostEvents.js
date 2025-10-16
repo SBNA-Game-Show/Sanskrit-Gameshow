@@ -332,6 +332,7 @@ export function setupHostEvents(socket, io) {
             round1: { team1: 0, team2: 0 },
             round2: { team1: 0, team2: 0 },
             round3: { team1: 0, team2: 0 },
+            round4: { team1: 0, team2: 0 },
           },
           awaitingAnswer: false,
           canAdvance: false,
@@ -363,7 +364,7 @@ export function setupHostEvents(socket, io) {
       game.teams.forEach((team) => {
         team.score = 0;
         team.active = false;
-        team.roundScores = [0, 0, 0];
+        team.roundScores = [0, 0, 0, 0];
         team.currentRoundScore = 0;
       });
 
@@ -406,33 +407,50 @@ export function setupHostEvents(socket, io) {
     const game = getGame(gameCode);
 
     if (game && game.hostId === socket.id) {
-      console.log(`🔄 Host resetting game: ${gameCode}`);
+      console.log(`🔄 Host skipping to the lightning round: ${gameCode}`);
+
+      const updatedRoundScoreTeamOne = game.teams[0].roundScores.map((score, idx) => {
+        if (idx === game.currentRound - 1) {
+          return game.teams[0].currentRoundScore
+        }
+        return 0;
+      });
+      const updatedRoundScoreTeamTwo = game.teams[1].roundScores.map((score, idx) => {
+        if (idx === game.currentRound - 1) {
+          return game.teams[1].currentRoundScore
+        }
+        return 0;
+      });
+      const updatedRoundScores = [
+        updatedRoundScoreTeamOne,
+        updatedRoundScoreTeamTwo
+      ]
+      console.log(updatedRoundScores);
 
       // Reset game to initial state but keep players
-      const resetUpdates = {
+      const skipUpdates = {
         status: "active",
         currentQuestionIndex: 18,
         currentRound: 4,
-        teams: game.teams.map(team => ({ ...team, active: false })),
+        teams: game.teams.map((team, idx) => ({ 
+          ...team, 
+          score: team.roundScores.reduce((total, num) => total + num, 0),
+          active: false,
+          roundScores: updatedRoundScores[idx],
+          currentRoundScore: 0
+        })),
         gameState: {
           ...game.gameState,
           currentTurn: null,
           questionsAnswered: { team1: 0, team2: 0 },
           roundScores: {
-            round1: { team1: 0, team2: 0 },
-            round2: { team1: 0, team2: 0 },
-            round3: { team1: 0, team2: 0 },
+            ...game.gameState.roundScores,
+            round4: {team1: 0, team2: 0}
           },
           awaitingAnswer: false,
           canAdvance: false,
           currentQuestionAttempts: 0,
           maxAttemptsPerQuestion: 3,
-          questionData: initializeQuestionData(), // Reset question data
-          tossUpQuestion: game.gameState.tossUpQuestion
-            ? JSON.parse(JSON.stringify(game.gameState.tossUpQuestion))
-            : undefined,
-          tossUpAnswers: [],
-          tossUpSubmittedTeams: [],
         },
       };
 
@@ -444,18 +462,19 @@ export function setupHostEvents(socket, io) {
       game.lightningRoundSubmittedTeams = [],
       game.pauseTimer = false,
 
-      // Reset all question answers
+      // Reset all question answers 
+      // This will also reset the lightning round if you want to reset/skip to it multiple times
       game.questions.forEach((question) => {
         question.answers.forEach((answer) => {
           answer.revealed = false;
         });
       });
 
-      const resetGame = updateGame(gameCode, resetUpdates);
+      const updatedGame = updateGame(gameCode, skipUpdates);
 
       io.to(gameCode).emit("skipped-to-lightning-round", {
-        game: resetGame,
-        message: "Game has been reset by the host",
+        game: updatedGame,
+        message: "Host has skipped to the lightning round",
       });
     }
   })
