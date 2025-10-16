@@ -567,114 +567,123 @@ export function submitAnswer(gameCode, playerId, answerText) {
   }
 
   // ✅ LIGHTNING ROUND LOGIC (Round 4)
-  if (game.currentRound === 4) {
-    if (!game.lightningRoundSubmittedTeams) game.lightningRoundSubmittedTeams = [];
+  // ✅ LIGHTNING ROUND LOGIC (Round 4)
+if (game.currentRound === 4) {
+  if (!game.lightningRoundSubmittedTeams) game.lightningRoundSubmittedTeams = [];
 
-    // Check if this team has already answered THIS SPECIFIC QUESTION
-    const currentQuestionId = currentQuestion._id;
-    const teamQuestionKey = `${currentQuestionId}_${player.teamId}`;
-    
-    if (game.lightningRoundSubmittedTeams.includes(teamQuestionKey)) {
-      return {
-        success: false,
-        message: "Your team has already answered this question",
-      };
-    }
-
-    const matchingAnswer = checkAnswerMatch(answerText, currentQuestion.answers);
-    const teamKey = player.teamId.includes("team1") ? "team1" : "team2";
-    const otherTeamKey = teamKey === "team1" ? "team2" : "team1";
-
-    // Mark this team as having answered this specific question
-    game.lightningRoundSubmittedTeams.push(teamQuestionKey);
-
-    let result = {
-      success: true,
-      isCorrect: false,
-      pointsAwarded: 0,
-      matchingAnswer: null,
-      playerName: player.name,
-      teamName: playerTeam.name,
-      teamId: playerTeam.id,
-      game: null,
-      shouldAdvance: false, // Don't auto-advance in lightning round
-      revealAllCards: false,
-      revealRemainingAfterDelay: false,
-      submittedText: answerText,
-      singleAttempt: true,
-      lightningRound: true,
+  // Check if this team has already answered THIS SPECIFIC QUESTION
+  const currentQuestionId = currentQuestion._id;
+  const teamQuestionKey = `${currentQuestionId}_${player.teamId}`;
+  
+  if (game.lightningRoundSubmittedTeams.includes(teamQuestionKey)) {
+    return {
+      success: false,
+      message: "Your team has already answered this question",
     };
-
-    if (matchingAnswer && matchingAnswer.score > 0) {
-      // Correct answer
-      matchingAnswer.revealed = true;
-      const points = matchingAnswer.score * game.currentRound;
-
-      playerTeam.score += points;
-      playerTeam.currentRoundScore += points;
-
-      result.isCorrect = true;
-      result.pointsAwarded = points;
-      result.matchingAnswer = matchingAnswer;
-      result.revealRemainingAfterDelay = true;
-      result.shouldAdvance = true; // Advance to next question on correct answer
-
-      // Update question data for CORRECT team
-      const questionNumber = game.currentQuestionIndex - game.questions.findIndex(q => q.round === 4) + 1;
-      updateQuestionData(
-        game,
-        teamKey,
-        4,
-        questionNumber,
-        true,
-        points
-      );
-
-      // Mark the OTHER team as incorrect for this question (they didn't get it right)
-      updateQuestionData(
-        game,
-        otherTeamKey,
-        4,
-        questionNumber,
-        false,
-        0
-      );
-
-      console.log(`✅ Lightning Round: ${playerTeam.name} answered correctly: "${answerText}" = "${matchingAnswer.answer}" (+${points} pts)`);
-    } else {
-      // Wrong answer
-      result.isCorrect = false;
-      result.revealAllCards = false;
-      result.shouldAdvance = false; // Don't advance yet - wait to see if other team answers
-
-      // Update question data for WRONG attempt
-      const questionNumber = game.currentQuestionIndex - game.questions.findIndex(q => q.round === 4) + 1;
-      updateQuestionData(game, teamKey, 4, questionNumber, false, 0);
-
-      console.log(`❌ Lightning Round: ${playerTeam.name} answered incorrectly: "${answerText}"`);
-
-      // Check if the other team has already answered this question
-      const otherTeamQuestionKey = `${currentQuestionId}_${game.teams.find(t => t.id.includes(otherTeamKey)).id}`;
-      const otherTeamAnswered = game.lightningRoundSubmittedTeams.includes(otherTeamQuestionKey);
-
-      if (!otherTeamAnswered) {
-        // Other team hasn't answered yet - wait for them
-        console.log(`🔄 Lightning Round: Waiting for ${otherTeamKey} to answer`);
-        result.waitingForOtherTeam = true;
-      } else {
-        // Both teams answered incorrectly - reveal all and move on
-        currentQuestion.answers.forEach((answer) => {
-          answer.revealed = true;
-        });
-        result.revealAllCards = true;
-        result.shouldAdvance = true;
-        console.log(`❌ Lightning Round: Both teams answered incorrectly - revealing all answers and advancing`);
-      }
-    }
-
-    result.game = games[gameCode];
-    return result;
   }
+
+  const matchingAnswer = checkAnswerMatch(answerText, currentQuestion.answers);
+  const teamKey = player.teamId.includes("team1") ? "team1" : "team2";
+  const otherTeamKey = teamKey === "team1" ? "team2" : "team1";
+
+  // Mark this team as having answered this specific question
+  game.lightningRoundSubmittedTeams.push(teamQuestionKey);
+
+  let result = {
+    success: true,
+    isCorrect: false,
+    pointsAwarded: 0,
+    matchingAnswer: null,
+    playerName: player.name,
+    teamName: playerTeam.name,
+    teamId: playerTeam.id,
+    game: null,
+    shouldAdvance: false, // Don't auto-advance in lightning round
+    revealAllCards: false,
+    revealRemainingAfterDelay: false,
+    submittedText: answerText,
+    singleAttempt: true,
+    lightningRound: true,
+  };
+
+  if (matchingAnswer && matchingAnswer.score > 0) {
+    // Correct answer
+    matchingAnswer.revealed = true;
+    const points = matchingAnswer.score * game.currentRound;
+
+    playerTeam.score += points;
+    playerTeam.currentRoundScore += points;
+
+    result.isCorrect = true;
+    result.pointsAwarded = points;
+    result.matchingAnswer = matchingAnswer;
+    result.revealRemainingAfterDelay = true;
+    result.shouldAdvance = true; // Advance to next question on correct answer
+
+    // Update question data for CORRECT team
+    const questionNumber = game.currentQuestionIndex - game.questions.findIndex(q => q.round === 4) + 1;
+    updateQuestionData(
+      game,
+      teamKey,
+      4,
+      questionNumber,
+      true,
+      points
+    );
+
+    // Mark the OTHER team as incorrect for this question (they didn't get it right)
+    updateQuestionData(
+      game,
+      otherTeamKey,
+      4,
+      questionNumber,
+      false,
+      0
+    );
+
+    console.log(`✅ Lightning Round: ${playerTeam.name} answered correctly: "${answerText}" = "${matchingAnswer.answer}" (+${points} pts)`);
+  } else {
+    // Wrong answer - reveal the clicked answer as incorrect
+    const clickedAnswer = currentQuestion.answers.find(
+      a => a.answer.toLowerCase().trim() === answerText.toLowerCase().trim()
+    );
+    
+    if (clickedAnswer) {
+      clickedAnswer.revealed = true;
+    }
+    
+    result.isCorrect = false;
+    result.revealAllCards = false;
+    result.shouldAdvance = false; // Don't advance yet - wait to see if other team answers
+
+    // Update question data for WRONG attempt
+    const questionNumber = game.currentQuestionIndex - game.questions.findIndex(q => q.round === 4) + 1;
+    updateQuestionData(game, teamKey, 4, questionNumber, false, 0);
+
+    console.log(`❌ Lightning Round: ${playerTeam.name} answered incorrectly: "${answerText}"`);
+
+    // Check if the other team has already answered this question
+    const otherTeamQuestionKey = `${currentQuestionId}_${game.teams.find(t => t.id.includes(otherTeamKey)).id}`;
+    const otherTeamAnswered = game.lightningRoundSubmittedTeams.includes(otherTeamQuestionKey);
+
+    if (!otherTeamAnswered) {
+      // Other team hasn't answered yet - wait for them
+      console.log(`🔄 Lightning Round: Waiting for ${otherTeamKey} to answer`);
+      result.waitingForOtherTeam = true;
+    } else {
+      // Both teams answered incorrectly - reveal all and move on
+      currentQuestion.answers.forEach((answer) => {
+        answer.revealed = true;
+      });
+      result.revealAllCards = true;
+      result.shouldAdvance = true;
+      console.log(`❌ Lightning Round: Both teams answered incorrectly - revealing all answers and advancing`);
+    }
+  }
+
+  result.game = games[gameCode];
+  return result;
+}
 
   // ✅ REGULAR ROUND LOGIC (Rounds 1-3)
   if (!playerTeam.active) {
@@ -767,7 +776,7 @@ export function advanceGameState(gameCode) {
     
     if (currentLightningIndex >= lightningQuestions.length - 1) {
       // Lightning round complete
-      game.status = "round-summary";
+      game.status = "finished";
       game.gameState.currentTurn = null;
       updateTeamActiveStatus(game);
     } else {
