@@ -301,57 +301,48 @@ const JoinGamePage: React.FC = () => {
     };
   }, [game, player, requestPlayersList]);
 
+
+  //Player gets to choose their team after they enter the room
   const joinGame = async () => {
-    if (!gameCode.trim() || !playerName.trim()) {
-      setError("Please enter both game code and your name");
-      return;
-    }
+  if (!gameCode.trim() || !playerName.trim()) {
+    setError("Please enter both game code and your name");
+    return;
+  }
 
-    setIsLoading(true);
-    setError("");
+  setIsLoading(true);
+  setError("");
 
-    try {
-      const response = await gameApi.joinGame({
-        gameCode: gameCode.toUpperCase(),
-        playerName: playerName.trim(),
-      });
+  try {
+    const response = await gameApi.joinGame({
+      gameCode: gameCode.toUpperCase(),
+      playerName: playerName.trim(),
+    });
 
-      const { playerId, game: gameData } = response;
+    const { playerId, game: gameData } = response;
 
-      // Auto-assign to team with fewer members
-      const team1Count = gameData.players.filter(
-        (p: Player) => p.teamId === gameData.teams[0].id
-      ).length;
+    
+    setPlayer({
+      id: playerId,
+      name: playerName.trim(),
+      gameCode: gameCode.toUpperCase(),
+      connected: true,
+      teamId: undefined, // Player hasn't chosen a team yet
+    });
+    setGame(gameData);
 
-      const team2Count = gameData.players.filter(
-        (p: Player) => p.teamId === gameData.teams[1].id
-      ).length;
+    connect();
+    playerJoinGame(gameCode.toUpperCase(), playerId);
 
-      const autoTeamId =
-        team1Count <= team2Count ? gameData.teams[0].id : gameData.teams[1].id;
+    
+  } catch (error: any) {
+    console.error("Error joining game:", error);
+    setError(error.response?.data?.error || "Failed to join game");
+  }
+  setIsLoading(false);
+};
 
-      setPlayer({
-        id: playerId,
-        name: playerName.trim(),
-        gameCode: gameCode.toUpperCase(),
-        connected: true,
-        teamId: autoTeamId,
-      });
-      setGame(gameData);
 
-      connect();
-      playerJoinGame(gameCode.toUpperCase(), playerId);
 
-      // Auto-join the team
-      setTimeout(() => {
-        joinTeam(gameCode.toUpperCase(), playerId, autoTeamId);
-      }, 500);
-    } catch (error: any) {
-      console.error("Error joining game:", error);
-      setError(error.response?.data?.error || "Failed to join game");
-    }
-    setIsLoading(false);
-  };
 // Buzz-in handler
   const handleBuzzIn = () => {
     if (player && game && !hasBuzzed && !game.buzzedTeamId) {
