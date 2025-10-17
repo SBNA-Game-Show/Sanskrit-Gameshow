@@ -589,6 +589,7 @@ const HostGamePage: React.FC = () => {
               </div>
 
               <Button
+                data-testid="host-start-game-button"
                 onClick={handleStartGame}
                 variant="success"
                 size="xl"
