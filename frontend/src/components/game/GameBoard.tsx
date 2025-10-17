@@ -116,6 +116,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         <div className="answer-grid">
           {currentQuestion.answers.slice(0, 5).map((answer, index) => (
             <div
+              data-testid={`answer-${index + 1}-card`}
               key={index}
               onClick={() => onClickAnswerCard?.(answer.answer)}
               className={`answer-card glass-card transition-all ${
