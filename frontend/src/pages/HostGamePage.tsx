@@ -722,6 +722,7 @@ const HostGamePage: React.FC = () => {
                 ➡️ Next Question
               </Button> */}
               <Button
+                data-testid="force-next-question-button"
                 onClick={game.currentRound === 4 ? handlePauseTimer : handleForceNextQuestion}
                 disabled={game.currentRound === 4 && game.pauseTimer}
                 variant="secondary"
@@ -741,6 +742,7 @@ const HostGamePage: React.FC = () => {
                 </Button>
               )}
               <Button
+                data-testid="reset-game-button"
                 onClick={handleResetGame}
                 variant="secondary"
                 size="sm"
@@ -749,6 +751,7 @@ const HostGamePage: React.FC = () => {
                 🔄 Reset
               </Button>
               <Button
+                data-testid="skip-to-lightning-round-button"
                 onClick={handleSkipToLightningRound}
                 variant="secondary"
                 size="sm"
