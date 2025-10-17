@@ -149,14 +149,26 @@ const JoinGamePage: React.FC = () => {
         `✅ ${data.playerName} answered correctly! +${data.pointsAwarded} points.`
       );
     },
-    onAnswerIncorrect: (data: any) => {
-      console.log("Answer incorrect event received (single attempt):", data);
-      setGame(data.game);
-      setAnswer("");
-      setGameMessage(
-        `❌ ${data.playerName} answered incorrectly.`
-      );
+      onAnswerIncorrect: (data: any) => {
+        console.log("Answer incorrect event received (single attempt):", data);
+        setGame(data.game);
+        setAnswer("");
+        
+        // Check if it's lightning round and opposing team gets a chance
+        if (data.game?.currentRound === 4 && data.switchToOpposingTeam) {
+          const opposingTeamName = data.opposingTeamName || "Opposing team";
+          setGameMessage(
+            `❌ ${data.playerName} answered incorrectly. ${opposingTeamName} can now attempt to answer!`
+          );
+          // Reset buzz state for opposing team
+          setHasBuzzed(false);
+        } else {
+          setGameMessage(
+            `❌ ${data.playerName} answered incorrectly.`
+          );
+        }
     },
+    
     onRemainingCardsRevealed: (data: any) => {
       console.log("Remaining cards revealed:", data);
       setGame(data.game);
@@ -171,7 +183,7 @@ const JoinGamePage: React.FC = () => {
         console.log("Next question event received:", data);
         setGame(data.game);
         setAnswer("");
-        if (data.sameTeam) {
+        if (data.sameTeam && data.game?.currentRound !== 4) {
           setGameMessage("Same team continues with their next question.");
         } else {
           setGameMessage("Moving to next question.");
