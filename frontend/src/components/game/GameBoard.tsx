@@ -315,6 +315,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             )}
             {game.gameState.canAdvance && !overrideMode && (
               <Button
+                data-testid="host-next-question-button"
                 onClick={onNextQuestion}
                 variant="primary"
                 size="sm"
