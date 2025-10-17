@@ -194,6 +194,7 @@ const LoginForm: React.FC = () => {
             </div>
 
             <button
+              data-testid="login-button"
               onClick={handleSubmit}
               disabled={isLoading}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
