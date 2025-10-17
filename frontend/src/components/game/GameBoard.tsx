@@ -10,6 +10,7 @@ interface GameBoardProps {
   onRevealAnswer?: (answerIndex: number) => void;
   onSelectAnswer?: (answerIndex: number) => void;
   onNextQuestion?: () => void;
+  onCompleteTossUpRound?: () => void;
   onPauseTimer?: () => void;
   isHost?: boolean;
   variant?: "host" | "player";
@@ -27,6 +28,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onRevealAnswer,
   onSelectAnswer,
   onNextQuestion,
+  onCompleteTossUpRound,
   onPauseTimer,
   isHost = false,
   variant = "host",
@@ -316,7 +318,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             {game.gameState.canAdvance && !overrideMode && (
               <Button
                 data-testid="host-next-question-button"
-                onClick={onNextQuestion}
+                onClick={game.currentRound === 0 ? onCompleteTossUpRound : onNextQuestion}
                 variant="primary"
                 size="sm"
                 className="mt-2 text-xs py-1 px-3"

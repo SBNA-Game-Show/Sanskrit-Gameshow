@@ -427,6 +427,12 @@ const HostGamePage: React.FC = () => {
     }
   };
 
+  const handleCompleteTossUpRound = () => {
+    if (gameCode && socketRef.current) {
+      socketRef.current.emit("complete-toss-up-round", {gameCode});
+    }
+  }
+
   const handleContinueToNextRound = () => {
     if (gameCode && socketRef.current) {
       socketRef.current.emit("continue-to-next-round", { gameCode });
@@ -736,6 +742,7 @@ const HostGamePage: React.FC = () => {
             onConfirmOverride={handleConfirmOverride}
             onSelectAnswer={handleSelectOverride}
             onNextQuestion={handleNextQuestion}
+            onCompleteTossUpRound={handleCompleteTossUpRound}
             onPauseTimer={handlePauseTimer}
           />
 
