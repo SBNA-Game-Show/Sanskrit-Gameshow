@@ -580,7 +580,7 @@ const HostGamePage: React.FC = () => {
                 <p className="text-lg text-slate-300 mb-2">
                   Share this code with contestants:
                 </p>
-                <div className="text-5xl font-mono font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
+                <div data-testid="game-code" className="text-5xl font-mono font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
                   {gameCode}
                 </div>
                 <p className="text-sm text-slate-400 mt-4">
