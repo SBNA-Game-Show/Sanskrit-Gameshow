@@ -26,6 +26,7 @@ import { Game, RoundSummary, RoundData } from "../types"; //Team
 import { getCurrentQuestion, getTeamName } from "../utils/gameHelper"; //getGameWinner
 import { ROUTES } from "../utils/constants";
 
+const role = localStorage.getItem("role");
 const HostGamePage: React.FC = () => {
   const [gameCode, setGameCode] = useState<string>("");
   const [game, setGame] = useState<Game | null>(null);
@@ -43,6 +44,7 @@ const HostGamePage: React.FC = () => {
   const [overridePoints, setOverridePoints] = useState("0");
 
   const socketRef = useRef<Socket | null>(null);
+  const radioButtonRef = useRef<HTMLFormElement>(null);
 
   const location = useLocation();
 
@@ -340,11 +342,11 @@ const HostGamePage: React.FC = () => {
       setOverrideMode(false);
     });
 
-    socket.on("skipped-to-lightning-round", (data) => {
-      console.log("Game skipped to lightning round:", data);
+    socket.on("skipped-to-round", (data) => {
+      console.log(data.message);
       setGame(data.game);
       setRoundSummary(null);
-      setControlMessage(data.message || "Skipped to the lightning round.");
+      setControlMessage(data.message || "Skipped rounds.");
       setOverrideMode(false);
     });
 
@@ -514,9 +516,12 @@ const HostGamePage: React.FC = () => {
     }
   };
 
-  const handleSkipToLightningRound = () => {
+  const handleSkipToRound = (round: number, radioButtonRef: React.RefObject<HTMLFormElement>) => {
     if (gameCode && socketRef.current) {
-      socketRef.current.emit("skip-to-lightning-round", { gameCode });
+      const selectedStartingTeam = radioButtonRef.current?.querySelector<HTMLInputElement>(
+        'input[name="starting-team"]:checked'
+      )?.value;
+      socketRef.current.emit("skip-to-round", gameCode, round, selectedStartingTeam );
     }
   }
 
@@ -791,15 +796,77 @@ const HostGamePage: React.FC = () => {
               >
                 🔄 Reset
               </Button>
-              <Button
-                data-testid="skip-to-lightning-round-button"
-                onClick={handleSkipToLightningRound}
-                variant="secondary"
-                size="sm"
-                className="text-xs py-1 px-3"
-              >
-                🔄 Skip
-              </Button>
+
+              {role === "Tester" && (
+                <>
+                  <Button
+                  data-testid="skip-to-round-1-button"
+                  onClick={() => handleSkipToRound(1, radioButtonRef)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs py-1 px-3"
+                  >
+                    Skip to R1
+                  </Button>
+                  <Button
+                  data-testid="skip-to-round-2-button"
+                  onClick={() => handleSkipToRound(2, radioButtonRef)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs py-1 px-3"
+                  >
+                    Skip to R2
+                  </Button>
+                  <Button
+                  data-testid="skip-to-round-3-button"
+                  onClick={() => handleSkipToRound(3, radioButtonRef)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs py-1 px-3"
+                  >
+                    Skip to R3
+                  </Button>
+                  <Button
+                  data-testid="skip-to-lightning-round-button"
+                  onClick={() => handleSkipToRound(4, radioButtonRef)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs py-1 px-3"
+                  >
+                    Skip to LR
+                  </Button>
+
+                  <form className="ml-3" ref={radioButtonRef}>
+                    <div className="flex gap-6">
+
+                      <div className="inline-flex items-center">
+                        <input 
+                          type="radio" 
+                          data-testid="set-starting-team-1-button"
+                          id="team1" 
+                          name="starting-team" 
+                          value="team1" 
+                          defaultChecked
+                        />
+                        <label className="pl-2" htmlFor="team1">{game.teams[0].name}</label>
+                      </div>
+
+                      <div className="inline-flex items-center">
+                        <input 
+                          type="radio" 
+                          data-testid="set-starting-team-2-button"
+                          id="team2" 
+                          name="starting-team" 
+                          value="team2" 
+                        />
+                        <label className="pl-2" htmlFor="team2">{game.teams[1].name}</label>
+                      </div>
+
+                    </div>
+                  </form>
+                </>
+              )}
+              
             </div>
           </div>
         </div>

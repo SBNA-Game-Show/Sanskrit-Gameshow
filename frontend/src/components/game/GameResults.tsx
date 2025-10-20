@@ -150,7 +150,7 @@ const GameResults: React.FC<GameResultsProps> = ({
 
           {/* ACTION BUTTONS */}
           <div className="flex gap-4 justify-center">
-            <Link to={role === "Host" ? ROUTES.HOSTHOME : ROUTES.PLAYERHOME}>
+            <Link to={role === "Host" || role === "Tester" ? ROUTES.HOSTHOME : ROUTES.PLAYERHOME}>
               <Button variant="secondary" size="lg">
                 Back to Home
               </Button>
