@@ -143,7 +143,12 @@ const RegisterForm: React.FC = () => {
             {error && <p className="text-red-500 text-sm">{error}</p>}
             {success && <p className="text-green-600 text-sm">{success}</p>}
 
-            <button type="submit" disabled={isLoading} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+            <button 
+              type="submit" 
+              disabled={isLoading} 
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              data-testid="create-account-button"
+            >
               {isLoading ? 'Registering...' : 'Create Account'}
             </button>
           </form>
