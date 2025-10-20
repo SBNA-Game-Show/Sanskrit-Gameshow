@@ -149,14 +149,26 @@ const JoinGamePage: React.FC = () => {
         `✅ ${data.playerName} answered correctly! +${data.pointsAwarded} points.`
       );
     },
-    onAnswerIncorrect: (data: any) => {
-      console.log("Answer incorrect event received (single attempt):", data);
-      setGame(data.game);
-      setAnswer("");
-      setGameMessage(
-        `❌ ${data.playerName} answered incorrectly.`
-      );
+      onAnswerIncorrect: (data: any) => {
+        console.log("Answer incorrect event received (single attempt):", data);
+        setGame(data.game);
+        setAnswer("");
+        
+        // Check if it's lightning round and opposing team gets a chance
+        if (data.game?.currentRound === 4 && data.switchToOpposingTeam) {
+          const opposingTeamName = data.opposingTeamName || "Opposing team";
+          setGameMessage(
+            `❌ ${data.playerName} answered incorrectly. ${opposingTeamName} can now attempt to answer!`
+          );
+          // Reset buzz state for opposing team
+          setHasBuzzed(false);
+        } else {
+          setGameMessage(
+            `❌ ${data.playerName} answered incorrectly.`
+          );
+        }
     },
+    
     onRemainingCardsRevealed: (data: any) => {
       console.log("Remaining cards revealed:", data);
       setGame(data.game);
@@ -171,7 +183,7 @@ const JoinGamePage: React.FC = () => {
         console.log("Next question event received:", data);
         setGame(data.game);
         setAnswer("");
-        if (data.sameTeam) {
+        if (data.sameTeam && data.game?.currentRound !== 4) {
           setGameMessage("Same team continues with their next question.");
         } else {
           setGameMessage("Moving to next question.");
@@ -295,57 +307,48 @@ const JoinGamePage: React.FC = () => {
     };
   }, [game, player, requestPlayersList]);
 
+
+  //Player gets to choose their team after they enter the room
   const joinGame = async () => {
-    if (!gameCode.trim() || !playerName.trim()) {
-      setError("Please enter both game code and your name");
-      return;
-    }
+  if (!gameCode.trim() || !playerName.trim()) {
+    setError("Please enter both game code and your name");
+    return;
+  }
 
-    setIsLoading(true);
-    setError("");
+  setIsLoading(true);
+  setError("");
 
-    try {
-      const response = await gameApi.joinGame({
-        gameCode: gameCode.toUpperCase(),
-        playerName: playerName.trim(),
-      });
+  try {
+    const response = await gameApi.joinGame({
+      gameCode: gameCode.toUpperCase(),
+      playerName: playerName.trim(),
+    });
 
-      const { playerId, game: gameData } = response;
+    const { playerId, game: gameData } = response;
 
-      // Auto-assign to team with fewer members
-      const team1Count = gameData.players.filter(
-        (p: Player) => p.teamId === gameData.teams[0].id
-      ).length;
+    
+    setPlayer({
+      id: playerId,
+      name: playerName.trim(),
+      gameCode: gameCode.toUpperCase(),
+      connected: true,
+      teamId: undefined, // Player hasn't chosen a team yet
+    });
+    setGame(gameData);
 
-      const team2Count = gameData.players.filter(
-        (p: Player) => p.teamId === gameData.teams[1].id
-      ).length;
+    connect();
+    playerJoinGame(gameCode.toUpperCase(), playerId);
 
-      const autoTeamId =
-        team1Count <= team2Count ? gameData.teams[0].id : gameData.teams[1].id;
+    
+  } catch (error: any) {
+    console.error("Error joining game:", error);
+    setError(error.response?.data?.error || "Failed to join game");
+  }
+  setIsLoading(false);
+};
 
-      setPlayer({
-        id: playerId,
-        name: playerName.trim(),
-        gameCode: gameCode.toUpperCase(),
-        connected: true,
-        teamId: autoTeamId,
-      });
-      setGame(gameData);
 
-      connect();
-      playerJoinGame(gameCode.toUpperCase(), playerId);
 
-      // Auto-join the team
-      setTimeout(() => {
-        joinTeam(gameCode.toUpperCase(), playerId, autoTeamId);
-      }, 500);
-    } catch (error: any) {
-      console.error("Error joining game:", error);
-      setError(error.response?.data?.error || "Failed to join game");
-    }
-    setIsLoading(false);
-  };
 // Buzz-in handler
   const handleBuzzIn = () => {
     if (player && game && !hasBuzzed && !game.buzzedTeamId) {
@@ -547,6 +550,8 @@ const JoinGamePage: React.FC = () => {
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
           <div className="bg-[#FEFEFC] rounded p-4 mt-2">
+
+            {/* START OF PLAYER INPUT FIELDS (answer input, buzzer, etc) */}
             {player.teamId ? (
               <div>
                 {/* Game Status Message */}
@@ -565,18 +570,18 @@ const JoinGamePage: React.FC = () => {
                   </div>
                 )}
   
-                {/* Toss-up or Answer input */}
+                {/* TOSS UP ROUND */}
                 {game.currentRound === 0 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
                         onBuzz={handleBuzzIn}
-                        disabled={hasBuzzed || !!game.buzzedTeamId}
+                        disabled={hasBuzzed || !!game.buzzedTeamId || game.gameState.canAdvance}
                         teamName={myTeam?.name}
                       />
                     </div>
                   ) : (
-                    canAnswer ? (
+                    canAnswer && game?.activeTeamId ? (
                       <div className="max-w-md mx-auto">
                         <input
                           data-testid="answer-input"
@@ -614,12 +619,14 @@ const JoinGamePage: React.FC = () => {
                     )
                     
                   )
-                ) : game.currentRound === 4 ? (
+                ) : 
+                // LIGHTNING ROUND
+                game.currentRound === 4 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
                         onBuzz={handleBuzzIn}
-                        disabled={hasBuzzed || !!game.buzzedTeamId}
+                        disabled={hasBuzzed || !!game.buzzedTeamId || game.pauseTimer}
                         teamName={myTeam?.name}
                       />
                     </div>
@@ -641,7 +648,9 @@ const JoinGamePage: React.FC = () => {
                       </div>
                     )
                   )
-                ) : isMyTurn && game?.activeTeamId ? (
+                ) : 
+                // STANDARD ROUNDS
+                isMyTurn && game?.activeTeamId ? (
                   <div className="max-w-md mx-auto">
                     <input
                       type="text"
@@ -684,6 +693,8 @@ const JoinGamePage: React.FC = () => {
                 </p>
               </div>
             )}
+            {/* END OF PLAYER INPUT FIELDS */}
+
           </div>
         </div>
 

@@ -31,16 +31,14 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
   if (variant === "compact") {
     return (
       <div className="bg-[#FEFCF0] rounded p-3 mb-4  border-blue-500/30">
-        {/* <div className="absolute top-3 right-2 z-10">
-          <CountdownTimer seconds={10} size={60} />
-        </div> */}
+
 
         <div className="text-center">
           <h3 className="text-lg font-bold text-blue-300 mb-1">
             🎯 {activeTeam?.name}'s Turn
           </h3>
           <p className="text-sm text-slate-300">
-            Question {questionNumber} of {round === 0 ? 1 : 3} •{' '}
+            Question {questionNumber} of {round === 0 ? 1 : round === 4 ? 7 : 3} •{' '}
             {round === 0 ? 'Toss-up Round' : `Round ${round}`}
           </p>
           <p className="text-xs text-slate-400 mt-1">
