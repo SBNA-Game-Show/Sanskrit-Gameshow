@@ -243,6 +243,7 @@ const RoundSummaryComponent: React.FC<RoundSummaryProps> = ({
                 round < 4 &&
                 onContinueToNextRound && (
                   <Button
+                    data-testid="next-round-button"
                     onClick={onContinueToNextRound}
                     variant="primary"
                     size="lg"

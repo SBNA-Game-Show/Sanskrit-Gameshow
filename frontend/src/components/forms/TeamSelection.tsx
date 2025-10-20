@@ -30,6 +30,7 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
               <AnimatedCard key={team.id} delay={index * 100}>
                 <button
                   onClick={() => onSelectTeam(team.id)}
+                  data-testid={`join-team-${index+1}-button`}
                   disabled={team.id === selectedTeamId}
                   className={`w-full p-6 rounded-xl text-left transition-all transform ${
                     team.id === selectedTeamId
