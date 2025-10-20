@@ -54,7 +54,7 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
           </div>
           
           {selectedTeamId && (
-            <div className="mt-6 p-4  rounded-lg border border-blue-500/30 shadow">
+            <div className="mt-6 p-4  rounded-lg border border-blue-500/30 shadow bg-gray-100">
               <p className="text-blue-300 font-medium">
                 You're on{" "}
                 {teams.find((t) => t.id === selectedTeamId)?.name || "a team"}!

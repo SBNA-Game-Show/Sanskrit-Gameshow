@@ -213,10 +213,12 @@ const LoginForm: React.FC = () => {
               </button>
 
               <button 
-                className="w-1/2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold shadow-lg text-lg"
+                className="w-1/2 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 data-testid="register-here-button"
+                onClick={() => navigate('/register')}
               >
-              <a href="/register">Register Here</a>
+                {/* <a href="/register">Register Here</a> */}
+                Register Here
               </button>
 
             </div>
