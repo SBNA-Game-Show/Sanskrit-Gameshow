@@ -917,25 +917,41 @@ export function continueToNextRound(gameCode) {
 }
 
 // Join a game
-export function joinGame(gameCode, playerName) {
+export function joinGame(gameCode, playerName, localPlayerId) {
   if (!games[gameCode]) {
     throw new Error("Game not found");
   }
 
-  const playerId = uuidv4();
-  const player = {
-    id: playerId,
-    name: playerName,
-    gameCode,
-    connected: true,
-    teamId: null,
-  };
+  let playerId = "";
+  if (!localPlayerId) {
+    playerId = uuidv4();
+  }
+  else {
+    playerId = localPlayerId;
+  }
 
-  players[playerId] = player;
-  games[gameCode].players.push(player);
+  let player = games[gameCode].players.find(p => p.id === playerId);
+
+  if (player) {
+    console.log("PLAYER EXISTS")
+    player.connected = true;
+  }
+  else {
+    console.log("PLAYER DOESN'T EXIST")
+    player = {
+      id: playerId,
+      name: playerName,
+      gameCode,
+      connected: true,
+      teamId: null,
+    };
+
+    players[playerId] = player;
+    games[gameCode].players.push(player);
+  }
 
   console.log(`👤 Player joined: ${playerName} in game ${gameCode}`);
-  return { playerId, game: games[gameCode] };
+  return { playerId, game: games[gameCode], teamId: player.teamId };
 }
 
 // Get game by code

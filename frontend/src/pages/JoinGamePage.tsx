@@ -48,17 +48,17 @@ const JoinGamePage: React.FC = () => {
         round1: [
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 }
+          { firstAttemptCorrect: null, pointsEarned: 0 },
         ],
         round2: [
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 }
+          { firstAttemptCorrect: null, pointsEarned: 0 },
         ],
         round3: [
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 }
+          { firstAttemptCorrect: null, pointsEarned: 0 },
         ],
         round4: [
           { firstAttemptCorrect: null, pointsEarned: 0 },
@@ -67,8 +67,8 @@ const JoinGamePage: React.FC = () => {
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 }
-        ]
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+        ],
       };
     }
     return game.gameState.questionData[teamKey];
@@ -149,26 +149,24 @@ const JoinGamePage: React.FC = () => {
         `✅ ${data.playerName} answered correctly! +${data.pointsAwarded} points.`
       );
     },
-      onAnswerIncorrect: (data: any) => {
-        console.log("Answer incorrect event received (single attempt):", data);
-        setGame(data.game);
-        setAnswer("");
-        
-        // Check if it's lightning round and opposing team gets a chance
-        if (data.game?.currentRound === 4 && data.switchToOpposingTeam) {
-          const opposingTeamName = data.opposingTeamName || "Opposing team";
-          setGameMessage(
-            `❌ ${data.playerName} answered incorrectly. ${opposingTeamName} can now attempt to answer!`
-          );
-          // Reset buzz state for opposing team
-          setHasBuzzed(false);
-        } else {
-          setGameMessage(
-            `❌ ${data.playerName} answered incorrectly.`
-          );
-        }
+    onAnswerIncorrect: (data: any) => {
+      console.log("Answer incorrect event received (single attempt):", data);
+      setGame(data.game);
+      setAnswer("");
+
+      // Check if it's lightning round and opposing team gets a chance
+      if (data.game?.currentRound === 4 && data.switchToOpposingTeam) {
+        const opposingTeamName = data.opposingTeamName || "Opposing team";
+        setGameMessage(
+          `❌ ${data.playerName} answered incorrectly. ${opposingTeamName} can now attempt to answer!`
+        );
+        // Reset buzz state for opposing team
+        setHasBuzzed(false);
+      } else {
+        setGameMessage(`❌ ${data.playerName} answered incorrectly.`);
+      }
     },
-    
+
     onRemainingCardsRevealed: (data: any) => {
       console.log("Remaining cards revealed:", data);
       setGame(data.game);
@@ -179,43 +177,45 @@ const JoinGamePage: React.FC = () => {
       setGame(data.game);
       setGameMessage(`It's now ${data.teamName}'s turn!`);
     },
-      onNextQuestion: (data: any) => {
-        console.log("Next question event received:", data);
+    onNextQuestion: (data: any) => {
+      console.log("Next question event received:", data);
+      setGame(data.game);
+      setAnswer("");
+      if (data.sameTeam && data.game?.currentRound !== 4) {
+        setGameMessage("Same team continues with their next question.");
+      } else {
+        setGameMessage("Moving to next question.");
+      }
+    },
+    onQuestionComplete: (data: any) => {
+      console.log("Question complete event received:", data);
+      setGame(data.game);
+      setGameMessage("Waiting for host to advance...");
+    },
+    onRoundComplete: (data: any) => {
+      console.log("Round complete event received:", data);
+
+      // Update local game state when provided
+      if (data.game) {
         setGame(data.game);
-        setAnswer("");
-        if (data.sameTeam && data.game?.currentRound !== 4) {
-          setGameMessage("Same team continues with their next question.");
+      }
+
+      if (data.roundSummary) {
+        setRoundSummary(data.roundSummary);
+        if (data.roundSummary.round === 0) {
+          setGameMessage(
+            `${
+              data.roundSummary.tossUpWinner?.teamName || "A team"
+            } won the toss-up!`
+          );
         } else {
-          setGameMessage("Moving to next question.");
+          setGameMessage(`Round ${data.roundSummary.round} completed!`);
         }
-      },
-      onQuestionComplete: (data: any) => {
-        console.log("Question complete event received:", data);
-        setGame(data.game);
-        setGameMessage("Waiting for host to advance...");
-      },
-      onRoundComplete: (data: any) => {
-        console.log("Round complete event received:", data);
-
-        // Update local game state when provided
-        if (data.game) {
-          setGame(data.game);
-        }
-
-        if (data.roundSummary) {
-          setRoundSummary(data.roundSummary);
-          if (data.roundSummary.round === 0) {
-            setGameMessage(
-              `${data.roundSummary.tossUpWinner?.teamName || "A team"} won the toss-up!`
-            );
-          } else {
-            setGameMessage(`Round ${data.roundSummary.round} completed!`);
-          }
-        } else if (typeof data.round !== "undefined") {
-          // Fallback to a simple message when summary is missing
-          setGameMessage(`Round ${data.round} completed!`);
-        }
-      },
+      } else if (typeof data.round !== "undefined") {
+        // Fallback to a simple message when summary is missing
+        setGameMessage(`Round ${data.round} completed!`);
+      }
+    },
     onRoundStarted: (data: any) => {
       console.log("Round started event received:", data);
       setGame(data.game);
@@ -287,7 +287,7 @@ const JoinGamePage: React.FC = () => {
       setGame(data.game);
       setRoundSummary(null);
       setGameMessage(data.message || "Game has been reset.");
-    }
+    },
   });
 
   // Periodically request updated player list from server
@@ -307,55 +307,55 @@ const JoinGamePage: React.FC = () => {
     };
   }, [game, player, requestPlayersList]);
 
-
   //Player gets to choose their team after they enter the room
   const joinGame = async () => {
-  if (!gameCode.trim() || !playerName.trim()) {
-    setError("Please enter both game code and your name");
-    return;
-  }
+    if (!gameCode.trim() || !playerName.trim()) {
+      setError("Please enter both game code and your name");
+      return;
+    }
 
-  setIsLoading(true);
-  setError("");
+    setIsLoading(true);
+    setError("");
 
-  try {
-    const response = await gameApi.joinGame({
-      gameCode: gameCode.toUpperCase(),
-      playerName: playerName.trim(),
-    });
+    let localPlayerId = localStorage.getItem("playerId") ?? undefined;
 
-    const { playerId, game: gameData } = response;
+    try {
+      const response = await gameApi.joinGame({
+        gameCode: gameCode.toUpperCase(),
+        playerName: playerName.trim(),
+        localPlayerId: localPlayerId,
+      });
 
-    
-    setPlayer({
-      id: playerId,
-      name: playerName.trim(),
-      gameCode: gameCode.toUpperCase(),
-      connected: true,
-      teamId: undefined, // Player hasn't chosen a team yet
-    });
-    setGame(gameData);
+      console.log(response);
 
-    connect();
-    playerJoinGame(gameCode.toUpperCase(), playerId);
+      localStorage.setItem("playerId", response.playerId);
 
-    
-  } catch (error: any) {
-    console.error("Error joining game:", error);
-    setError(error.response?.data?.error || "Failed to join game");
-  }
-  setIsLoading(false);
-};
+      const { playerId, game: gameData, teamId } = response;
 
+      setPlayer({
+        id: playerId,
+        name: playerName.trim(),
+        gameCode: gameCode.toUpperCase(),
+        connected: true,
+        teamId: teamId, // Player hasn't chosen a team yet
+      });
+      setGame(gameData);
 
+      connect();
+      playerJoinGame(gameCode.toUpperCase(), playerId);
+    } catch (error: any) {
+      console.error("Error joining game:", error);
+      setError(error.response?.data?.error || "Failed to join game");
+    }
+    setIsLoading(false);
+  };
 
-// Buzz-in handler
+  // Buzz-in handler
   const handleBuzzIn = () => {
     if (player && game && !hasBuzzed && !game.buzzedTeamId) {
       buzzIn(game.code, player.id);
     }
   };
-
 
   const handleJoinTeam = (teamId: string) => {
     if (player && game) {
@@ -370,7 +370,7 @@ const JoinGamePage: React.FC = () => {
     }
   };
 
-  const handleSubmitAnswer = (answer:string) => {
+  const handleSubmitAnswer = (answer: string) => {
     if (player && game && answer.trim()) {
       console.log("Submitting single attempt answer:", answer.trim());
       submitAnswer(game.code, player.id, answer.trim());
@@ -385,9 +385,8 @@ const JoinGamePage: React.FC = () => {
   };
 
   const handleSubmitMCQAnswer = (answer: string) => {
-    if (game?.currentRound === 4 && canAnswer)
-    handleSubmitAnswer(answer);
-  }
+    if (game?.currentRound === 4 && canAnswer) handleSubmitAnswer(answer);
+  };
 
   // Initial render - show join form
   if (!player) {
@@ -546,11 +545,14 @@ const JoinGamePage: React.FC = () => {
           />
 
           {/* Game Board */}
-          <GameBoard game={game} variant="player" onClickAnswerCard={handleSubmitMCQAnswer}/>
+          <GameBoard
+            game={game}
+            variant="player"
+            onClickAnswerCard={handleSubmitMCQAnswer}
+          />
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
           <div className="bg-[#FEFEFC] rounded p-4 mt-2">
-
             {/* START OF PLAYER INPUT FIELDS (answer input, buzzer, etc) */}
             {player.teamId ? (
               <div>
@@ -569,87 +571,90 @@ const JoinGamePage: React.FC = () => {
                     <p className="text-red-300 text-sm text-center">{error}</p>
                   </div>
                 )}
-  
+
                 {/* TOSS UP ROUND */}
                 {game.currentRound === 0 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
                         onBuzz={handleBuzzIn}
-                        disabled={hasBuzzed || !!game.buzzedTeamId || game.gameState.canAdvance}
+                        disabled={
+                          hasBuzzed ||
+                          !!game.buzzedTeamId ||
+                          game.gameState.canAdvance
+                        }
                         teamName={myTeam?.name}
                       />
                     </div>
+                  ) : canAnswer && game?.activeTeamId ? (
+                    <div className="max-w-md mx-auto">
+                      <input
+                        data-testid="answer-input"
+                        type="text"
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Type your answer here..."
+                        disabled={!canAnswer}
+                        autoFocus={true}
+                        className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
+                      />
+                      <button
+                        data-testid="submit-answer-button"
+                        onClick={() => handleSubmitAnswer(answer)}
+                        disabled={!answer.trim() || !canAnswer}
+                        className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
+                          canAnswer && answer.trim()
+                            ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-105 active:scale-95"
+                            : "bg-gray-500 text-gray-300 cursor-not-allowed opacity-60"
+                        }`}
+                      >
+                        {answer.trim() ? "Submit Answer" : "Type an answer..."}
+                      </button>
+                    </div>
                   ) : (
-                    canAnswer && game?.activeTeamId ? (
-                      <div className="max-w-md mx-auto">
-                        <input
-                          data-testid="answer-input"
-                          type="text"
-                          value={answer}
-                          onChange={(e) => setAnswer(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          placeholder="Type your answer here..."
-                          disabled={!canAnswer}
-                          autoFocus={true}
-                          className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
-                        />
-                        <button
-                          data-testid="submit-answer-button"
-                          onClick={() => handleSubmitAnswer(answer)}
-                          disabled={!answer.trim() || !canAnswer}
-                          className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
-                            canAnswer && answer.trim()
-                              ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-105 active:scale-95"
-                              : "bg-gray-500 text-gray-300 cursor-not-allowed opacity-60"
-                          }`}
-                        >
-                          {answer.trim() ? "Submit Answer" : "Type an answer..."}
-                        </button>
+                    <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
+                      <div className="flex items-center justify-center gap-3 mb-3">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
+                        <p className="text-gray-300 font-medium">
+                          {game.teams.find((t) => t.active)?.name ||
+                            "Other team"}{" "}
+                          is answering...
+                        </p>
                       </div>
-                    ) : (
-                      <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
-                        <div className="flex items-center justify-center gap-3 mb-3">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
-                          <p className="text-gray-300 font-medium">
-                            {game.teams.find((t) => t.active)?.name || "Other team"} is answering...
-                          </p>
-                        </div>
-                      </div>
-                    )
-                    
+                    </div>
                   )
-                ) : 
-                // LIGHTNING ROUND
+                ) : // LIGHTNING ROUND
                 game.currentRound === 4 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
                         onBuzz={handleBuzzIn}
-                        disabled={hasBuzzed || !!game.buzzedTeamId || game.pauseTimer}
+                        disabled={
+                          hasBuzzed || !!game.buzzedTeamId || game.pauseTimer
+                        }
                         teamName={myTeam?.name}
                       />
                     </div>
+                  ) : canAnswer ? (
+                    <div className="p-4 bg-blue-500/20 border border-blue-500/50 rounded text-center">
+                      <p className="text-blue-300 font-medium">
+                        Click on an answer card above to submit your answer
+                      </p>
+                    </div>
                   ) : (
-                    canAnswer ? (
-                      <div className="p-4 bg-blue-500/20 border border-blue-500/50 rounded text-center">
-                        <p className="text-blue-300 font-medium">
-                          Click on an answer card above to submit your answer
+                    <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
+                      <div className="flex items-center justify-center gap-3 mb-3">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
+                        <p className="text-gray-300 font-medium">
+                          {game.teams.find((t) => t.active)?.name ||
+                            "Other team"}{" "}
+                          is answering...
                         </p>
                       </div>
-                    ) : (
-                      <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
-                        <div className="flex items-center justify-center gap-3 mb-3">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
-                          <p className="text-gray-300 font-medium">
-                            {game.teams.find((t) => t.active)?.name || "Other team"} is answering...
-                          </p>
-                        </div>
-                      </div>
-                    )
+                    </div>
                   )
-                ) : 
-                // STANDARD ROUNDS
+                ) : // STANDARD ROUNDS
                 isMyTurn && game?.activeTeamId ? (
                   <div className="max-w-md mx-auto">
                     <input
@@ -679,7 +684,8 @@ const JoinGamePage: React.FC = () => {
                     <div className="flex items-center justify-center gap-3 mb-3">
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
                       <p className="text-gray-300 font-medium">
-                        {game.teams.find((t) => t.active)?.name || "Other team"} is answering...
+                        {game.teams.find((t) => t.active)?.name || "Other team"}{" "}
+                        is answering...
                       </p>
                     </div>
                   </div>
@@ -694,7 +700,6 @@ const JoinGamePage: React.FC = () => {
               </div>
             )}
             {/* END OF PLAYER INPUT FIELDS */}
-
           </div>
         </div>
 
