@@ -776,7 +776,20 @@ export function advanceGameState(gameCode) {
     const currentLightningIndex = game.currentQuestionIndex - game.questions.findIndex(q => q.round === 4);
     
     if (currentLightningIndex >= lightningQuestions.length - 1) {
-      // Lightning round complete
+      const roundKey = `round${game.currentRound}`;
+      const team1 = game.teams.find((t) => t.id.includes("team1"));
+      const team2 = game.teams.find((t) => t.id.includes("team2"));
+
+      if (team1 && team2) {
+        game.gameState.roundScores[roundKey] = {
+          team1: team1.currentRoundScore,
+          team2: team2.currentRoundScore,
+        };
+
+        team1.roundScores[game.currentRound - 1] = team1.currentRoundScore;
+        team2.roundScores[game.currentRound - 1] = team2.currentRoundScore;
+      }
+
       game.status = "finished";
       game.gameState.currentTurn = null;
       updateTeamActiveStatus(game);
