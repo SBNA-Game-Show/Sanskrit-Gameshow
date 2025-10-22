@@ -94,7 +94,7 @@ router.post("/api/join-game", (req, res) => {
       });
     }
 
-    const { playerId, game, teamId } = joinGame(
+    const { playerId, game, teamId, gameFull } = joinGame(
       gameCode.toUpperCase(),
       playerName.trim(),
       localPlayerId
@@ -104,6 +104,7 @@ router.post("/api/join-game", (req, res) => {
       playerId,
       game,
       teamId,
+      gameFull,
       success: true,
     });
   } catch (error) {

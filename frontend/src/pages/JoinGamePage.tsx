@@ -326,7 +326,9 @@ const JoinGamePage: React.FC = () => {
         localPlayerId: localPlayerId,
       });
 
-      console.log(response);
+      if (response.gameFull) {
+        throw new Error("Game is full!");
+      }
 
       localStorage.setItem("playerId", response.playerId);
 
@@ -345,7 +347,7 @@ const JoinGamePage: React.FC = () => {
       playerJoinGame(gameCode.toUpperCase(), playerId);
     } catch (error: any) {
       console.error("Error joining game:", error);
-      setError(error.response?.data?.error || "Failed to join game");
+      setError(error.message || error.response?.data?.error || "Failed to join game");
     }
     setIsLoading(false);
   };

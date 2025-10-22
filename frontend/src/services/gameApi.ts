@@ -18,6 +18,7 @@ export interface JoinGameResponse {
   playerId: string;
   game: any; // Game type from types
   teamId: string;
+  gameFull: boolean;
 }
 
 export interface JoinGameRequest {
