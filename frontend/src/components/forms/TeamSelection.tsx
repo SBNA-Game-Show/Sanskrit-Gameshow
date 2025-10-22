@@ -68,7 +68,7 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
       </div>
       
       <p className="text-slate-400 mt-4">
-        Waiting for the host to start the game...
+        Please select a team - the game cannot start until all players have chosen a team
       </p>
     </div>
   );

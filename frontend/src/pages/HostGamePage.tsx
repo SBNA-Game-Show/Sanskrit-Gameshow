@@ -371,6 +371,49 @@ const HostGamePage: React.FC = () => {
     }
   }, [location.search, gameCode, setupSocket]);
 
+  // Validation function to check if game can start
+  const canStartGame = (game: Game | null) => {
+    if (!game || !game.players || game.players.length < 2) {
+      return { 
+        canStart: false, 
+        reason: "Need at least 2 players to start the game" 
+      };
+    }
+
+    // Check if all players have selected a team
+    const playersWithoutTeam = game.players.filter((p) => !p.teamId);
+    if (playersWithoutTeam.length > 0) {
+      return { 
+        canStart: false, 
+        reason: `${playersWithoutTeam.length} player(s) haven't selected a team yet` 
+      };
+    }
+
+    // Check if each team has at least one member
+    const team1Players = game.players.filter((p) => 
+      p.teamId === game.teams[0]?.id
+    );
+    const team2Players = game.players.filter((p) => 
+      p.teamId === game.teams[1]?.id
+    );
+
+    if (team1Players.length === 0) {
+      return { 
+        canStart: false, 
+        reason: `Team "${game.teams[0]?.name}" needs at least one player` 
+      };
+    }
+
+    if (team2Players.length === 0) {
+      return { 
+        canStart: false, 
+        reason: `Team "${game.teams[1]?.name}" needs at least one player` 
+      };
+    }
+
+    return { canStart: true, reason: "" };
+  };
+
   const createGame = async () => {
     console.log(
       "🎮 Creating new single-attempt game with question tracking..."
@@ -575,11 +618,13 @@ const HostGamePage: React.FC = () => {
 
   // Game created but waiting for players
   if (game && game.status === "waiting") {
+    const validation = canStartGame(game);
+    
     return (
       <PageLayout gameCode={gameCode}>
         <AnimatedCard>
           <div className="max-w-4xl mx-auto">
-            <div className="glass-card p-8 text-center">
+            <div className="rounded shadow bg-white p-8 text-center">
               <h2 className="text-3xl font-bold mb-6">Game Setup</h2>
 
               <div className="mb-8">
@@ -590,16 +635,24 @@ const HostGamePage: React.FC = () => {
                   {gameCode}
                 </div>
                 <p className="text-sm text-slate-400 mt-4">
-                  ⭐ Each question allows only 1 attempt!
+                  ⚠️ Each question allows only 1 attempt!
                 </p>
               </div>
+
+              {!validation.canStart && (
+                <div className="mb-4 p-4 bg-gray-200 border-yellow-500/50 rounded">
+                  <p className="text-white text-sm">
+                    {validation.reason}
+                  </p>
+                </div>
+              )}
 
               <Button
                 data-testid="host-start-game-button"
                 onClick={handleStartGame}
                 variant="success"
                 size="xl"
-                disabled={game.players.length < 2}
+                disabled={!validation.canStart}
                 icon={<span className="text-2xl">🎮</span>}
                 className="mb-6"
               >
