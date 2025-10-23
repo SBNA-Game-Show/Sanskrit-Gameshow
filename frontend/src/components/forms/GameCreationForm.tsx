@@ -1,9 +1,10 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import AnimatedCard from "../common/AnimatedCard";
 import Button from "../common/Button";
 import Input from "../common/Input";
 import { ROUTES } from "../../utils/constants";
+import React, { useMemo } from "react";
+
 
 interface GameCreationFormProps {
   team1Name: string;
@@ -22,6 +23,11 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
   onCreateGame,
   isLoading,
 }) => {
+    // Check if names are identical (case-insensitive)
+  const duplicateNames = useMemo(() => {
+    return team1Name.trim().toLowerCase() === team2Name.trim().toLowerCase();
+  }, [team1Name, team2Name]);
+
   return (
     <AnimatedCard>
       <div className="max-w-2xl mx-auto">
@@ -59,19 +65,23 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
             />
           </div>
 
-          <Button
-            data-testid="host-create-game-button"
-            onClick={onCreateGame}
-            disabled={
-              isLoading || !team1Name.trim() || !team2Name.trim()
-            }
-            variant="primary"
-            size="xl"
-            loading={isLoading}
-            icon={!isLoading ? <span className="text-2xl">🚀</span> : undefined}
-          >
-            {isLoading ? "Creating..." : "CREATE GAME"}
-          </Button>
+          {duplicateNames && (
+  <p className="text-red-400 mb-4 text-sm">
+    Team names must be different
+  </p>
+)}
+
+<Button
+  onClick={onCreateGame}
+  disabled={isLoading || !team1Name.trim() || !team2Name.trim() || duplicateNames}
+  variant="primary"
+  size="xl"
+  loading={isLoading}
+  icon={!isLoading ? <span className="text-2xl">🚀</span> : undefined}
+>
+  {isLoading ? "Creating..." : "CREATE GAME"}
+</Button>
+
 
           <div className="mt-6">
             <Link

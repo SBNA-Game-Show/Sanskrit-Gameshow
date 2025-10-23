@@ -304,6 +304,14 @@ export function updateTeamActiveStatus(game) {
 
 // Create a new game (SINGLE ATTEMPT + Question Data)
 export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
+  if (
+      teamNames?.team1?.trim().toLowerCase() ===
+      teamNames?.team2?.trim().toLowerCase()
+
+) {
+  throw new Error("Team names must be different (case-insensitive).");
+
+}
   const gameCode = generateGameCode();
   const gameId = uuidv4();
 
