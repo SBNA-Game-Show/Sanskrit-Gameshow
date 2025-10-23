@@ -40,163 +40,171 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
-  const connect = useCallback(() => {
-    if (socket) {
-      console.log("Socket already connected");
-      return socket;
-    }
-
-    console.log("Connecting to socket...");
-    const newSocket = io(GAME_CONFIG.SOCKET_URL, {
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-
-    newSocket.on("connect", () => {
-      console.log("Socket connected:", newSocket.id);
-      setIsConnected(true);
-    });
-
-    newSocket.on("disconnect", () => {
-      console.log("Socket disconnected");
-      setIsConnected(false);
-    });
-
-    newSocket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
-    });
-    newSocket.on("buzzer-pressed", (data) => {
-      const { teamName, playerName } = data;
-      console.log(`${teamName} buzzed first! ${playerName}, answer now!`);
-      if (callbacks.onPlayerBuzzed) {
-        callbacks.onPlayerBuzzed(data);
+  const connect = useCallback(
+    (gameCode?: string) => {
+      if (socket) {
+        console.log("Socket already connected");
+        return socket;
       }
-    });
 
-    newSocket.on("buzz-too-late", () => {
-      console.error("Too late! Another team already buzzed.");
-    });
+      console.log("Connecting to socket...");
+      const newSocket = io(GAME_CONFIG.SOCKET_URL, {
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
 
-    // Register all callback handlers
-    if (callbacks.onPlayerJoined) {
-      newSocket.on("player-joined", callbacks.onPlayerJoined);
-    }
+      newSocket.on("connect", () => {
+        console.log("Socket connected:", newSocket.id);
+        setIsConnected(true);
+      });
 
-    if (callbacks.onTeamUpdated) {
-      newSocket.on("team-updated", callbacks.onTeamUpdated);
-    }
+      newSocket.on("disconnect", () => {
+        console.log("Socket disconnected");
+        setIsConnected(false);
+      });
 
-    if (callbacks.onHostJoined) {
-      newSocket.on("host-joined", callbacks.onHostJoined);
-    }
+      newSocket.on("connect_error", (error) => {
+        console.error("Socket connection error:", error);
+      });
+      newSocket.on("buzzer-pressed", (data) => {
+        const { teamName, playerName } = data;
+        console.log(`${teamName} buzzed first! ${playerName}, answer now!`);
+        if (callbacks.onPlayerBuzzed) {
+          callbacks.onPlayerBuzzed(data);
+        }
+      });
 
-    if (callbacks.onGameStarted) {
-      newSocket.on("game-started", callbacks.onGameStarted);
-    }
+      newSocket.on("buzz-too-late", () => {
+        console.error("Too late! Another team already buzzed.");
+      });
 
-    // Buzzer events handled above via "buzzer-pressed"
-    if (callbacks.onBuzzTooLate) {
-      newSocket.on("buzz-too-late", callbacks.onBuzzTooLate);
-    }
+      // Register all callback handlers
+      if (callbacks.onPlayerJoined) {
+        newSocket.on("player-joined", callbacks.onPlayerJoined);
+      }
 
-    if (callbacks.onBuzzRejected) {
-      newSocket.on("buzz-rejected", callbacks.onBuzzRejected);
-    }
+      if (callbacks.onTeamUpdated) {
+        newSocket.on("team-updated", callbacks.onTeamUpdated);
+      }
 
-    if (callbacks.onAnswerRevealed) {
-      newSocket.on("answer-revealed", callbacks.onAnswerRevealed);
-    }
+      if (callbacks.onHostJoined) {
+        newSocket.on("host-joined", callbacks.onHostJoined);
+      }
 
-    if (callbacks.onNextQuestion) {
-      newSocket.on("next-question", callbacks.onNextQuestion);
-    }
+      if (callbacks.onGameStarted) {
+        newSocket.on("game-started", callbacks.onGameStarted);
+      }
 
-    if (callbacks.onGameOver) {
-      newSocket.on("game-over", callbacks.onGameOver);
-    }
+      // Buzzer events handled above via "buzzer-pressed"
+      if (callbacks.onBuzzTooLate) {
+        newSocket.on("buzz-too-late", callbacks.onBuzzTooLate);
+      }
 
-    if (callbacks.onBuzzerCleared) {
-      newSocket.on("buzzer-cleared", callbacks.onBuzzerCleared);
-    }
+      if (callbacks.onBuzzRejected) {
+        newSocket.on("buzz-rejected", callbacks.onBuzzRejected);
+      }
 
-    if (callbacks.onWrongAnswer) {
-      newSocket.on("wrong-answer", callbacks.onWrongAnswer);
-    }
+      if (callbacks.onAnswerRevealed) {
+        newSocket.on("answer-revealed", callbacks.onAnswerRevealed);
+      }
 
-    if (callbacks.onTeamSwitched) {
-      newSocket.on("team-switched", callbacks.onTeamSwitched);
-    }
+      if (callbacks.onNextQuestion) {
+        newSocket.on("next-question", callbacks.onNextQuestion);
+      }
 
-    if (callbacks.onPlayersListReceived) {
-      newSocket.on("players-list", callbacks.onPlayersListReceived);
-    }
+      if (callbacks.onGameOver) {
+        newSocket.on("game-over", callbacks.onGameOver);
+      }
 
-    if (callbacks.onAnswerRejected) {
-      newSocket.on("answer-rejected", callbacks.onAnswerRejected);
-    }
+      if (callbacks.onBuzzerCleared) {
+        newSocket.on("buzzer-cleared", callbacks.onBuzzerCleared);
+      }
 
-    if (callbacks.onAnswerCorrect) {
-      newSocket.on("answer-correct", callbacks.onAnswerCorrect);
-    }
+      if (callbacks.onWrongAnswer) {
+        newSocket.on("wrong-answer", callbacks.onWrongAnswer);
+      }
 
-    // UPDATED: Single attempt events
-    if (callbacks.onAnswerIncorrect) {
-      newSocket.on("answer-incorrect", callbacks.onAnswerIncorrect);
-    }
+      if (callbacks.onTeamSwitched) {
+        newSocket.on("team-switched", callbacks.onTeamSwitched);
+      }
 
-    if (callbacks.onTurnChanged) {
-      newSocket.on("turn-changed", callbacks.onTurnChanged);
-    }
+      if (callbacks.onPlayersListReceived) {
+        newSocket.on("players-list", callbacks.onPlayersListReceived);
+      }
 
-    if (callbacks.onRoundComplete) {
-      newSocket.on("round-complete", callbacks.onRoundComplete);
-    }
+      if (callbacks.onAnswerRejected) {
+        newSocket.on("answer-rejected", callbacks.onAnswerRejected);
+      }
 
-    if (callbacks.onRoundStarted) {
-      newSocket.on("round-started", callbacks.onRoundStarted);
-    }
+      if (callbacks.onAnswerCorrect) {
+        newSocket.on("answer-correct", callbacks.onAnswerCorrect);
+      }
 
-    if (callbacks.onQuestionForced) {
-      newSocket.on("question-forced", callbacks.onQuestionForced);
-    }
+      // UPDATED: Single attempt events
+      if (callbacks.onAnswerIncorrect) {
+        newSocket.on("answer-incorrect", callbacks.onAnswerIncorrect);
+      }
 
-    if (callbacks.onQuestionComplete) {
-      newSocket.on("question-complete", callbacks.onQuestionComplete);
-    }
+      if (callbacks.onTurnChanged) {
+        newSocket.on("turn-changed", callbacks.onTurnChanged);
+      }
 
-    if (callbacks.onGameReset) {
-      newSocket.on("game-reset", callbacks.onGameReset);
-    }
+      if (callbacks.onRoundComplete) {
+        newSocket.on("round-complete", callbacks.onRoundComplete);
+      }
 
-    if (callbacks.onSkippedToRound) {
-      newSocket.on("skipped-to-round", callbacks.onSkippedToRound)
-    }
+      if (callbacks.onRoundStarted) {
+        newSocket.on("round-started", callbacks.onRoundStarted);
+      }
 
-    if (callbacks.onAnswersRevealed) {
-      newSocket.on("answers-revealed", callbacks.onAnswersRevealed);
-    }
+      if (callbacks.onQuestionForced) {
+        newSocket.on("question-forced", callbacks.onQuestionForced);
+      }
 
-    // NEW: Card revelation events
-    if (callbacks.onRemainingCardsRevealed) {
-      newSocket.on(
-        "remaining-cards-revealed",
-        callbacks.onRemainingCardsRevealed
-      );
-    }
+      if (callbacks.onQuestionComplete) {
+        newSocket.on("question-complete", callbacks.onQuestionComplete);
+      }
 
-    if (callbacks.onAnswerOverridden) {
-      newSocket.on("answer-overridden", callbacks.onAnswerOverridden);
-    }
+      if (callbacks.onGameReset) {
+        newSocket.on("game-reset", callbacks.onGameReset);
+      }
 
-    if (callbacks.onAudienceJoined) {
-      newSocket.on("audience-joined", callbacks.onAudienceJoined);
-    }
+      if (callbacks.onSkippedToRound) {
+        newSocket.on("skipped-to-round", callbacks.onSkippedToRound);
+      }
 
-    socketRef.current = newSocket;
-    setSocket(newSocket);
-    return newSocket;
-  }, [socket, callbacks]);
+      if (callbacks.onAnswersRevealed) {
+        newSocket.on("answers-revealed", callbacks.onAnswersRevealed);
+      }
+
+      // NEW: Card revelation events
+      if (callbacks.onRemainingCardsRevealed) {
+        newSocket.on(
+          "remaining-cards-revealed",
+          callbacks.onRemainingCardsRevealed
+        );
+      }
+
+      if (callbacks.onAnswerOverridden) {
+        newSocket.on("answer-overridden", callbacks.onAnswerOverridden);
+      }
+
+      if (callbacks.onAudienceJoined) {
+        newSocket.on("audience-joined", callbacks.onAudienceJoined);
+      }
+
+      socketRef.current = newSocket;
+      setSocket(newSocket);
+
+      if (gameCode) {
+        socketRef.current.emit("host-join", { gameCode });
+      }
+
+      return newSocket;
+    },
+    [socket, callbacks]
+  );
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
@@ -233,6 +241,11 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       gameCode: code,
       playerId,
     });
+  };
+  const completeTossUpRound = (gameCode: string) => {
+    if (socketRef.current) {
+      socketRef.current.emit("complete-toss-up-round", { gameCode });
+    }
   };
   const continueToNextRound = (gameCode: string) => {
     if (socketRef.current) {
@@ -271,7 +284,7 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
     questionNumber: number,
     isCorrect: boolean,
     points: number,
-    answerIndex: number
+    answerIndex?: number
   ) => {
     if (socketRef.current) {
       socketRef.current.emit("override-answer", {
@@ -283,6 +296,31 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
         pointsAwarded: points,
         answerIndex,
       });
+    }
+  };
+
+  const pauseTimer = (gameCode: string) => {
+    if (socketRef.current) {
+      socketRef.current.emit("pause-timer", { gameCode });
+    }
+  };
+
+  const skipToRound = (
+    gameCode: string,
+    round: number,
+    radioButtonRef: React.RefObject<HTMLFormElement>
+  ) => {
+    if (socketRef.current) {
+      const selectedStartingTeam =
+        radioButtonRef.current?.querySelector<HTMLInputElement>(
+          'input[name="starting-team"]:checked'
+        )?.value;
+      socketRef.current.emit(
+        "skip-to-round",
+        gameCode,
+        round,
+        selectedStartingTeam
+      );
     }
   };
 
@@ -342,6 +380,7 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
     // Host actions
     hostJoinGame,
     startGame,
+    completeTossUpRound,
     continueToNextRound,
     advanceQuestion,
     forceNextQuestion,
@@ -351,6 +390,8 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
     buzzIn,
     requestPlayersList,
     audienceJoinGame,
+    pauseTimer,
+    skipToRound,
     // Player actions
     playerJoinGame,
     submitAnswer,
