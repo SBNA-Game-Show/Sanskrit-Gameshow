@@ -55,7 +55,7 @@ const LoginForm: React.FC = () => {
     localStorage.setItem("username", res.data.username);
 
     // ✅ Navigate based on user role
-    if (res.data.role === 'Host') {
+    if (res.data.role === 'Host' || res.data.role === 'Tester') {
       navigate('/HostHomePage');
     } else if (res.data.role === 'Player') {
       navigate('/PlayerHomePage');

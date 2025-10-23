@@ -437,68 +437,89 @@ export function setupHostEvents(socket, io) {
     }
   });
 
-  socket.on("skip-to-lightning-round", (data) => {
-    const { gameCode } = data;
+  socket.on("skip-to-round", (gameCode, round, selectedStartingTeam) => {
     const game = getGame(gameCode);
 
+    let skipUpdates = {};
     if (game && game.hostId === socket.id) {
-      console.log(`🔄 Host skipping to the lightning round: ${gameCode}`);
+      if (round === 4) {
+        const updatedRoundScoreTeamOne = game.teams[0].roundScores.map((score, idx) => {
+          if (idx === game.currentRound - 1) {
+            return game.teams[0].currentRoundScore
+          }
+          return 0;
+        });
+        const updatedRoundScoreTeamTwo = game.teams[1].roundScores.map((score, idx) => {
+          if (idx === game.currentRound - 1) {
+            return game.teams[1].currentRoundScore
+          }
+          return 0;
+        });
+        const updatedRoundScores = [
+          updatedRoundScoreTeamOne,
+          updatedRoundScoreTeamTwo
+        ]
 
-      const updatedRoundScoreTeamOne = game.teams[0].roundScores.map((score, idx) => {
-        if (idx === game.currentRound - 1) {
-          return game.teams[0].currentRoundScore
-        }
-        return 0;
-      });
-      const updatedRoundScoreTeamTwo = game.teams[1].roundScores.map((score, idx) => {
-        if (idx === game.currentRound - 1) {
-          return game.teams[1].currentRoundScore
-        }
-        return 0;
-      });
-      const updatedRoundScores = [
-        updatedRoundScoreTeamOne,
-        updatedRoundScoreTeamTwo
-      ]
-      console.log(updatedRoundScores);
-
-      // Reset game to initial state but keep players
-      const skipUpdates = {
-        status: "active",
-        currentQuestionIndex: 18,
-        currentRound: 4,
-        teams: game.teams.map((team, idx) => ({ 
-          ...team, 
-          score: team.roundScores.reduce((total, num) => total + num, 0),
-          active: false,
-          roundScores: updatedRoundScores[idx],
-          currentRoundScore: 0
-        })),
-        gameState: {
-          ...game.gameState,
-          currentTurn: null,
-          questionsAnswered: { team1: 0, team2: 0 },
-          roundScores: {
-            ...game.gameState.roundScores,
-            round4: {team1: 0, team2: 0}
+        skipUpdates = {
+          status: "active",
+          currentQuestionIndex: 18,
+          currentRound: 4,
+          teams: game.teams.map((team, idx) => ({ 
+            ...team, 
+            score: team.roundScores.reduce((total, num) => total + num, 0),
+            active: false,
+            roundScores: updatedRoundScores[idx],
+            currentRoundScore: 0
+          })),
+          gameState: {
+            ...game.gameState,
+            currentTurn: null,
+            questionsAnswered: { team1: 0, team2: 0 },
+            roundScores: {
+              ...game.gameState.roundScores,
+              round4: {team1: 0, team2: 0}
+            },
+            awaitingAnswer: false,
+            canAdvance: false,
+            currentQuestionAttempts: 0,
+            maxAttemptsPerQuestion: 3,
           },
-          awaitingAnswer: false,
-          canAdvance: false,
-          currentQuestionAttempts: 0,
-          maxAttemptsPerQuestion: 3,
-        },
-      };
+        };
 
-      game.buzzedTeamId = null;
-      game.activeTeamId = null;
-      game.tossUpWinner = null;
-      game.tossUpAnswers = [];
-      game.tossUpSubmittedTeams = [];
-      game.lightningRoundSubmittedTeams = [],
-      game.pauseTimer = false,
+        game.buzzedTeamId = null;
+        game.activeTeamId = null;
+        game.tossUpWinner = null;
+        game.tossUpAnswers = [];
+        game.tossUpSubmittedTeams = [];
+        game.lightningRoundSubmittedTeams = [];
+        game.pauseTimer = false;
+      }
+      else {
+        const updatedQuestionIndex = selectedStartingTeam === "team1"
+          ? (round - 1) * 6
+          : (round - 1) * 6 + 3;
+
+        skipUpdates = {
+          status: "active",
+          currentQuestionIndex: updatedQuestionIndex,
+          currentRound: round,
+          teams: game.teams.map((team, idx) => ({ 
+            ...team, 
+            active: (selectedStartingTeam === "team1" && idx === 0) || (selectedStartingTeam === "team2" && idx === 1),
+          })),
+          gameState: {
+            ...game.gameState,
+            currentTurn: selectedStartingTeam,
+            questionsAnswered: { team1: 0, team2: 0 },
+            awaitingAnswer: true,
+            canAdvance: false,
+          },
+        }
+
+        game.activeTeamId = selectedStartingTeam;
+      }
 
       // Reset all question answers 
-      // This will also reset the lightning round if you want to reset/skip to it multiple times
       game.questions.forEach((question) => {
         question.answers.forEach((answer) => {
           answer.revealed = false;
@@ -507,9 +528,9 @@ export function setupHostEvents(socket, io) {
 
       const updatedGame = updateGame(gameCode, skipUpdates);
 
-      io.to(gameCode).emit("skipped-to-lightning-round", {
+      io.to(gameCode).emit("skipped-to-round", {
         game: updatedGame,
-        message: "Host has skipped to the lightning round",
+        message: `Host has skipped to round ${round}`,
       });
     }
   })

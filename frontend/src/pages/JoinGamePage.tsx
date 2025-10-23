@@ -282,7 +282,7 @@ const JoinGamePage: React.FC = () => {
       setRoundSummary(null);
       setGameMessage(data.message || "Game has been reset.");
     },
-    onSkippedToLightningRound: (data: any) => {
+    onSkippedToRound: (data: any) => {
       console.log("Game reset received:", data);
       setGame(data.game);
       setRoundSummary(null);
@@ -317,20 +317,29 @@ const JoinGamePage: React.FC = () => {
     setIsLoading(true);
     setError("");
 
+    let localPlayerId = localStorage.getItem("playerId") ?? undefined;
+
     try {
       const response = await gameApi.joinGame({
         gameCode: gameCode.toUpperCase(),
         playerName: playerName.trim(),
+        localPlayerId: localPlayerId,
       });
 
-      const { playerId, game: gameData } = response;
+      if (response.gameFull) {
+        throw new Error("Game is full!");
+      }
+
+      localStorage.setItem("playerId", response.playerId);
+
+      const { playerId, game: gameData, teamId } = response;
 
       setPlayer({
         id: playerId,
         name: playerName.trim(),
         gameCode: gameCode.toUpperCase(),
         connected: true,
-        teamId: undefined, // Player hasn't chosen a team yet
+        teamId: teamId, // Player hasn't chosen a team yet
       });
       setGame(gameData);
 
@@ -338,7 +347,7 @@ const JoinGamePage: React.FC = () => {
       playerJoinGame(gameCode.toUpperCase(), playerId);
     } catch (error: any) {
       console.error("Error joining game:", error);
-      setError(error.response?.data?.error || "Failed to join game");
+      setError(error.message || error.response?.data?.error || "Failed to join game");
     }
     setIsLoading(false);
   };

@@ -968,25 +968,111 @@ export function continueToNextRound(gameCode) {
 }
 
 // Join a game
-export function joinGame(gameCode, playerName) {
+export function joinGame(gameCode, playerName, localPlayerId) {
   if (!games[gameCode]) {
     throw new Error("Game not found");
   }
 
-  const playerId = uuidv4();
-  const player = {
-    id: playerId,
-    name: playerName,
-    gameCode,
-    connected: true,
-    teamId: null,
-  };
 
-  players[playerId] = player;
-  games[gameCode].players.push(player);
+  if (games[gameCode].players.length < 10) {
+    let playerId = "";
+    if (!localPlayerId) {
+      playerId = uuidv4();
+    }
+    else {
+      playerId = localPlayerId;
+    }
 
-  console.log(`👤 Player joined: ${playerName} in game ${gameCode}`);
-  return { playerId, game: games[gameCode] };
+    let player = games[gameCode].players.find(p => p.id === playerId);
+
+    if (player) {
+      console.log("PLAYER EXISTS")
+      player.connected = true;
+      // COMMENTED CODE BELOW IS FOR TESTING THE GAME ROOM PLAYER LIMIT
+      // This section of code allows the tester to populate the game room with 8
+      // additional players after exiting and rejoining a game
+      // if (playerName === "Tester") {
+      //   const playerList = [
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     }
+      //   ]
+      //   games[gameCode].players.push(...playerList);
+      // }
+    }
+    else {
+      console.log("PLAYER DOESN'T EXIST")
+      player = {
+        id: playerId,
+        name: playerName,
+        gameCode,
+        connected: true,
+        teamId: null,
+      };
+
+      players[playerId] = player;
+      games[gameCode].players.push(player);
+    }
+
+    console.log(`👤 Player joined: ${playerName} in game ${gameCode}`);
+    return { playerId, game: games[gameCode], teamId: player.teamId, gameFull: false };
+  }
+  else {
+    return { playerId: null, game: null, teamId: null, gameFull: true }
+  }
 }
 
 // Get game by code

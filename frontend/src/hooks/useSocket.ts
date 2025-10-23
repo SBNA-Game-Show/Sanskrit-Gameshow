@@ -27,7 +27,7 @@ interface SocketCallbacks {
   onQuestionForced?: (data: any) => void;
   onQuestionComplete?: (data: any) => void;
   onGameReset?: (data: any) => void;
-  onSkippedToLightningRound?: (data: any) => void;
+  onSkippedToRound?: (data: any) => void;
   onAnswersRevealed?: (data: any) => void;
   // NEW: Card revelation events
   onRemainingCardsRevealed?: (data: any) => void;
@@ -169,11 +169,8 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       newSocket.on("game-reset", callbacks.onGameReset);
     }
 
-    if (callbacks.onSkippedToLightningRound) {
-      newSocket.on(
-        "skipped-to-lightning-round",
-        callbacks.onSkippedToLightningRound
-      );
+    if (callbacks.onSkippedToRound) {
+      newSocket.on("skipped-to-round", callbacks.onSkippedToRound)
     }
 
     if (callbacks.onAnswersRevealed) {
