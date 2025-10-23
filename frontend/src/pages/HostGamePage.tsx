@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import io, { Socket } from "socket.io-client";
 import { GAME_CONFIG } from "../utils/constants";
 
-
 // Import components
 import PageLayout from "../components/layout/PageLayout";
 import AnimatedCard from "../components/common/AnimatedCard";
@@ -216,7 +215,7 @@ const HostGamePage: React.FC = () => {
       if (data.game.currentRound === 4) {
         setTimeout(() => {
           socket.emit("advance-question", { gameCode });
-        }, 2500)
+        }, 2500);
       }
     });
 
@@ -245,36 +244,38 @@ const HostGamePage: React.FC = () => {
       setControlMessage("Question finished. Click Next Question when ready.");
     });
 
-      socket.on("round-complete", (data) => {
-        console.log("🏁 Round completed:", data);
+    socket.on("round-complete", (data) => {
+      console.log("🏁 Round completed:", data);
 
-        // Update game state if provided
-        if (data.game) {
-          setGame(data.game);
-        }
+      // Update game state if provided
+      if (data.game) {
+        setGame(data.game);
+      }
 
-        if (data.roundSummary) {
-          setRoundSummary(data.roundSummary);
-          if (data.roundSummary.round === 0) {
-            setControlMessage(
-              `${data.roundSummary.tossUpWinner?.teamName || "A team"} won the toss-up!`
-            );
-          } else {
-            setControlMessage(
-              `Round ${data.roundSummary.round} completed! ${
-                data.isGameFinished ? "Game finished!" : "Ready for next round."
-              }`
-            );
-          }
-        } else if (typeof data.round !== "undefined") {
-          // Fallback when summary is missing
+      if (data.roundSummary) {
+        setRoundSummary(data.roundSummary);
+        if (data.roundSummary.round === 0) {
           setControlMessage(
-            `Round ${data.round} completed! ${
+            `${
+              data.roundSummary.tossUpWinner?.teamName || "A team"
+            } won the toss-up!`
+          );
+        } else {
+          setControlMessage(
+            `Round ${data.roundSummary.round} completed! ${
               data.isGameFinished ? "Game finished!" : "Ready for next round."
             }`
           );
         }
-      });
+      } else if (typeof data.round !== "undefined") {
+        // Fallback when summary is missing
+        setControlMessage(
+          `Round ${data.round} completed! ${
+            data.isGameFinished ? "Game finished!" : "Ready for next round."
+          }`
+        );
+      }
+    });
 
     socket.on("round-started", (data) => {
       console.log("🆕 New round started:", data);
@@ -319,7 +320,7 @@ const HostGamePage: React.FC = () => {
       if (data.game.currentRound === 4) {
         setTimeout(() => {
           socket.emit("advance-question", { gameCode });
-        }, 2500)
+        }, 2500);
       }
     });
 
@@ -374,40 +375,40 @@ const HostGamePage: React.FC = () => {
   // Validation function to check if game can start
   const canStartGame = (game: Game | null) => {
     if (!game || !game.players || game.players.length < 2) {
-      return { 
-        canStart: false, 
-        reason: "Need at least 2 players to start the game" 
+      return {
+        canStart: false,
+        reason: "Need at least 2 players to start the game",
       };
     }
 
     // Check if all players have selected a team
     const playersWithoutTeam = game.players.filter((p) => !p.teamId);
     if (playersWithoutTeam.length > 0) {
-      return { 
-        canStart: false, 
-        reason: `${playersWithoutTeam.length} player(s) haven't selected a team yet` 
+      return {
+        canStart: false,
+        reason: `${playersWithoutTeam.length} player(s) haven't selected a team yet`,
       };
     }
 
     // Check if each team has at least one member
-    const team1Players = game.players.filter((p) => 
-      p.teamId === game.teams[0]?.id
+    const team1Players = game.players.filter(
+      (p) => p.teamId === game.teams[0]?.id
     );
-    const team2Players = game.players.filter((p) => 
-      p.teamId === game.teams[1]?.id
+    const team2Players = game.players.filter(
+      (p) => p.teamId === game.teams[1]?.id
     );
 
     if (team1Players.length === 0) {
-      return { 
-        canStart: false, 
-        reason: `Team "${game.teams[0]?.name}" needs at least one player` 
+      return {
+        canStart: false,
+        reason: `Team "${game.teams[0]?.name}" needs at least one player`,
       };
     }
 
     if (team2Players.length === 0) {
-      return { 
-        canStart: false, 
-        reason: `Team "${game.teams[1]?.name}" needs at least one player` 
+      return {
+        canStart: false,
+        reason: `Team "${game.teams[1]?.name}" needs at least one player`,
       };
     }
 
@@ -472,9 +473,9 @@ const HostGamePage: React.FC = () => {
 
   const handleCompleteTossUpRound = () => {
     if (gameCode && socketRef.current) {
-      socketRef.current.emit("complete-toss-up-round", {gameCode});
+      socketRef.current.emit("complete-toss-up-round", { gameCode });
     }
-  }
+  };
 
   const handleContinueToNextRound = () => {
     if (gameCode && socketRef.current) {
@@ -498,7 +499,7 @@ const HostGamePage: React.FC = () => {
     if (gameCode && socketRef.current) {
       socketRef.current.emit("pause-timer", { gameCode });
     }
-  }
+  };
 
   const handleOverrideAnswer = () => {
     if (pendingOverride) {
@@ -550,7 +551,6 @@ const HostGamePage: React.FC = () => {
     setOverridePoints("0");
   };
 
-
   const handleResetGame = () => {
     if (gameCode && socketRef.current) {
       socketRef.current.emit("reset-game", { gameCode });
@@ -561,7 +561,7 @@ const HostGamePage: React.FC = () => {
     if (gameCode && socketRef.current) {
       socketRef.current.emit("skip-to-lightning-round", { gameCode });
     }
-  }
+  };
 
   // Request updated player list periodically when in waiting state
   useEffect(() => {
@@ -619,7 +619,7 @@ const HostGamePage: React.FC = () => {
   // Game created but waiting for players
   if (game && game.status === "waiting") {
     const validation = canStartGame(game);
-    
+
     return (
       <PageLayout gameCode={gameCode}>
         <AnimatedCard>
@@ -631,7 +631,10 @@ const HostGamePage: React.FC = () => {
                 <p className="text-lg text-slate-300 mb-2">
                   Share this code with contestants:
                 </p>
-                <div data-testid="game-code" className="text-5xl font-mono font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
+                <div
+                  data-testid="game-code"
+                  className="text-5xl font-mono font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse"
+                >
                   {gameCode}
                 </div>
                 <p className="text-sm text-slate-400 mt-4">
@@ -641,9 +644,7 @@ const HostGamePage: React.FC = () => {
 
               {!validation.canStart && (
                 <div className="mb-4 p-4 bg-gray-200 border-yellow-500/50 rounded">
-                  <p className="text-white text-sm">
-                    {validation.reason}
-                  </p>
+                  <p className="text-white text-sm">{validation.reason}</p>
                 </div>
               )}
 
@@ -799,7 +800,6 @@ const HostGamePage: React.FC = () => {
             onPauseTimer={handlePauseTimer}
           />
 
-
           {/* Host Controls - CLEAN VERSION */}
           <div className="bg-[#FEFEFC] rounded p-3 mt-2">
             <div className="text-center mb-2">
@@ -817,7 +817,11 @@ const HostGamePage: React.FC = () => {
               </Button> */}
               <Button
                 data-testid="force-next-question-button"
-                onClick={game.currentRound === 4 ? handlePauseTimer : handleForceNextQuestion}
+                onClick={
+                  game.currentRound === 4
+                    ? handlePauseTimer
+                    : handleForceNextQuestion
+                }
                 disabled={game.currentRound === 4 && game.pauseTimer}
                 variant="secondary"
                 size="sm"

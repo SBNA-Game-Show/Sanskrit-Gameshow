@@ -44,17 +44,17 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     round1: [
       { firstAttemptCorrect: null, pointsEarned: 0 },
       { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 }
+      { firstAttemptCorrect: null, pointsEarned: 0 },
     ],
     round2: [
       { firstAttemptCorrect: null, pointsEarned: 0 },
       { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 }
+      { firstAttemptCorrect: null, pointsEarned: 0 },
     ],
     round3: [
       { firstAttemptCorrect: null, pointsEarned: 0 },
       { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 }
+      { firstAttemptCorrect: null, pointsEarned: 0 },
     ],
     round4: [
       { firstAttemptCorrect: null, pointsEarned: 0 },
@@ -63,12 +63,12 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       { firstAttemptCorrect: null, pointsEarned: 0 },
       { firstAttemptCorrect: null, pointsEarned: 0 },
       { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 }
-    ]
+      { firstAttemptCorrect: null, pointsEarned: 0 },
+    ],
   },
   allTeams = [],
   activeBorderColor,
-  activeBackgroundColor
+  activeBackgroundColor,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const colorClasses = getTeamColorClasses(teamIndex);
@@ -78,9 +78,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       const answered = questionsAnswered > 0;
       return [
         {
-          firstAttemptCorrect: answered
-            ? team.currentRoundScore > 0
-            : null,
+          firstAttemptCorrect: answered ? team.currentRoundScore > 0 : null,
           pointsEarned: team.currentRoundScore,
         },
       ];
@@ -99,7 +97,11 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     }
   };
 
-  const renderQuestionStatus = (questionStatus: QuestionStatus, questionNumber: number, isCurrentRoundActive: boolean = false) => {
+  const renderQuestionStatus = (
+    questionStatus: QuestionStatus,
+    questionNumber: number,
+    isCurrentRoundActive: boolean = false
+  ) => {
     let display = "";
     let bgColor = "";
     let textColor = "";
@@ -114,7 +116,11 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       textColor = "text-white";
     } else {
       display = questionNumber.toString();
-      if (isCurrentRoundActive && questionNumber === questionsAnswered + 1 && isActive) {
+      if (
+        isCurrentRoundActive &&
+        questionNumber === questionsAnswered + 1 &&
+        isActive
+      ) {
         bgColor = "bg-yellow-500";
         textColor = "text-black";
       } else {
@@ -127,7 +133,11 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       <div className="flex flex-col items-center">
         <div
           className={`w-6 h-6 rounded text-xs font-bold flex items-center justify-center ${bgColor} ${textColor} ${
-            isCurrentRoundActive && questionNumber === questionsAnswered + 1 && isActive ? "animate-pulse" : ""
+            isCurrentRoundActive &&
+            questionNumber === questionsAnswered + 1 &&
+            isActive
+              ? "animate-pulse"
+              : ""
           }`}
         >
           {display}
@@ -138,37 +148,48 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
   const didTeamWinRound = (roundNum: number, roundData: QuestionStatus[]) => {
     if (allTeams.length < 2) return false;
-    
+
     const thisTeamScore = roundData.reduce((sum, q) => sum + q.pointsEarned, 0);
-    const otherTeam = allTeams.find(t => t.id !== team.id);
+    const otherTeam = allTeams.find((t) => t.id !== team.id);
     if (!otherTeam) return false;
-    
-    const otherTeamScore = otherTeam.roundScores ? otherTeam.roundScores[roundNum - 1] || 0 : 0;
+
+    const otherTeamScore = otherTeam.roundScores
+      ? otherTeam.roundScores[roundNum - 1] || 0
+      : 0;
     return thisTeamScore > otherTeamScore;
   };
 
-  const renderRoundSummary = (roundNum: number, roundData: QuestionStatus[]) => {
+  const renderRoundSummary = (
+    roundNum: number,
+    roundData: QuestionStatus[]
+  ) => {
     const roundTotal = roundData.reduce((sum, q) => sum + q.pointsEarned, 0);
     const isRoundWinner = didTeamWinRound(roundNum, roundData);
-    
+
     return (
-      <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-2 transition-all ${
-        isRoundWinner 
-          ? 'border-4 border-yellow-400 shadow-lg shadow-yellow-400/40' 
-          : 'border-gray-500/30'
-      }`}>
+      <div
+        className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-2 transition-all ${
+          isRoundWinner
+            ? "border-4 border-yellow-400 shadow-lg shadow-yellow-400/40"
+            : "border-gray-500/30"
+        }`}
+      >
         <h5 className="text-xs font-bold text-gray-300 mb-1 text-center">
           Round {roundNum}
         </h5>
-        
+
         <div className="flex justify-center gap-1 mb-1">
-          {roundData.map((questionStatus, idx) => 
+          {roundData.map((questionStatus, idx) =>
             renderQuestionStatus(questionStatus, idx + 1, false)
           )}
         </div>
 
         <div className="text-center">
-          <div className={`text-sm font-bold ${isRoundWinner ? 'text-yellow-300' : 'text-gray-200'}`}>
+          <div
+            className={`text-sm font-bold ${
+              isRoundWinner ? "text-yellow-300" : "text-gray-200"
+            }`}
+          >
             {roundTotal} pts
           </div>
         </div>
@@ -184,20 +205,26 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       className={`relative rounded p-3 transition-all ${
         isActive ? `border-2` : "border border-gray-300"
       } ${isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""}`}
-      style={isActive ? {
-        borderColor: activeBorderColor,
-        borderWidth: '2px',
-        borderStyle: 'solid',
-        backgroundColor: activeBackgroundColor ?? "#FFFFFF"
-      } : {
-        backgroundColor: "#FFFFFF"
-      }}
+      style={
+        isActive
+          ? {
+              borderColor: activeBorderColor,
+              borderWidth: "2px",
+              borderStyle: "solid",
+              backgroundColor: activeBackgroundColor ?? "#FFFFFF",
+            }
+          : {
+              backgroundColor: "#FFFFFF",
+            }
+      }
     >
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <h3 className="text-sm font-bold mb-1 flex items-center gap-1">
             {team.name}
-            {isPlayerTeam && <span className="text-yellow-400 text-xs">👤</span>}
+            {isPlayerTeam && (
+              <span className="text-yellow-400 text-xs">👤</span>
+            )}
           </h3>
           <div className="text-xl font-bold text-gray-900">
             {team.currentRoundScore || 0} pts
@@ -208,12 +235,19 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
           className="ml-2 p-2 hover:bg-gray-100 rounded-full transition-colors"
         >
           <svg
-            className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            className={`w-5 h-5 transition-transform ${
+              isExpanded ? "rotate-180" : ""
+            }`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
       </div>
@@ -221,7 +255,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       {/* Expanded overlay */}
       {isExpanded && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setIsExpanded(false)}
           />
@@ -235,8 +269,18 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 onClick={() => setIsExpanded(false)}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -247,7 +291,9 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
               </div>
             )}
 
-            <div className={`text-2xl font-bold mb-4 ${colorClasses.primary} text-center`}>
+            <div
+              className={`text-2xl font-bold mb-4 ${colorClasses.primary} text-center`}
+            >
               {team.currentRoundScore || 0}
             </div>
 
@@ -264,7 +310,9 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                         key={idx}
                         className="text-xs glass-card p-1 flex items-center gap-1"
                       >
-                        {idx === 0 && <span className="text-yellow-400">👑</span>}
+                        {idx === 0 && (
+                          <span className="text-yellow-400">👑</span>
+                        )}
                         {member}
                       </div>
                     ))}
@@ -272,27 +320,35 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
               </div>
             )}
 
-            <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${currentRound === 4 ? 'pb-3' : ''}`}>
+            <div
+              className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${
+                currentRound === 4 ? "pb-3" : ""
+              }`}
+            >
               <h4 className="text-sm font-bold text-red-300 mb-2 text-center">
                 {currentRound === 0 ? "Toss-up Round" : `Round ${currentRound}`}
               </h4>
-              
+
               {currentRound === 4 ? (
                 <div className="flex flex-col items-center gap-1 mb-2">
                   <div className="flex justify-center gap-1">
-                    {currentRoundData.slice(0, 4).map((questionStatus, idx) => 
-                      renderQuestionStatus(questionStatus, idx + 1, true)
-                    )}
+                    {currentRoundData
+                      .slice(0, 4)
+                      .map((questionStatus, idx) =>
+                        renderQuestionStatus(questionStatus, idx + 1, true)
+                      )}
                   </div>
                   <div className="flex justify-center gap-1">
-                    {currentRoundData.slice(4, 7).map((questionStatus, idx) => 
-                      renderQuestionStatus(questionStatus, idx + 5, true)
-                    )}
+                    {currentRoundData
+                      .slice(4, 7)
+                      .map((questionStatus, idx) =>
+                        renderQuestionStatus(questionStatus, idx + 5, true)
+                      )}
                   </div>
                 </div>
               ) : (
                 <div className="flex justify-center gap-1 mb-2">
-                  {currentRoundData.map((questionStatus, idx) => 
+                  {currentRoundData.map((questionStatus, idx) =>
                     renderQuestionStatus(questionStatus, idx + 1, true)
                   )}
                 </div>
@@ -304,7 +360,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 {renderRoundSummary(1, questionData.round1)}
               </div>
             )}
-            
+
             {currentRound >= 3 && (
               <div className="mb-3">
                 {renderRoundSummary(2, questionData.round2)}
@@ -318,9 +374,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             )}
 
             <div className="bg-white text-black rounded px-2 py-1 text-center border-2 border-gray-300">
-              <div className="text-xl font-bold">
-                {getTeamRoundTotal(team)}
-              </div>
+              <div className="text-xl font-bold">{getTeamRoundTotal(team)}</div>
               <div className="text-xs">Total Score</div>
             </div>
           </div>
@@ -335,14 +389,18 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       className={`rounded p-3 h-full flex flex-col transition-all 
       ${isActive ? `border-2 border-red-500` : "border border-gray-300"} 
       ${isPlayerTeam ? "border-yellow-400/50 bg-yellow-400/10" : ""}`}
-      style={isActive ? {
-        borderColor: activeBorderColor,
-        borderWidth: '2px',
-        borderStyle: 'solid',
-        backgroundColor: activeBackgroundColor ?? "#FFFFFF"
-      } : {
-        backgroundColor: "#FFFFFF"  
-      }}
+      style={
+        isActive
+          ? {
+              borderColor: activeBorderColor,
+              borderWidth: "2px",
+              borderStyle: "solid",
+              backgroundColor: activeBackgroundColor ?? "#FFFFFF",
+            }
+          : {
+              backgroundColor: "#FFFFFF",
+            }
+      }
     >
       <div className="text-center mb-4">
         <h3 className="text-lg font-bold mb-2 flex items-center justify-center gap-2">
@@ -382,27 +440,35 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         </div>
       )}
 
-      <div className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${currentRound === 4 ? 'pb-3' : ''}`}>
+      <div
+        className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${
+          currentRound === 4 ? "pb-3" : ""
+        }`}
+      >
         <h4 className="text-sm font-bold text-red-300 mb-2 text-center">
           {currentRound === 0 ? "Toss-up Round" : `Round ${currentRound}`}
         </h4>
-        
+
         {currentRound === 4 ? (
           <div className="flex flex-col items-center gap-1 mb-2">
             <div className="flex justify-center gap-1">
-              {currentRoundData.slice(0, 4).map((questionStatus, idx) => 
-                renderQuestionStatus(questionStatus, idx + 1, true)
-              )}
+              {currentRoundData
+                .slice(0, 4)
+                .map((questionStatus, idx) =>
+                  renderQuestionStatus(questionStatus, idx + 1, true)
+                )}
             </div>
             <div className="flex justify-center gap-1">
-              {currentRoundData.slice(4, 7).map((questionStatus, idx) => 
-                renderQuestionStatus(questionStatus, idx + 5, true)
-              )}
+              {currentRoundData
+                .slice(4, 7)
+                .map((questionStatus, idx) =>
+                  renderQuestionStatus(questionStatus, idx + 5, true)
+                )}
             </div>
           </div>
         ) : (
           <div className="flex justify-center gap-1 mb-2">
-            {currentRoundData.map((questionStatus, idx) => 
+            {currentRoundData.map((questionStatus, idx) =>
               renderQuestionStatus(questionStatus, idx + 1, true)
             )}
           </div>
@@ -412,27 +478,19 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       <div className="flex-grow"></div>
 
       {currentRound >= 2 && (
-        <div className="mb-3">
-          {renderRoundSummary(1, questionData.round1)}
-        </div>
+        <div className="mb-3">{renderRoundSummary(1, questionData.round1)}</div>
       )}
-      
+
       {currentRound >= 3 && (
-        <div className="mb-3">
-          {renderRoundSummary(2, questionData.round2)}
-        </div>
+        <div className="mb-3">{renderRoundSummary(2, questionData.round2)}</div>
       )}
 
       {currentRound >= 4 && (
-        <div className="mb-3">
-          {renderRoundSummary(3, questionData.round3)}
-        </div>
+        <div className="mb-3">{renderRoundSummary(3, questionData.round3)}</div>
       )}
 
       <div className="bg-white text-black rounded px-2 py-1 text-center">
-        <div className="text-xl font-bold">
-          {getTeamRoundTotal(team)}
-        </div>
+        <div className="text-xl font-bold">{getTeamRoundTotal(team)}</div>
         <div className="text-xs">Total Score</div>
       </div>
     </div>
@@ -440,12 +498,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
   return (
     <>
-      <div className="block md:hidden">
-        {mobileCompactView}
-      </div>
-      <div className="hidden md:block h-full">
-        {desktopView}
-      </div>
+      <div className="block md:hidden">{mobileCompactView}</div>
+      <div className="hidden md:block h-full">{desktopView}</div>
     </>
   );
 };

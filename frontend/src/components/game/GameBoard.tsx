@@ -20,7 +20,7 @@ interface GameBoardProps {
   onOverridePointsChange?: (value: string) => void;
   onCancelOverride?: () => void;
   onConfirmOverride?: () => void;
-  onClickAnswerCard?: (answer:string) => void;
+  onClickAnswerCard?: (answer: string) => void;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -38,14 +38,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onOverridePointsChange,
   onCancelOverride,
   onConfirmOverride,
-  onClickAnswerCard
+  onClickAnswerCard,
 }) => {
   const currentQuestion = getCurrentQuestion(game);
 
   // if (currentQuestion) {
   //   console.log(currentQuestion.answers)
   // }
-  
 
   if (!currentQuestion) {
     return (
@@ -93,22 +92,20 @@ const GameBoard: React.FC<GameBoardProps> = ({
           {/* Question Header - Compact with Round Status */}
           <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
             <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="font-bold">
-                    {game.currentRound === 0
-                      ? 'Toss-up Round'
-                      : ""}
-                  </h2>
-                </div>
+              <div>
+                <h2 className="font-bold">
+                  {game.currentRound === 0 ? "Toss-up Round" : ""}
+                </h2>
+              </div>
               <RoundStatus />
             </div>
           </div>
 
           {/* Question Text - Compact */}
-          <QuestionCard 
+          <QuestionCard
             key={game.currentQuestionIndex}
             game={game}
-            question={currentQuestion.question} 
+            question={currentQuestion.question}
             duration={10000}
             isTimerActive={game.currentRound === 4}
           />
@@ -122,9 +119,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
               key={index}
               onClick={() => onClickAnswerCard?.(answer.answer)}
               className={`answer-card glass-card transition-all ${
-                currentQuestion.questionType === "MCQ" && answer.revealed && answer.score > 0
+                currentQuestion.questionType === "MCQ" &&
+                answer.revealed &&
+                answer.score > 0
                   ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
-                  : currentQuestion.questionType === "MCQ" && answer.revealed && answer.score <= 0
+                  : currentQuestion.questionType === "MCQ" &&
+                    answer.revealed &&
+                    answer.score <= 0
                   ? "!bg-gradient-to-r from-red-600/30 to-red-600/30 border-red-400 animate-pulse"
                   : currentQuestion.questionType === "MCQ"
                   ? "bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400"
@@ -169,7 +170,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   }
 
   return (
-      <div className="flex-1 flex flex-col overflow-y-auto">
+    <div className="flex-1 flex flex-col overflow-y-auto">
       {/* Keep question visible on mobile by sticking it to the top */}
       <div className="sticky top-0 z-10">
         {/* Question Header with Round Status */}
@@ -177,9 +178,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           <div className="flex justify-between items-center">
             <div>
               <h2 className="font-bold">
-                {game.currentRound === 0
-                  ? 'Toss-up Round'
-                  : ""}
+                {game.currentRound === 0 ? "Toss-up Round" : ""}
               </h2>
             </div>
             <RoundStatus />
@@ -187,10 +186,10 @@ const GameBoard: React.FC<GameBoardProps> = ({
         </div>
 
         {/* Question Text */}
-        <QuestionCard 
+        <QuestionCard
           key={game.currentQuestionIndex}
           game={game}
-          question={currentQuestion.question} 
+          question={currentQuestion.question}
           duration={10000}
           isTimerActive={game.currentRound === 4}
           onPauseTimer={onPauseTimer}
@@ -203,9 +202,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
           <div
             key={index}
             className={`answer-card glass-card transition-all ${
-              currentQuestion.questionType === "MCQ" && answer.revealed && answer.score > 0
+              currentQuestion.questionType === "MCQ" &&
+              answer.revealed &&
+              answer.score > 0
                 ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
-                : currentQuestion.questionType === "MCQ" && answer.revealed && answer.score <= 0
+                : currentQuestion.questionType === "MCQ" &&
+                  answer.revealed &&
+                  answer.score <= 0
                 ? "!bg-gradient-to-r from-red-600/30 to-red-600/30 border-red-400 animate-pulse"
                 : currentQuestion.questionType === "MCQ"
                 ? "bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400"
@@ -213,7 +216,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 ? "!bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
                 : "border-slate-500/50"
             }`}
-
             // className={`answer-card glass-card transition-all ${
             //   answer.revealed
             //     ? "bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400 animate-pulse"
@@ -221,7 +223,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             // } ${
             //   isHost && (!answer.revealed || overrideMode) ? "cursor-pointer" : ""
             // }`}
-            
+
             onClick={() => {
               if (overrideMode) {
                 onSelectAnswer?.(index);
@@ -233,21 +235,25 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <span className="answer-text">
               {/* HOST ALWAYS SEES THE ANSWER TEXT */}
               {isHost ? (
-                <span className={answer.revealed ? "text-black" : "text-blue-300"}>
+                <span
+                  className={answer.revealed ? "text-black" : "text-blue-300"}
+                >
                   {index + 1}. {answer.answer}
-                  {!answer.revealed && <span className="ml-2 text-xs text-yellow-400">(Click to reveal)</span>}
+                  {!answer.revealed && (
+                    <span className="ml-2 text-xs text-yellow-400">
+                      (Click to reveal)
+                    </span>
+                  )}
+                </span>
+              ) : // NON-HOST VIEW
+              answer.revealed ? (
+                <span className="text-black">
+                  {index + 1}. {answer.answer}
                 </span>
               ) : (
-                // NON-HOST VIEW
-                answer.revealed ? (
-                  <span className="text-black">
-                    {index + 1}. {answer.answer}
-                  </span>
-                ) : (
-                  <span className="text-slate-400">
-                    {index + 1}. {"\u00A0".repeat(15)}
-                  </span>
-                )
+                <span className="text-slate-400">
+                  {index + 1}. {"\u00A0".repeat(15)}
+                </span>
               )}
             </span>
             <span
@@ -268,67 +274,72 @@ const GameBoard: React.FC<GameBoardProps> = ({
       </div>
 
       {/* Host Control Message */}
-      {isHost && (controlMessage || overrideMode || game.gameState.canAdvance) && (
-        <div className=" host-controls">
-          <div className="text-center">
-            {overrideMode && (
-              <>
-                <div className="text-xs text-yellow-300 mb-2">
-                  Select an answer or enter points to award
-                </div>
-                <div className="flex justify-center items-center gap-2 mt-1">
-                  <Input
-                    id="overridePoints"
-                    type="number"
-                    value={overridePoints ?? ""}
-                    onChange={(e) =>
-                      onOverridePointsChange &&
-                      onOverridePointsChange(e.target.value)
-                    }
-                    className="w-24 text-center"
-                    variant="center"
-                    placeholder="Award points"
-                  />
-                  {onConfirmOverride && (
-                    <Button
-                      onClick={onConfirmOverride}
-                      variant="primary"
-                      size="sm"
-                      className="text-xs py-1 px-3"
-                    >
-                      Award
-                    </Button>
-                  )}
-                  {onCancelOverride && (
-                    <Button
-                      onClick={onCancelOverride}
-                      variant="secondary"
-                      size="sm"
-                      className="text-xs py-1 px-3"
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                </div>
-              </>
-            )}
-            {controlMessage && !overrideMode && (
-              <div className="text-xs text-blue-400">{controlMessage}</div>
-            )}
-            {game.gameState.canAdvance && !overrideMode && (
-              <Button
-                data-testid="host-next-question-button"
-                onClick={game.currentRound === 0 ? onCompleteTossUpRound : onNextQuestion}
-                variant="primary"
-                size="sm"
-                className="mt-2 text-xs py-1 px-3"
-              >
-                Next Question
-              </Button>
-            )}
+      {isHost &&
+        (controlMessage || overrideMode || game.gameState.canAdvance) && (
+          <div className=" host-controls">
+            <div className="text-center">
+              {overrideMode && (
+                <>
+                  <div className="text-xs text-yellow-300 mb-2">
+                    Select an answer or enter points to award
+                  </div>
+                  <div className="flex justify-center items-center gap-2 mt-1">
+                    <Input
+                      id="overridePoints"
+                      type="number"
+                      value={overridePoints ?? ""}
+                      onChange={(e) =>
+                        onOverridePointsChange &&
+                        onOverridePointsChange(e.target.value)
+                      }
+                      className="w-24 text-center"
+                      variant="center"
+                      placeholder="Award points"
+                    />
+                    {onConfirmOverride && (
+                      <Button
+                        onClick={onConfirmOverride}
+                        variant="primary"
+                        size="sm"
+                        className="text-xs py-1 px-3"
+                      >
+                        Award
+                      </Button>
+                    )}
+                    {onCancelOverride && (
+                      <Button
+                        onClick={onCancelOverride}
+                        variant="secondary"
+                        size="sm"
+                        className="text-xs py-1 px-3"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
+              {controlMessage && !overrideMode && (
+                <div className="text-xs text-blue-400">{controlMessage}</div>
+              )}
+              {game.gameState.canAdvance && !overrideMode && (
+                <Button
+                  data-testid="host-next-question-button"
+                  onClick={
+                    game.currentRound === 0
+                      ? onCompleteTossUpRound
+                      : onNextQuestion
+                  }
+                  variant="primary"
+                  size="sm"
+                  className="mt-2 text-xs py-1 px-3"
+                >
+                  Next Question
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
