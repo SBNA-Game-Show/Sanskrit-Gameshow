@@ -937,70 +937,70 @@ export function joinGame(gameCode, playerName, localPlayerId) {
     if (player) {
       console.log("PLAYER EXISTS")
       player.connected = true;
-      // FOR TESTING THE GAME ROOM PLAYER LIMIT
+      // COMMENTED CODE BELOW IS FOR TESTING THE GAME ROOM PLAYER LIMIT
       // This section of code allows the tester to populate the game room with 8
       // additional players after exiting and rejoining a game
-      if (playerName === "Tester") {
-        const playerList = [
-          {
-            id: uuidv4(),
-            name: "fakePlayer",
-            gameCode,
-            connected: true,
-            teamId: null,
-          },
-          {
-            id: uuidv4(),
-            name: "fakePlayer",
-            gameCode,
-            connected: true,
-            teamId: null,
-          },
-          {
-            id: uuidv4(),
-            name: "fakePlayer",
-            gameCode,
-            connected: true,
-            teamId: null,
-          },
-          {
-            id: uuidv4(),
-            name: "fakePlayer",
-            gameCode,
-            connected: true,
-            teamId: null,
-          },
-          {
-            id: uuidv4(),
-            name: "fakePlayer",
-            gameCode,
-            connected: true,
-            teamId: null,
-          },
-          {
-            id: uuidv4(),
-            name: "fakePlayer",
-            gameCode,
-            connected: true,
-            teamId: null,
-          },
-          {
-            id: uuidv4(),
-            name: "fakePlayer",
-            gameCode,
-            connected: true,
-            teamId: null,
-          },
-          {
-            id: uuidv4(),
-            name: "fakePlayer",
-            gameCode,
-            connected: true,
-            teamId: null,
-          }
-        ]
-        games[gameCode].players.push(...playerList);
-      }
+      // if (playerName === "Tester") {
+      //   const playerList = [
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     },
+      //     {
+      //       id: uuidv4(),
+      //       name: "fakePlayer",
+      //       gameCode,
+      //       connected: true,
+      //       teamId: null,
+      //     }
+      //   ]
+      //   games[gameCode].players.push(...playerList);
+      // }
     }
     else {
       console.log("PLAYER DOESN'T EXIST")
