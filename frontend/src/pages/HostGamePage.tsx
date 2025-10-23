@@ -197,7 +197,7 @@ const HostGamePage: React.FC = () => {
 
       if (data.game.currentRound === 4) {
         setTimeout(() => {
-          advanceQuestion(gameCode)
+          socketRef.current?.emit("advance-question", { gameCode })
         }, 2500);
       }
     },
@@ -293,7 +293,7 @@ const HostGamePage: React.FC = () => {
 
       if (data.game.currentRound === 4) {
         setTimeout(() => {
-          advanceQuestion(gameCode);
+          socketRef.current?.emit("advance-question", { gameCode })
         }, 2500);
       }
     },
