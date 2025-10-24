@@ -9,9 +9,9 @@ interface GameBoardProps {
   game: Game;
   onRevealAnswer?: (answerIndex: number) => void;
   onSelectAnswer?: (answerIndex: number) => void;
-  onAdvanceQuestion?: (gameCode: string) => void;
-  onCompleteTossUpRound?: (gameCode: string) => void;
-  onPauseTimer?: (gameCode: string) => void;
+  onNextQuestion?: () => void;
+  onCompleteTossUpRound?: () => void;
+  onPauseTimer?: () => void;
   isHost?: boolean;
   variant?: "host" | "player";
   controlMessage?: string;
@@ -27,7 +27,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   game,
   onRevealAnswer,
   onSelectAnswer,
-  onAdvanceQuestion,
+  onNextQuestion,
   onCompleteTossUpRound,
   onPauseTimer,
   isHost = false,
@@ -192,7 +192,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           question={currentQuestion.question}
           duration={10000}
           isTimerActive={game.currentRound === 4}
-          onPauseTimer={() => onPauseTimer?.(game.code)}
+          onPauseTimer={onPauseTimer}
         />
       </div>
 
@@ -327,8 +327,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   data-testid="host-next-question-button"
                   onClick={
                     game.currentRound === 0
-                      ? () => onCompleteTossUpRound?.(game.code)
-                      : () => onAdvanceQuestion?.(game.code)
+                      ? onCompleteTossUpRound
+                      : onNextQuestion
                   }
                   variant="primary"
                   size="sm"

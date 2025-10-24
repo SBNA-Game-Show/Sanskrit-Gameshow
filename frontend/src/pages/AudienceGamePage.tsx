@@ -73,7 +73,7 @@ const AudienceGamePage: React.FC = () => {
         });
       }
     },
-    onBuzzerPressed: (data: any) => {
+    onPlayerBuzzed: (data: any) => {
       setGame(data.game);
       setMessage({
         text: `🔔 ${data.teamName} buzzed in! ${data.playerName}, answer now!`,
