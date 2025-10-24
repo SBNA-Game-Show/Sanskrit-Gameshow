@@ -209,14 +209,10 @@ export function updateTeamActiveStatus(game) {
 
 // Create a new game (SINGLE ATTEMPT + Question Data)
 export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
-  if (
-      teamNames?.team1?.trim().toLowerCase() ===
-      teamNames?.team2?.trim().toLowerCase()
+  if (teamNames?.team1?.trim().toLowerCase() === teamNames?.team2?.trim().toLowerCase()) {
+    throw new Error("Team names must be different (case-insensitive).");
+  }
 
-) {
-  throw new Error("Team names must be different (case-insensitive).");
-
-}
   const gameCode = generateGameCode();
   const gameId = uuidv4();
 
@@ -286,7 +282,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
   console.log(
     `🎮 Single-attempt game created with question tracking: ${gameCode}`
   );
-  return { gameCode, gameId };
+  return { game: games[gameCode]};
 }
 
 // Start the game (called by host)

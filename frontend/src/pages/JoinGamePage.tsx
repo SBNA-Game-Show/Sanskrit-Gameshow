@@ -26,6 +26,7 @@ import { getTeamName } from "../utils/gameHelper";
 
 const JoinGamePage: React.FC = () => {
   const [gameCode, setGameCode] = useState("");
+  const [playerName] = useState(() => localStorage.getItem("username") || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [game, setGame] = useState<Game | null>(null);
@@ -34,7 +35,6 @@ const JoinGamePage: React.FC = () => {
   const [gameMessage, setGameMessage] = useState("");
   const [hasBuzzed, setHasBuzzed] = useState(false);
   //const [buzzFeedback, setBuzzFeedback] = useState("");
-  const [playerName] = useState(() => localStorage.getItem("username") || "");
 
   const myTeam = game?.teams.find((team) => team.id === player?.teamId);
   const isMyTurn = myTeam && myTeam.active;
@@ -336,7 +336,7 @@ const JoinGamePage: React.FC = () => {
       setGame(gameData);
 
       connect();
-      playerJoinGame(gameCode.toUpperCase(), playerId);
+      playerJoinGame(gameData.code.toUpperCase(), playerId);
     } catch (error: any) {
       console.error("Error joining game:", error);
       setError(error.message || error.response?.data?.error || "Failed to join game");
