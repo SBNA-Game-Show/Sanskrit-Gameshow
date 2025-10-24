@@ -21,7 +21,7 @@ import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
 
 // Import types and utils
-import { Game, RoundSummary, RoundData } from "../types"; //Team
+import { Game, RoundData } from "../types"; //Team
 import { getCurrentQuestion, getTeamName } from "../utils/gameHelper"; //getGameWinner
 import { ROUTES } from "../utils/constants";
 
@@ -33,7 +33,6 @@ const HostGamePage: React.FC = () => {
   const [team2Name, setTeam2Name] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [controlMessage, setControlMessage] = useState<string>("");
-  const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
   const [overrideMode, setOverrideMode] = useState(false);
   const [pendingOverride, setPendingOverride] = useState<{
     teamId: string;
@@ -249,30 +248,27 @@ const HostGamePage: React.FC = () => {
     socket.on("round-complete", (data) => {
       console.log("🏁 Round completed:", data);
 
-      // Update game state if provided
+      console.log(data.game)
+
+      // Update game state
       if (data.game) {
         setGame(data.game);
-      }
-
-      if (data.roundSummary) {
-        setRoundSummary(data.roundSummary);
-        if (data.roundSummary.round === 0) {
+        if (data.game.currentRound === 0) {
           setControlMessage(
             `${
-              data.roundSummary.tossUpWinner?.teamName || "A team"
+              data.game.tossUpWinner?.teamName || "A team"
             } won the toss-up!`
           );
         } else {
           setControlMessage(
-            `Round ${data.roundSummary.round} completed! ${
+            `Round ${data.game.currentRound} completed! ${
               data.isGameFinished ? "Game finished!" : "Ready for next round."
             }`
           );
         }
-      } else if (typeof data.round !== "undefined") {
-        // Fallback when summary is missing
+      } else {
         setControlMessage(
-          `Round ${data.round} completed! ${
+          `Round ${data.game.currentRound} completed! ${
             data.isGameFinished ? "Game finished!" : "Ready for next round."
           }`
         );
@@ -282,7 +278,6 @@ const HostGamePage: React.FC = () => {
     socket.on("round-started", (data) => {
       console.log("🆕 New round started:", data);
       setGame(data.game);
-      setRoundSummary(null);
       const teamName = getTeamName(data.game, data.activeTeam);
       setControlMessage(
         `Round ${data.round} started! ${teamName} goes first. Each question allows only 1 attempt.`
@@ -338,7 +333,6 @@ const HostGamePage: React.FC = () => {
     socket.on("game-reset", (data) => {
       console.log("🔄 Game reset:", data);
       setGame(data.game);
-      setRoundSummary(null);
       setControlMessage(data.message || "Game has been reset.");
       setOverrideMode(false);
     });
@@ -346,7 +340,6 @@ const HostGamePage: React.FC = () => {
     socket.on("skipped-to-round", (data) => {
       console.log(data.message);
       setGame(data.game);
-      setRoundSummary(null);
       setControlMessage(data.message || "Skipped rounds.");
       setOverrideMode(false);
     });
@@ -700,12 +693,12 @@ const HostGamePage: React.FC = () => {
   }
 
   // Round Summary Screen
-  if (game?.status === "round-summary" && roundSummary) {
+  if (game && game.status === "round-summary") {
     return (
       <PageLayout gameCode={gameCode} timer={timer} variant="game">
         <div className="p-4">
           <RoundSummaryComponent
-            roundSummary={roundSummary}
+            game={game}
             teams={game.teams}
             isHost={true}
             isGameFinished={game.currentRound >= 4}
@@ -966,7 +959,7 @@ const HostGamePage: React.FC = () => {
     <PageLayout gameCode={gameCode}>
       <AnimatedCard>
         <div className="glass-card p-8 text-center">
-          <p className="text-xl font-bold mb-4">Unexpected Game State</p>
+          <p className="text-xl font-bold mb-4">Unexpected Game State {game?.status}</p>
           <p className="text-slate-400 mb-4">
             The game is in an unexpected state. Please refresh the page or
             create a new game.

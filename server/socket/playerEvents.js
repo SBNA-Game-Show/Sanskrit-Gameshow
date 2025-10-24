@@ -6,8 +6,6 @@ import {
   updateGame,
   advanceGameState,
   getCurrentQuestion,
-  calculateRoundSummary,
-  calculateTossUpSummary,
   getGameWinner,
 } from "../services/gameService.js";
 
@@ -468,11 +466,9 @@ export function handleGameStateAdvancement(gameCode, advancedGame, io, result) {
   // Check what happened after advancing
   if (advancedGame.status === "round-summary") {
     // Round completed - emit round summary
-    const roundSummary = calculateRoundSummary(advancedGame);
 
     io.to(gameCode).emit("round-complete", {
       game: advancedGame,
-      roundSummary: roundSummary,
       isGameFinished: advancedGame.currentRound >= 3,
     });
 
@@ -480,12 +476,10 @@ export function handleGameStateAdvancement(gameCode, advancedGame, io, result) {
   } else if (advancedGame.status === "finished") {
     // Game finished - include round summary for final round
     const winner = getGameWinner(advancedGame);
-    const roundSummary = calculateRoundSummary(advancedGame);
 
     io.to(gameCode).emit("game-over", {
       game: advancedGame,
       winner: winner,
-      roundSummary,
     });
 
     console.log(`🏆 Game finished: ${gameCode}`);

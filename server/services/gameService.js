@@ -137,101 +137,6 @@ export function isRoundComplete(game) {
   );
 }
 
-// Calculate round summary
-export function calculateRoundSummary(game) {
-  const round = game.currentRound;
-  const team1 = game.teams.find(
-    (t) => t.id.includes("team1") || t.name.includes("1")
-  );
-  const team2 = game.teams.find(
-    (t) => t.id.includes("team2") || t.name.includes("2")
-  );
-
-  const team1BaseTotal = team1.roundScores.reduce((sum, s) => sum + s, 0);
-  const team2BaseTotal = team2.roundScores.reduce((sum, s) => sum + s, 0);
-
-  const includeCurrentRound = game.status === "round-summary" && round > 0;
-
-  const team1Total =
-    team1BaseTotal +
-    (includeCurrentRound && team1.roundScores[round - 1] === 0
-      ? team1.currentRoundScore
-      : 0);
-  const team2Total =
-    team2BaseTotal +
-    (includeCurrentRound && team2.roundScores[round - 1] === 0
-      ? team2.currentRoundScore
-      : 0);
-
-  return {
-    round,
-    teamScores: {
-      team1: {
-        roundScore: team1.currentRoundScore,
-        totalScore: team1Total,
-        teamName: team1.name,
-      },
-      team2: {
-        roundScore: team2.currentRoundScore,
-        totalScore: team2Total,
-        teamName: team2.name,
-      },
-    },
-    questionsAnswered: {
-      team1: game.questions.filter(
-        (q) => q.teamAssignment === "team1" && q.round === round
-      ),
-      team2: game.questions.filter(
-        (q) => q.teamAssignment === "team2" && q.round === round
-      ),
-    },
-  };
-}
-
-// Create a summary object for the toss-up round
-export function calculateTossUpSummary(game) {
-  const team1 = getTeamByAssignment(game, "team1");
-  const team2 = getTeamByAssignment(game, "team2");
-
-  let winner = null;
-  if (game.tossUpAnswers && game.tossUpAnswers.length > 0) {
-    winner = game.tossUpAnswers.reduce((a, b) => (a.score > b.score ? a : b));
-  }
-
-  const team1Answer =
-    game.tossUpAnswers?.find((a) => a.teamId === team1?.id) || null;
-  const team2Answer =
-    game.tossUpAnswers?.find((a) => a.teamId === team2?.id) || null;
-
-  return {
-    round: 0,
-    tossUpWinner: winner
-      ? { teamId: winner.teamId, teamName: winner.teamName }
-      : null,
-    tossUpAnswers: game.tossUpAnswers || [],
-    teamScores: {
-      team1: {
-        roundScore: team1Answer ? team1Answer.score : 0,
-        totalScore: team1
-          ? team1.roundScores.reduce((sum, s) => sum + s, 0)
-          : 0,
-        teamName: team1 ? team1.name : "",
-      },
-      team2: {
-        roundScore: team2Answer ? team2Answer.score : 0,
-        totalScore: team2
-          ? team2.roundScores.reduce((sum, s) => sum + s, 0)
-          : 0,
-        teamName: team2 ? team2.name : "",
-      },
-    },
-    questionsAnswered: {
-      team1: [],
-      team2: [],
-    },
-  };
-}
-
 // Start new round
 function startNewRound(game) {
   game.currentRound += 1;
@@ -556,7 +461,7 @@ export function submitAnswer(gameCode, playerId, answerText) {
     );
     const score = matchingAnswer ? matchingAnswer.score : 0;
     if (score > 0) {
-      playerTeam.score += score;
+      playerTeam.currentRoundScore = score;
     }
 
     game.tossUpAnswers.push({
@@ -996,70 +901,6 @@ export function joinGame(gameCode, playerName, localPlayerId) {
     if (player) {
       console.log("PLAYER EXISTS")
       player.connected = true;
-      // COMMENTED CODE BELOW IS FOR TESTING THE GAME ROOM PLAYER LIMIT
-      // This section of code allows the tester to populate the game room with 8
-      // additional players after exiting and rejoining a game
-      // if (playerName === "Tester") {
-      //   const playerList = [
-      //     {
-      //       id: uuidv4(),
-      //       name: "fakePlayer",
-      //       gameCode,
-      //       connected: true,
-      //       teamId: null,
-      //     },
-      //     {
-      //       id: uuidv4(),
-      //       name: "fakePlayer",
-      //       gameCode,
-      //       connected: true,
-      //       teamId: null,
-      //     },
-      //     {
-      //       id: uuidv4(),
-      //       name: "fakePlayer",
-      //       gameCode,
-      //       connected: true,
-      //       teamId: null,
-      //     },
-      //     {
-      //       id: uuidv4(),
-      //       name: "fakePlayer",
-      //       gameCode,
-      //       connected: true,
-      //       teamId: null,
-      //     },
-      //     {
-      //       id: uuidv4(),
-      //       name: "fakePlayer",
-      //       gameCode,
-      //       connected: true,
-      //       teamId: null,
-      //     },
-      //     {
-      //       id: uuidv4(),
-      //       name: "fakePlayer",
-      //       gameCode,
-      //       connected: true,
-      //       teamId: null,
-      //     },
-      //     {
-      //       id: uuidv4(),
-      //       name: "fakePlayer",
-      //       gameCode,
-      //       connected: true,
-      //       teamId: null,
-      //     },
-      //     {
-      //       id: uuidv4(),
-      //       name: "fakePlayer",
-      //       gameCode,
-      //       connected: true,
-      //       teamId: null,
-      //     }
-      //   ]
-      //   games[gameCode].players.push(...playerList);
-      // }
     }
     else {
       console.log("PLAYER DOESN'T EXIST")

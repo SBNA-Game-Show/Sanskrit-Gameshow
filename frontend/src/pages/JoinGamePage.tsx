@@ -20,7 +20,7 @@ import { useSocket } from "../hooks/useSocket";
 import gameApi from "../services/gameApi";
 
 // Import types and constants
-import { Game, Player, RoundSummary, RoundData } from "../types";
+import { Game, Player, RoundData } from "../types";
 import { ROUTES } from "../utils/constants";
 import { getTeamName } from "../utils/gameHelper";
 
@@ -31,7 +31,6 @@ const JoinGamePage: React.FC = () => {
   const [game, setGame] = useState<Game | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
   const [answer, setAnswer] = useState("");
-  const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
   const [gameMessage, setGameMessage] = useState("");
   const [hasBuzzed, setHasBuzzed] = useState(false);
   //const [buzzFeedback, setBuzzFeedback] = useState("");
@@ -198,18 +197,14 @@ const JoinGamePage: React.FC = () => {
       // Update local game state when provided
       if (data.game) {
         setGame(data.game);
-      }
-
-      if (data.roundSummary) {
-        setRoundSummary(data.roundSummary);
-        if (data.roundSummary.round === 0) {
+        if (data.game.currentRound === 0) {
           setGameMessage(
             `${
-              data.roundSummary.tossUpWinner?.teamName || "A team"
+              data.game.tossUpWinner?.teamName || "A team"
             } won the toss-up!`
           );
         } else {
-          setGameMessage(`Round ${data.roundSummary.round} completed!`);
+          setGameMessage(`Round ${data.game.currentRound} completed!`);
         }
       } else if (typeof data.round !== "undefined") {
         // Fallback to a simple message when summary is missing
@@ -219,7 +214,6 @@ const JoinGamePage: React.FC = () => {
     onRoundStarted: (data: any) => {
       console.log("Round started event received:", data);
       setGame(data.game);
-      setRoundSummary(null);
       const teamName = getTeamName(data.game, data.activeTeam);
       setGameMessage(`Round ${data.round} started! ${teamName} goes first.`);
     },
@@ -279,13 +273,11 @@ const JoinGamePage: React.FC = () => {
     onGameReset: (data: any) => {
       console.log("Game reset received:", data);
       setGame(data.game);
-      setRoundSummary(null);
       setGameMessage(data.message || "Game has been reset.");
     },
     onSkippedToRound: (data: any) => {
       console.log("Game reset received:", data);
       setGame(data.game);
-      setRoundSummary(null);
       setGameMessage(data.message || "Game has been reset.");
     },
   });
@@ -435,12 +427,12 @@ const JoinGamePage: React.FC = () => {
   }
 
   // Round Summary Screen for Players
-  if (game && game.status === "round-summary" && roundSummary) {
+  if (game && game.status === "round-summary") {
     return (
       <PageLayout gameCode={game.code} variant="game">
         <div className="p-4">
           <RoundSummaryComponent
-            roundSummary={roundSummary}
+            game={game}
             teams={game.teams}
             isHost={false}
             isGameFinished={game.currentRound >= 4}

@@ -4,8 +4,6 @@ import {
   startGame,
   continueToNextRound,
   getCurrentQuestion,
-  calculateTossUpSummary,
-  calculateRoundSummary,
   initializeQuestionData,
   updateQuestionData,
   advanceGameState,
@@ -114,14 +112,12 @@ export function setupHostEvents(socket, io) {
     const game = getGame(gameCode);
 
     if (game && game.hostId === socket.id) {
-      const summary = calculateTossUpSummary(game);
-      console.log(summary);
       game.status = "round-summary";
 
       // activeTeamId must be set from null to the starting teamId
       // Set the first team that buzzed in as the default starting team
       // If buzzedTeamId is falsy set team one as default
-      if (!summary.tossUpWinner) {
+      if (!game.gameState.tossUpWinner) {
         if (game.buzzedTeamId) {
           game.activeTeamId = game.buzzedTeamId;
         }
@@ -136,7 +132,6 @@ export function setupHostEvents(socket, io) {
 
       io.to(gameCode).emit("round-complete", {
         game,
-        roundSummary: summary,
         isGameFinished: false,
       });
     }
@@ -167,12 +162,10 @@ export function setupHostEvents(socket, io) {
         } else if (updatedGame.status === "finished") {
           // Game finished after round 3
           const winner = getGameWinner(updatedGame);
-          const roundSummary = calculateRoundSummary(updatedGame);
 
           io.to(gameCode).emit("game-over", {
             game: updatedGame,
             winner: winner,
-            roundSummary,
           });
 
           console.log(`🏆 Game finished after all rounds: ${gameCode}`);
@@ -307,11 +300,9 @@ export function setupHostEvents(socket, io) {
       game.teams.forEach((team) => (team.active = false));
 
       const updatedGame = updateGame(gameCode, game);
-      const roundSummary = calculateRoundSummary(updatedGame);
 
       io.to(gameCode).emit("round-complete", {
         game: updatedGame,
-        roundSummary: roundSummary,
         isGameFinished: updatedGame.currentRound >= 3,
         byHost: true,
       });
@@ -535,6 +526,7 @@ export function setupHostEvents(socket, io) {
     }
   })
 
+  //UNUSED EVENT
   // Get current game state (for host dashboard)
   socket.on("get-game-state", (data) => {
     const { gameCode } = data;
@@ -544,8 +536,6 @@ export function setupHostEvents(socket, io) {
       socket.emit("game-state-update", {
         game: game,
         currentQuestion: getCurrentQuestion(game),
-        roundSummary:
-          game.status === "round-summary" ? calculateRoundSummary(game) : null,
       });
     }
   });

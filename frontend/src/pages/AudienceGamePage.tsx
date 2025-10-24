@@ -8,7 +8,7 @@ import RoundSummaryComponent from "../components/game/RoundSummaryComponent";
 import GameResults from "../components/game/GameResults";
 import PlayerList from "../components/game/PlayerList";
 import { useSocket } from "../hooks/useSocket";
-import { Game, RoundSummary, RoundData } from "../types";
+import { Game, RoundData } from "../types";
 import { getCurrentQuestion, getTeamName } from "../utils/gameHelper";
 
 const AudienceGamePage: React.FC = () => {
@@ -16,7 +16,6 @@ const AudienceGamePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [game, setGame] = useState<Game | null>(null);
-  const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
   const [message, setMessage] = useState<
     | { text: string; type: "info" | "success" | "error" }
     | null
@@ -121,11 +120,9 @@ const AudienceGamePage: React.FC = () => {
     },
     onRoundComplete: (data: any) => {
       if (data.game) setGame(data.game);
-      if (data.roundSummary) setRoundSummary(data.roundSummary);
     },
     onRoundStarted: (data: any) => {
       setGame(data.game);
-      setRoundSummary(null);
       const teamName = getTeamName(data.game, data.activeTeam);
       setMessage({
         text: `Round ${data.round} started! ${teamName} goes first.`,
@@ -207,12 +204,12 @@ const AudienceGamePage: React.FC = () => {
     );
   }
 
-  if (game.status === "round-summary" && roundSummary) {
+  if (game && game.status === "round-summary") {
     return (
       <PageLayout gameCode={game.code} variant="game">
         <div className="p-4">
           <RoundSummaryComponent
-            roundSummary={roundSummary}
+            game={game}
             teams={game.teams}
             isHost={false}
             isGameFinished={game.currentRound >= 4}

@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
-import { RoundSummary, Team } from "../../types";
+import { Game, Team } from "../../types";
 import AnimatedCard from "../common/AnimatedCard";
 import Button from "../common/Button";
 import confetti from "canvas-confetti";
 
 interface RoundSummaryProps {
-  roundSummary: RoundSummary;
+  game: Game;
   teams: Team[];
   isHost?: boolean;
   isGameFinished?: boolean;
@@ -14,13 +14,32 @@ interface RoundSummaryProps {
 }
 
 const RoundSummaryComponent: React.FC<RoundSummaryProps> = ({
-  roundSummary,
+  game,
   teams,
   isHost = false,
   isGameFinished = false,
   onContinueToNextRound,
   onBackToHome,
 }) => {
+  // Round summary is now derived from game state
+  const roundSummary = {
+    round: game.currentRound,
+    teamScores: {
+      team1: {
+        roundScore: game.teams[0].currentRoundScore,
+        totalScore: game.teams[0].score,
+        teamName: game.teams[0].name
+      },
+      team2: {
+        roundScore: game.teams[1].currentRoundScore,
+        totalScore: game.teams[1].score,
+        teamName: game.teams[1].name
+      }
+    },
+    tossUpWinner: game.tossUpWinner,
+    tossUpAnswers: game.tossUpAnswers
+  }
+
   const { round, teamScores, tossUpWinner, tossUpAnswers } = roundSummary;
   const team1Score = teamScores.team1.roundScore;
   const team2Score = teamScores.team2.roundScore;
