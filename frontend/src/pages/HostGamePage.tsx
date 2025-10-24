@@ -17,7 +17,9 @@ import TurnIndicator from "../components/game/TurnIndicator";
 import RoundSummaryComponent from "../components/game/RoundSummaryComponent";
 
 // Import hooks and services
-import { useSocket } from "../hooks/useSocket";
+import { useSocketConnection } from "../hooks/useSocketConnection";
+import { useSocketActions } from "../hooks/useSocketActions";
+import { useSocketEvents } from "../hooks/useSocketEvents";
 import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
 
@@ -43,7 +45,7 @@ const HostGamePage: React.FC = () => {
   } | null>(null);
   const [overridePoints, setOverridePoints] = useState("0");
 
-  const socketRef = useRef<Socket | null>(null);
+  // Refs
   const radioButtonRef = useRef<HTMLFormElement>(null);
 
   const location = useLocation();
@@ -84,21 +86,21 @@ const HostGamePage: React.FC = () => {
     return game.gameState.questionData[teamKey];
   };
 
+  const { socket, isConnected, connect, disconnect } = useSocketConnection();
+
   const {
-    socket,
-    connect, 
-    hostJoinGame,
     startGame,
     completeTossUpRound,
     continueToNextRound,
     forceNextQuestion,
     advanceQuestion,
-    forceRoundSummary,
     resetGame,
     overrideAnswer,
     pauseTimer,
-    skipToRound
-  } = useSocket({
+    skipToRound,
+  } = useSocketActions(socket);
+
+  useSocketEvents(socket, {
     onHostJoined: (data: any) => {
       console.log("🎯 Host joined successfully! Game data:", data);
       const { game: gameData, activeTeam } = data;
@@ -120,7 +122,7 @@ const HostGamePage: React.FC = () => {
       }
 
       // Request current players list
-      socketRef.current?.emit("get-players", { gameCode });
+      socket?.emit("get-players", { gameCode });
     },
     onGameStarted: (data: any) => {
       console.log("🚀 Single-attempt game started with question tracking!");
@@ -134,7 +136,7 @@ const HostGamePage: React.FC = () => {
         setControlMessage("Game started! Buzz in for the toss-up question.");
       }
     },
-    onPlayerBuzzed: (data: any) => {
+    onBuzzerPressed: (data: any) => {
       console.log("🔔 Buzzer pressed:", data);
       setGame(data.game);
       setControlMessage(`Turn switched to ${data.teamName}!`);
@@ -197,7 +199,7 @@ const HostGamePage: React.FC = () => {
 
       if (data.game.currentRound === 4) {
         setTimeout(() => {
-          socketRef.current?.emit("advance-question", { gameCode })
+          advanceQuestion(gameCode);
         }, 2500);
       }
     },
@@ -293,7 +295,7 @@ const HostGamePage: React.FC = () => {
 
       if (data.game.currentRound === 4) {
         setTimeout(() => {
-          socketRef.current?.emit("advance-question", { gameCode })
+          advanceQuestion(gameCode);
         }, 2500);
       }
     },
@@ -428,7 +430,7 @@ const HostGamePage: React.FC = () => {
   };
 
   const handleSelectOverride = (answerIndex: number) => {
-    if (pendingOverride && socketRef.current && currentQuestion) {
+    if (pendingOverride && socket && currentQuestion) {
       const points = currentQuestion.answers[answerIndex]?.score || 0;
       overrideAnswer(
         gameCode,
@@ -437,8 +439,8 @@ const HostGamePage: React.FC = () => {
         pendingOverride.questionNumber,
         true,
         points,
-        answerIndex,
-      )
+        answerIndex
+      );
       setPendingOverride(null);
       setOverrideMode(false);
       setOverridePoints("0");
@@ -447,7 +449,7 @@ const HostGamePage: React.FC = () => {
   };
 
   const handleConfirmOverride = () => {
-    if (pendingOverride && socketRef.current) {
+    if (pendingOverride && socket) {
       const points = parseInt(overridePoints, 10) || 0;
       overrideAnswer(
         gameCode,
@@ -455,8 +457,8 @@ const HostGamePage: React.FC = () => {
         pendingOverride.round,
         pendingOverride.questionNumber,
         true,
-        points,
-      )
+        points
+      );
       setPendingOverride(null);
       setOverrideMode(false);
       setOverridePoints("0");
@@ -473,12 +475,12 @@ const HostGamePage: React.FC = () => {
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
-    if (game && game.status === "waiting" && socketRef.current) {
-      socketRef.current.emit("get-players", { gameCode });
+    if (game && game.status === "waiting" && socket) {
+      socket.emit("get-players", { gameCode });
 
       interval = setInterval(() => {
-        if (socketRef.current?.connected) {
-          socketRef.current.emit("get-players", { gameCode });
+        if (socket?.connected) {
+          socket.emit("get-players", { gameCode });
         }
       }, 3000);
     }
@@ -491,8 +493,8 @@ const HostGamePage: React.FC = () => {
   // Cleanup socket on unmount
   useEffect(() => {
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
+      if (socket) {
+        socket.disconnect();
       }
     };
   }, []);
@@ -712,15 +714,6 @@ const HostGamePage: React.FC = () => {
               <div className="text-sm text-slate-400 mb-2">Host Controls</div>
             </div>
             <div className="flex gap-2 justify-center flex-wrap">
-              {/* <Button
-                onClick={handleNextQuestion}
-                variant="primary"
-                size="sm"
-                className="text-xs py-1 px-3"
-                disabled={!game?.gameState.canAdvance}
-              >
-                ➡️ Next Question
-              </Button> */}
               <Button
                 data-testid="force-next-question-button"
                 onClick={
@@ -758,73 +751,74 @@ const HostGamePage: React.FC = () => {
               {role === "Tester" && (
                 <>
                   <Button
-                  data-testid="skip-to-round-1-button"
-                  onClick={() => skipToRound(gameCode, 1, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
+                    data-testid="skip-to-round-1-button"
+                    onClick={() => skipToRound(gameCode, 1, radioButtonRef)}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs py-1 px-3"
                   >
                     Skip to R1
                   </Button>
                   <Button
-                  data-testid="skip-to-round-2-button"
-                  onClick={() => skipToRound(gameCode, 2, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
+                    data-testid="skip-to-round-2-button"
+                    onClick={() => skipToRound(gameCode, 2, radioButtonRef)}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs py-1 px-3"
                   >
                     Skip to R2
                   </Button>
                   <Button
-                  data-testid="skip-to-round-3-button"
-                  onClick={() => skipToRound(gameCode, 3, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
+                    data-testid="skip-to-round-3-button"
+                    onClick={() => skipToRound(gameCode, 3, radioButtonRef)}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs py-1 px-3"
                   >
                     Skip to R3
                   </Button>
                   <Button
-                  data-testid="skip-to-lightning-round-button"
-                  onClick={() => skipToRound(gameCode, 4, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
+                    data-testid="skip-to-lightning-round-button"
+                    onClick={() => skipToRound(gameCode, 4, radioButtonRef)}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs py-1 px-3"
                   >
                     Skip to LR
                   </Button>
 
                   <form className="ml-3" ref={radioButtonRef}>
                     <div className="flex gap-6">
-
                       <div className="inline-flex items-center">
-                        <input 
-                          type="radio" 
+                        <input
+                          type="radio"
                           data-testid="set-starting-team-1-button"
-                          id="team1" 
-                          name="starting-team" 
-                          value="team1" 
+                          id="team1"
+                          name="starting-team"
+                          value="team1"
                           defaultChecked
                         />
-                        <label className="pl-2" htmlFor="team1">{game.teams[0].name}</label>
+                        <label className="pl-2" htmlFor="team1">
+                          {game.teams[0].name}
+                        </label>
                       </div>
 
                       <div className="inline-flex items-center">
-                        <input 
-                          type="radio" 
+                        <input
+                          type="radio"
                           data-testid="set-starting-team-2-button"
-                          id="team2" 
-                          name="starting-team" 
-                          value="team2" 
+                          id="team2"
+                          name="starting-team"
+                          value="team2"
                         />
-                        <label className="pl-2" htmlFor="team2">{game.teams[1].name}</label>
+                        <label className="pl-2" htmlFor="team2">
+                          {game.teams[1].name}
+                        </label>
                       </div>
-
                     </div>
                   </form>
                 </>
               )}
-              
             </div>
           </div>
         </div>

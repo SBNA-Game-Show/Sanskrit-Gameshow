@@ -7,7 +7,7 @@ interface SocketCallbacks {
   onTeamUpdated?: (data: any) => void;
   onHostJoined?: (data: any) => void;
   onGameStarted?: (data: any) => void;
-  onPlayerBuzzed?: (data: any) => void;
+  onBuzzerPressed?: (data:any) => void;
   onBuzzTooLate?: (data: any) => void;
   onBuzzRejected?: (data: any) => void;
   onAnswerRevealed?: (data: any) => void;
@@ -67,17 +67,6 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       newSocket.on("connect_error", (error) => {
         console.error("Socket connection error:", error);
       });
-      newSocket.on("buzzer-pressed", (data) => {
-        const { teamName, playerName } = data;
-        console.log(`${teamName} buzzed first! ${playerName}, answer now!`);
-        if (callbacks.onPlayerBuzzed) {
-          callbacks.onPlayerBuzzed(data);
-        }
-      });
-
-      newSocket.on("buzz-too-late", () => {
-        console.error("Too late! Another team already buzzed.");
-      });
 
       // Register all callback handlers
       if (callbacks.onPlayerJoined) {
@@ -97,6 +86,10 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       }
 
       // Buzzer events handled above via "buzzer-pressed"
+      if (callbacks.onBuzzerPressed) {
+        newSocket.on("buzzer-pressed", callbacks.onBuzzerPressed);
+      }
+
       if (callbacks.onBuzzTooLate) {
         newSocket.on("buzz-too-late", callbacks.onBuzzTooLate);
       }
