@@ -65,6 +65,7 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
             variant="primary"
             size="xl"
             loading={isLoading}
+            className="bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg border border-slate-700"
             icon={!isLoading ? <span className="text-2xl">🚀</span> : undefined}
           >
             {isLoading ? "Creating..." : "CREATE GAME"}
