@@ -5,22 +5,44 @@ const BASE_URL = process.env.BACKEND_URL || 'http://127.0.0.1:5004';
 test.describe('Model Integration Tests', () => {
   
   test.describe('User Model Operations', () => {
-    // test('POST /api/auth/register should create new user in database', async ({ request }) => {
-    //   const uniqueUsername = `testuser_${Date.now()}`;
-    //   const response = await request.post(`${BASE_URL}/api/auth/register`, {
-    //     data: { 
-    //       username: uniqueUsername, 
-    //       password: 'testpass123',
-    //       role: 'Player' 
-    //     },
-    //   });
+    test('POST /api/auth/register should create new user that can login', async ({ request }) => {
+      const uniqueUsername = `testuser_${Date.now()}`;
+      const testPassword = 'testpass123';
+      const testRole = 'Player';
+
+      // Step 1: Register new user
+      const registerResponse = await request.post(`${BASE_URL}/api/auth/register`, {
+        data: { 
+          username: uniqueUsername, 
+          password: testPassword,
+          role: testRole 
+        },
+      });
       
-    //   // Based on your error, the actual response is "User created" not "User created successfully"
-    //   expect(response.status()).toBe(201);
-    //   const body = await response.json();
-    //   expect(body).toHaveProperty('message', 'User created'); // Fixed to match actual response
-    //   expect(body).toHaveProperty('userId');
-    // });
+      const registerBody = await registerResponse.json();
+      console.log('Register response:', { status: registerResponse.status(), registerBody });
+
+      // Verify registration success
+      expect(registerResponse.status()).toBe(201);
+      expect(registerBody).toHaveProperty('message', 'User created');
+
+      // Step 2: Verify the user can login (proves user was actually created)
+      const loginResponse = await request.post(`${BASE_URL}/api/auth/login`, {
+        data: { 
+          username: uniqueUsername, 
+          password: testPassword 
+      },
+    });
+    
+    const loginBody = await loginResponse.json();
+    console.log('Login response:', { status: loginResponse.status(), loginBody });
+
+    // Verify login success
+    expect(loginResponse.status()).toBe(200);
+    expect(loginBody).toHaveProperty('token');
+    expect(loginBody).toHaveProperty('username', uniqueUsername);
+    expect(loginBody).toHaveProperty('role', testRole);
+  });
 
     test('POST /api/auth/login should validate user credentials against database', async ({ request }) => {
       const response = await request.post(`${BASE_URL}/api/auth/login`, {
@@ -98,27 +120,6 @@ test.describe('Model Integration Tests', () => {
         const body = await loginResponse.json();
         authToken = body.token;
     });
-
-    // test('Game creation should work with question preparation', async ({ request }) => {
-    //     // Test the actual game creation flow which includes question preparation
-    //     const response = await request.post(`${BASE_URL}/api/create-game`, {
-    //     headers: { Authorization: `Bearer ${authToken}` },
-    //     data: { 
-    //         teamNames: ["Team A", "Team B"] 
-    //     }
-    //     });
-        
-    //     // This endpoint should exist based on your gameRoutes.js
-    //     expect(response.status()).toBe(200);
-    //     const body = await response.json();
-        
-    //     // Verify game creation response
-    //     expect(body).toHaveProperty('gameCode');
-    //     expect(body).toHaveProperty('gameId');
-    //     expect(body).toHaveProperty('success', true);
-        
-    //     console.log('✅ Game created successfully with questions prepared internally');
-    // });
 
     test('Root endpoint should return server stats', async ({ request }) => {
         // Test the root endpoint that exists in your gameRoutes.js
