@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test:e2e": "npx playwright test"
-  },
+"scripts": {
+  "test:frontend": "playwright test -c playwright.frontend-mock.config.ts",
+  "test:backend": "playwright test -c playwright.backend-e2e.config.ts",
+  "test:all": "npm run test:frontend && npm run test:backend"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sabahat21/GameshowDeploy.git"
@@ -19,7 +21,7 @@
   },
   "homepage": "https://github.com/sabahat21/GameshowDeploy#readme",
   "devDependencies": {
-    "@playwright/test": "^1.55.1",
+    "@playwright/test": "^1.56.1",
     "@types/node": "^24.6.1"
   }
 }
