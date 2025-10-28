@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import io, { Socket } from "socket.io-client";
 import { GAME_CONFIG } from "../utils/constants";
@@ -16,8 +16,12 @@ import TurnIndicator from "../components/game/TurnIndicator";
 import RoundSummaryComponent from "../components/game/RoundSummaryComponent";
 
 // Import hooks and services
+import { useSetupSocket } from "../hooks/useSetupSocket";
+import { useSocketHostEvents } from "../hooks/useSocketHostEvents";
+import { useSocketActions } from "../hooks/useSocketActions";
 import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
+import { SocketContext } from "store/socket-context";
 
 // Import types and utils
 import { Game, RoundData } from "../types"; //Team
@@ -39,7 +43,12 @@ const HostGamePage: React.FC = () => {
   } | null>(null);
   const [overridePoints, setOverridePoints] = useState("0");
 
-  const socketRef = useRef<Socket | null>(null);
+  const socketContext = useContext(SocketContext);
+  if (!socketContext) {
+    throw new Error("HostGamePage must be used within a SocketProvider");
+  }
+  const { socketRef } = socketContext;
+
   const radioButtonRef = useRef<HTMLFormElement>(null);
 
   const location = useLocation();
@@ -80,289 +89,38 @@ const HostGamePage: React.FC = () => {
     return game.gameState.questionData[teamKey];
   };
 
-  // Socket setup for turn-based system with single attempt + question data
-  const setupSocket = React.useCallback((gameCode: string) => {
-    console.log(
-      "🔌 Setting up socket connection for single-attempt game with question tracking..."
-    );
-
-    // Clean up existing socket
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-    }
-
-    const socket = io(GAME_CONFIG.SOCKET_URL, {
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 5004,
-    });
-
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
-      console.log("✅ Socket connected successfully:", socket.id);
-
-      // Join as host immediately after connection
-      console.log("👑 Joining as host...");
-      socket.emit("host-join", { gameCode });
-    });
-
-    socket.on("host-joined", (data) => {
-      console.log("🎯 Host joined successfully! Game data:", data);
-      const { game: gameData, activeTeam } = data;
-      setGame(gameData);
-
-      if (gameData.status === "active") {
-        if (activeTeam) {
-          const teamName = getTeamName(gameData, activeTeam);
-          setControlMessage(`Rejoined game in progress. ${teamName} goes now.`);
-        } else {
-          setControlMessage("Rejoined game in progress. Waiting for buzz.");
-        }
-      } else if (gameData.status === "round-summary") {
-        setControlMessage(
-          `Round ${gameData.currentRound} completed! Ready for next round.`
-        );
-      } else {
-        setControlMessage("Waiting for players to join...");
-      }
-
-      // Request current players list
-      socket.emit("get-players", { gameCode });
-    });
-
-    socket.on("game-started", (data) => {
-      console.log("🚀 Single-attempt game started with question tracking!");
-      setGame(data.game);
-      if (data.activeTeam) {
-        const teamName = getTeamName(data.game, data.activeTeam);
-        setControlMessage(
-          `Game started! ${teamName} goes first. Each question allows only 1 attempt.`
-        );
-      } else {
-        setControlMessage("Game started! Buzz in for the toss-up question.");
-      }
-    });
-
-    socket.on("buzzer-pressed", (data) => {
-      console.log("🔔 Buzzer pressed:", data);
-      setGame(data.game);
-      setControlMessage(`Turn switched to ${data.teamName}!`);
-    });
-
-    socket.on("player-joined", (data) => {
-      console.log("👤 Player joined event received:", data);
-
-      if (data.player) {
-        setGame((prev) => {
-          if (!prev) return null;
-
-          const playerExists = prev.players.some(
-            (p) => p.id === data.player.id
-          );
-          if (playerExists) {
-            return {
-              ...prev,
-              players: prev.players.map((p) =>
-                p.id === data.player.id ? { ...p, ...data.player } : p
-              ),
-            };
-          }
-
-          return {
-            ...prev,
-            players: [...prev.players, data.player],
-          };
-        });
-      }
-    });
-
-    socket.on("answer-correct", (data) => {
-      console.log("✅ Correct answer with question tracking:", data);
-      setGame(data.game);
-      setControlMessage(
-        `✅ ${data.playerName} answered correctly! +${data.pointsAwarded} points for ${data.teamName}.`
-      );
-
-      const round = data.game.currentRound;
-      const teamId = data.teamId;
-      const teamKey = teamId?.includes("team1") ? "team1" : "team2";
-      const questionNumber = data.game.gameState.questionsAnswered[teamKey] + 1;
-      setPendingOverride({ teamId, round, questionNumber });
-    });
-
-    socket.on("answer-incorrect", (data) => {
-      console.log("❌ Incorrect answer with question tracking:", data);
-      setGame(data.game);
-      setControlMessage(`❌ ${data.playerName} answered incorrectly.`);
-
-      const round = data.game.currentRound;
-      const teamId = data.teamId;
-      const teamKey = teamId?.includes("team1") ? "team1" : "team2";
-      const questionNumber = data.game.gameState.questionsAnswered[teamKey] + 1;
-
-      setPendingOverride({ teamId, round, questionNumber });
-    });
-
-    socket.on("remaining-cards-revealed", (data) => {
-      console.log("👁️ Remaining cards revealed:", data);
-      setGame(data.game);
-      // Preserve the previous message instead of showing a new one
-
-      if (data.game.currentRound === 4) {
-        setTimeout(() => {
-          socket.emit("advance-question", { gameCode });
-        }, 2500);
-      }
-    });
-
-    socket.on("turn-changed", (data) => {
-      console.log("↔️ Turn changed:", data);
-      setGame(data.game);
-      setControlMessage(`Turn switched to ${data.teamName}!`);
-    });
-
-    socket.on("next-question", (data) => {
-      console.log("➡️ Next question:", data);
-      setGame(data.game);
-      if (data.sameTeam) {
-        setControlMessage(`Same team continues with their next question.`);
-      } else {
-        setControlMessage(`Moving to next question.`);
-      }
-      setPendingOverride(null);
-      setOverrideMode(false);
-      setOverridePoints("0");
-    });
-
-    socket.on("question-complete", (data) => {
-      console.log("🟢 Question complete:", data);
-      setGame(data.game);
-      setControlMessage("Question finished. Click Next Question when ready.");
-    });
-
-    socket.on("round-complete", (data) => {
-      console.log("🏁 Round completed:", data);
-
-      console.log(data.game)
-
-      // Update game state
-      if (data.game) {
-        setGame(data.game);
-        if (data.game.currentRound === 0) {
-          setControlMessage(
-            `${
-              data.game.tossUpWinner?.teamName || "A team"
-            } won the toss-up!`
-          );
-        } else {
-          setControlMessage(
-            `Round ${data.game.currentRound} completed! ${
-              data.isGameFinished ? "Game finished!" : "Ready for next round."
-            }`
-          );
-        }
-      } else {
-        setControlMessage(
-          `Round ${data.game.currentRound} completed! ${
-            data.isGameFinished ? "Game finished!" : "Ready for next round."
-          }`
-        );
-      }
-    });
-
-    socket.on("round-started", (data) => {
-      console.log("🆕 New round started:", data);
-      setGame(data.game);
-      const teamName = getTeamName(data.game, data.activeTeam);
-      setControlMessage(
-        `Round ${data.round} started! ${teamName} goes first. Each question allows only 1 attempt.`
-      );
-    });
-
-    socket.on("game-over", (data) => {
-      console.log("🏆 Game over:", data);
-      setGame(data.game);
-      setControlMessage("Game finished! Check out the final results.");
-    });
-
-    socket.on("players-list", (data: any) => {
-      console.log("📋 Received players list:", data);
-      if (data.players && data.players.length > 0) {
-        setGame((prevGame) => {
-          if (!prevGame) return null;
-          return {
-            ...prevGame,
-            players: data.players,
-          };
-        });
-      }
-    });
-
-    socket.on("team-updated", (data: any) => {
-      console.log("🔄 Team updated:", data);
-      setGame(data.game);
-    });
-
-    socket.on("answers-revealed", (data) => {
-      console.log("👁️ All answers revealed:", data);
-      setGame(data.game);
-      setControlMessage("All answers have been revealed!");
-      setOverrideMode(false);
-
-      if (data.game.currentRound === 4) {
-        setTimeout(() => {
-          socket.emit("advance-question", { gameCode });
-        }, 2500);
-      }
-    });
-
-    socket.on("answer-overridden", (data) => {
-      console.log("✅ Answer overridden:", data);
-      setGame(data.game);
-      setControlMessage(
-        `Host awarded ${data.pointsAwarded} points to ${data.teamName}.`
-      );
-      setOverrideMode(false);
-    });
-
-    socket.on("game-reset", (data) => {
-      console.log("🔄 Game reset:", data);
-      setGame(data.game);
-      setControlMessage(data.message || "Game has been reset.");
-      setOverrideMode(false);
-    });
-
-    socket.on("skipped-to-round", (data) => {
-      console.log(data.message);
-      setGame(data.game);
-      setControlMessage(data.message || "Skipped rounds.");
-      setOverrideMode(false);
-    });
-
-    socket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error);
-      setControlMessage("Connection error. Please try again.");
-    });
-
-    socket.on("error", (error) => {
-      console.error("❌ Socket error:", error);
-      setControlMessage(`Socket error: ${error.message || error}`);
-    });
-
-    return socket;
-  }, []);
+  const {connect, disconnect} = useSetupSocket(socketRef);
+  useSocketHostEvents(
+    socketRef,
+    game?.code,
+    setGame,
+    setControlMessage,
+    setPendingOverride,
+    setOverrideMode,
+    setOverridePoints
+  );
+  const {
+    startGame,
+    completeTossUpRound,
+    continueToNextRound,
+    forceNextQuestion,
+    advanceQuestion,
+    resetGame,
+    overrideAnswer,
+    pauseTimer,
+    skipToRound,
+  } = useSocketActions(socketRef);
+  
+  
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const code = params.get("code");
     if (code && !game) {
       const upper = code.toUpperCase();
-      setupSocket(upper);
+      connect(upper, true, setGame, setControlMessage);
     }
-  }, [location.search, game, setupSocket]);
+  }, [location.search, game, connect]);
 
   // Validation function to check if game can start
   const canStartGame = (game: Game | null) => {
@@ -432,7 +190,7 @@ const HostGamePage: React.FC = () => {
         `Game created successfully! Code: ${newGame.code}. Each question allows only 1 attempt.`
       );
 
-      setupSocket(newGame.code);
+      connect(newGame.code, true, setGame, setControlMessage);
     } catch (error: unknown) {
       console.error("❌ Error creating game:", error);
 
@@ -454,22 +212,22 @@ const HostGamePage: React.FC = () => {
     setIsLoading(false);
   };
 
-  const handleStartGame = () => {
-    console.log("🎮 Starting single-attempt game with question tracking...");
+  // const handleStartGame = () => {
+  //   console.log("🎮 Starting single-attempt game with question tracking...");
 
-    if (game && socketRef.current && socketRef.current.connected) {
-      socketRef.current.emit("start-game", { gameCode: game.code });
-    } else {
-      console.error("❌ Cannot start game - missing requirements");
-      setControlMessage("Cannot start game. Please check your connection.");
-    }
-  };
+  //   if (game && socketRef.current && socketRef.current.connected) {
+  //     socketRef.current.emit("start-game", { gameCode: game.code });
+  //   } else {
+  //     console.error("❌ Cannot start game - missing requirements");
+  //     setControlMessage("Cannot start game. Please check your connection.");
+  //   }
+  // };
 
-  const handleCompleteTossUpRound = () => {
-    if (game && socketRef.current) {
-      socketRef.current.emit("complete-toss-up-round", { gameCode: game.code });
-    }
-  };
+  // const handleCompleteTossUpRound = () => {
+  //   if (game && socketRef.current) {
+  //     socketRef.current.emit("complete-toss-up-round", { gameCode: game.code });
+  //   }
+  // };
 
   const handleContinueToNextRound = () => {
     if (game && socketRef.current) {
@@ -477,11 +235,11 @@ const HostGamePage: React.FC = () => {
     }
   };
 
-  const handleForceNextQuestion = () => {
-    if (game && socketRef.current) {
-      socketRef.current.emit("force-next-question", { gameCode: game.code });
-    }
-  };
+  // const handleForceNextQuestion = () => {
+  //   if (game && socketRef.current) {
+  //     socketRef.current.emit("force-next-question", { gameCode: game.code });
+  //   }
+  // };
 
   const handleNextQuestion = () => {
     if (game && socketRef.current) {
@@ -551,14 +309,14 @@ const HostGamePage: React.FC = () => {
     }
   };
 
-  const handleSkipToRound = (round: number, radioButtonRef: React.RefObject<HTMLFormElement>) => {
-    if (game && socketRef.current) {
-      const selectedStartingTeam = radioButtonRef.current?.querySelector<HTMLInputElement>(
-        'input[name="starting-team"]:checked'
-      )?.value;
-      socketRef.current.emit("skip-to-round", game.code , round, selectedStartingTeam );
-    }
-  };
+  // const handleSkipToRound = (round: number, radioButtonRef: React.RefObject<HTMLFormElement>) => {
+  //   if (game && socketRef.current) {
+  //     const selectedStartingTeam = radioButtonRef.current?.querySelector<HTMLInputElement>(
+  //       'input[name="starting-team"]:checked'
+  //     )?.value;
+  //     socketRef.current.emit("skip-to-round", game.code , round, selectedStartingTeam );
+  //   }
+  // };
 
   // Request updated player list periodically when in waiting state
   useEffect(() => {
@@ -647,7 +405,7 @@ const HostGamePage: React.FC = () => {
 
               <Button
                 data-testid="host-start-game-button"
-                onClick={handleStartGame}
+                onClick={() => startGame(game.code)}
                 variant="success"
                 size="xl"
                 disabled={!validation.canStart}
@@ -773,7 +531,7 @@ const HostGamePage: React.FC = () => {
             onConfirmOverride={handleConfirmOverride}
             onSelectAnswer={handleSelectOverride}
             onNextQuestion={handleNextQuestion}
-            onCompleteTossUpRound={handleCompleteTossUpRound}
+            onCompleteTossUpRound={() => completeTossUpRound(game.code)}
             onPauseTimer={handlePauseTimer}
           />
 
@@ -783,21 +541,12 @@ const HostGamePage: React.FC = () => {
               <div className="text-sm text-slate-400 mb-2">Host Controls</div>
             </div>
             <div className="flex gap-2 justify-center flex-wrap">
-              {/* <Button
-                onClick={handleNextQuestion}
-                variant="primary"
-                size="sm"
-                className="text-xs py-1 px-3"
-                disabled={!game?.gameState.canAdvance}
-              >
-                ➡️ Next Question
-              </Button> */}
               <Button
                 data-testid="force-next-question-button"
                 onClick={
                   game.currentRound === 4
-                    ? handlePauseTimer
-                    : handleForceNextQuestion
+                    ? () => pauseTimer(game.code)
+                    : () => forceNextQuestion(game.code)
                 }
                 disabled={game.currentRound === 4 && game.pauseTimer}
                 variant="secondary"
@@ -818,7 +567,7 @@ const HostGamePage: React.FC = () => {
               )}
               <Button
                 data-testid="reset-game-button"
-                onClick={handleResetGame}
+                onClick={() => resetGame(game.code)}
                 variant="secondary"
                 size="sm"
                 className="text-xs py-1 px-3"
@@ -830,7 +579,7 @@ const HostGamePage: React.FC = () => {
                 <>
                   <Button
                   data-testid="skip-to-round-1-button"
-                  onClick={() => handleSkipToRound(1, radioButtonRef)}
+                  onClick={() => skipToRound(game.code, 1, radioButtonRef)}
                   variant="secondary"
                   size="sm"
                   className="text-xs py-1 px-3"
@@ -839,7 +588,7 @@ const HostGamePage: React.FC = () => {
                   </Button>
                   <Button
                   data-testid="skip-to-round-2-button"
-                  onClick={() => handleSkipToRound(2, radioButtonRef)}
+                  onClick={() => skipToRound(game.code, 2, radioButtonRef)}
                   variant="secondary"
                   size="sm"
                   className="text-xs py-1 px-3"
@@ -848,7 +597,7 @@ const HostGamePage: React.FC = () => {
                   </Button>
                   <Button
                   data-testid="skip-to-round-3-button"
-                  onClick={() => handleSkipToRound(3, radioButtonRef)}
+                  onClick={() => skipToRound(game.code, 3, radioButtonRef)}
                   variant="secondary"
                   size="sm"
                   className="text-xs py-1 px-3"
@@ -857,7 +606,7 @@ const HostGamePage: React.FC = () => {
                   </Button>
                   <Button
                   data-testid="skip-to-lightning-round-button"
-                  onClick={() => handleSkipToRound(4, radioButtonRef)}
+                  onClick={() => skipToRound(game.code, 4, radioButtonRef)}
                   variant="secondary"
                   size="sm"
                   className="text-xs py-1 px-3"

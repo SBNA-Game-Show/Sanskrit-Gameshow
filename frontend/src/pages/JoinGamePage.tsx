@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link } from "react-router-dom";
+import { Socket } from "socket.io-client";
 
 // Import components
 import PageLayout from "../components/layout/PageLayout";
@@ -16,8 +17,11 @@ import RoundSummaryComponent from "../components/game/RoundSummaryComponent";
 import BuzzerButton from "../components/game/BuzzerButton";
 
 // Import hooks and services
-import { useSocket } from "../hooks/useSocket";
+import { useSetupSocket } from "../hooks/useSetupSocket";
+import { useSocketPlayerEvents } from "../hooks/useSocketPlayerEvents";
+import { useSocketActions } from "../hooks/useSocketActions";
 import gameApi from "../services/gameApi";
+import { SocketContext } from "store/socket-context";
 
 // Import types and constants
 import { Game, Player, RoundData } from "../types";
@@ -34,7 +38,12 @@ const JoinGamePage: React.FC = () => {
   const [answer, setAnswer] = useState("");
   const [gameMessage, setGameMessage] = useState("");
   const [hasBuzzed, setHasBuzzed] = useState(false);
-  //const [buzzFeedback, setBuzzFeedback] = useState("");
+  
+  const socketContext = useContext(SocketContext);
+  if (!socketContext) {
+    throw new Error("JoinGamePage must be used within a SocketProvider");
+  }
+  const { socketRef } = socketContext;
 
   const myTeam = game?.teams.find((team) => team.id === player?.teamId);
   const isMyTurn = myTeam && myTeam.active;
@@ -73,231 +82,43 @@ const JoinGamePage: React.FC = () => {
     return game.gameState.questionData[teamKey];
   };
 
+  const {connect, disconnect} = useSetupSocket(socketRef);
+  useSocketPlayerEvents(
+    socketRef,
+    game,
+    player,
+    setGame,
+    setGameMessage,
+    setPlayer,
+    setAnswer,
+    setHasBuzzed,
+    setError
+  )
   const {
-    connect,
     playerJoinGame,
     joinTeam,
     buzzIn,
     submitAnswer,
     requestPlayersList,
-  } = useSocket({
-    onPlayerJoined: (data: any) => {
-      console.log("Player joined event received:", data);
+  } = useSocketActions(socketRef);
 
-      if (game) {
-        setGame((prevGame) => {
-          if (!prevGame) return null;
+  // CURRENTLY BROKEN (re-rendering rapidly)
+  // // Periodically request updated player list from server
+  // useEffect(() => {
+  //   let interval: NodeJS.Timeout;
 
-          const playerExists = prevGame.players.some(
-            (p) => p.id === data.player.id
-          );
-          if (playerExists) {
-            return {
-              ...prevGame,
-              players: prevGame.players.map((p) =>
-                p.id === data.player.id ? { ...p, ...data.player } : p
-              ),
-            };
-          }
+  //   if (game && player) {
+  //     requestPlayersList(game.code);
 
-          return {
-            ...prevGame,
-            players: [...prevGame.players, data.player],
-          };
-        });
-      }
-    },
-    onTeamUpdated: (data: any) => {
-      console.log("Team updated event received:", data);
-      setGame(data.game);
+  //     interval = setInterval(() => {
+  //       requestPlayersList(game.code);
+  //     }, 3000);
+  //   }
 
-      if (player && data.playerId === player.id) {
-        setPlayer({
-          ...player,
-          teamId: data.teamId,
-        });
-      }
-    },
-    onGameStarted: (data: any) => {
-      console.log("Single-attempt game started:", data);
-
-      const updatedPlayer = data.game.players.find(
-        (p: Player) => player && p.id === player.id
-      );
-
-      if (updatedPlayer && player) {
-        setPlayer({
-          ...player,
-          teamId: updatedPlayer.teamId || player.teamId,
-        });
-      }
-
-      setGame(data.game);
-      if (data.activeTeam) {
-        const teamName = getTeamName(data.game, data.activeTeam);
-        setGameMessage(`Game started! ${teamName} goes first.`);
-      } else {
-        setGameMessage("Game started! Buzz in for the toss-up question.");
-      }
-    },
-    onAnswerCorrect: (data: any) => {
-      console.log("Answer correct event received (single attempt):", data);
-      setGame(data.game);
-      setAnswer("");
-      setGameMessage(
-        `✅ ${data.playerName} answered correctly! +${data.pointsAwarded} points.`
-      );
-    },
-    onAnswerIncorrect: (data: any) => {
-      console.log("Answer incorrect event received (single attempt):", data);
-      setGame(data.game);
-      setAnswer("");
-
-      // Check if it's lightning round and opposing team gets a chance
-      if (data.game?.currentRound === 4 && data.switchToOpposingTeam) {
-        const opposingTeamName = data.opposingTeamName || "Opposing team";
-        setGameMessage(
-          `❌ ${data.playerName} answered incorrectly. ${opposingTeamName} can now attempt to answer!`
-        );
-        // Reset buzz state for opposing team
-        setHasBuzzed(false);
-      } else {
-        setGameMessage(`❌ ${data.playerName} answered incorrectly.`);
-      }
-    },
-
-    onRemainingCardsRevealed: (data: any) => {
-      console.log("Remaining cards revealed:", data);
-      setGame(data.game);
-      // Do not override the current message when cards are revealed
-    },
-    onTurnChanged: (data: any) => {
-      console.log("Turn changed event received:", data);
-      setGame(data.game);
-      setGameMessage(`It's now ${data.teamName}'s turn!`);
-    },
-    onNextQuestion: (data: any) => {
-      console.log("Next question event received:", data);
-      setGame(data.game);
-      setAnswer("");
-      if (data.sameTeam && data.game?.currentRound !== 4) {
-        setGameMessage("Same team continues with their next question.");
-      } else {
-        setGameMessage("Moving to next question.");
-      }
-    },
-    onQuestionComplete: (data: any) => {
-      console.log("Question complete event received:", data);
-      setGame(data.game);
-      setGameMessage("Waiting for host to advance...");
-    },
-    onRoundComplete: (data: any) => {
-      console.log("Round complete event received:", data);
-
-      // Update local game state when provided
-      if (data.game) {
-        setGame(data.game);
-        if (data.game.currentRound === 0) {
-          setGameMessage(
-            `${
-              data.game.tossUpWinner?.teamName || "A team"
-            } won the toss-up!`
-          );
-        } else {
-          setGameMessage(`Round ${data.game.currentRound} completed!`);
-        }
-      } else if (typeof data.round !== "undefined") {
-        // Fallback to a simple message when summary is missing
-        setGameMessage(`Round ${data.round} completed!`);
-      }
-    },
-    onRoundStarted: (data: any) => {
-      console.log("Round started event received:", data);
-      setGame(data.game);
-      const teamName = getTeamName(data.game, data.activeTeam);
-      setGameMessage(`Round ${data.round} started! ${teamName} goes first.`);
-    },
-    onGameOver: (data: any) => {
-      console.log("Game over event received:", data);
-      setGame(data.game);
-      setAnswer("");
-      setGameMessage("Game finished!");
-    },
-    onPlayersListReceived: (data: any) => {
-      console.log("Players list received:", data);
-      if (game) {
-        const updatedPlayer = data.players.find(
-          (p: Player) => player && p.id === player.id
-        );
-        if (updatedPlayer && player) {
-          setPlayer({
-            ...player,
-            teamId: updatedPlayer.teamId || player.teamId,
-          });
-        }
-
-        setGame((prevGame) => {
-          if (!prevGame) return null;
-          return {
-            ...prevGame,
-            players: data.players,
-          };
-        });
-      }
-    },
-    onAnswerRejected: (data: any) => {
-      console.log("Answer rejected:", data);
-      setError(data.message || "Answer rejected");
-      setTimeout(() => setError(""), 3000);
-    },
-    onPlayerBuzzed: (data: any) => {
-      // Handle buzz-in and update state
-      if (data.game) {
-        setGame(data.game);
-      }
-      if (player?.id === data.playerId) setHasBuzzed(true);
-      setGameMessage(`Turn switched to ${data.teamName}!`);
-    },
-    onAnswersRevealed: (data: any) => {
-      console.log("All answers revealed:", data);
-      setGame(data.game);
-      setGameMessage("All answers have been revealed!");
-    },
-    onAnswerOverridden: (data: any) => {
-      console.log("Answer overridden:", data);
-      setGame(data.game);
-      setGameMessage(
-        `Host awarded ${data.pointsAwarded} points to ${data.teamName}.`
-      );
-    },
-    onGameReset: (data: any) => {
-      console.log("Game reset received:", data);
-      setGame(data.game);
-      setGameMessage(data.message || "Game has been reset.");
-    },
-    onSkippedToRound: (data: any) => {
-      console.log("Game reset received:", data);
-      setGame(data.game);
-      setGameMessage(data.message || "Game has been reset.");
-    },
-  });
-
-  // Periodically request updated player list from server
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (game && player) {
-      requestPlayersList(game.code);
-
-      interval = setInterval(() => {
-        requestPlayersList(game.code);
-      }, 3000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [game, player, requestPlayersList]);
+  //   return () => {
+  //     if (interval) clearInterval(interval);
+  //   };
+  // }, [game, player, requestPlayersList]);
 
   //Player gets to choose their team after they enter the room
   const joinGame = async () => {
@@ -335,7 +156,7 @@ const JoinGamePage: React.FC = () => {
       });
       setGame(gameData);
 
-      connect();
+      connect(gameData.code);
       playerJoinGame(gameData.code.toUpperCase(), playerId);
     } catch (error: any) {
       console.error("Error joining game:", error);
@@ -574,7 +395,7 @@ const JoinGamePage: React.FC = () => {
                         onBuzz={handleBuzzIn}
                         disabled={
                           hasBuzzed ||
-                          !!game.buzzedTeamId ||
+                          !! game.buzzedTeamId ||
                           game.gameState.canAdvance
                         }
                         teamName={myTeam?.name}
