@@ -3,8 +3,60 @@ import { ApiError } from "../utils/ApiError.js";
 import { QUESTION_CATEGORY, QUESTION_LEVEL } from "../utils/constants.js";
 import { SCHEMA_MODELS } from "../utils/enums.js";
 import { getQuestions } from "./questionService.js";
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
 
 export async function prepareGameQuestions() {
+  if (process.env.USE_MOCK_QUESTIONS === 'true') {
+    // Load DB-shaped mock
+    const mod = await import('../data/mockFinalQuestionsDbShape.js');
+    const questions = mod.default; 
+    // ---- From here, reuse your normal branch exactly, but without .toObject() ----
+
+    // Find toss-up (any Intermediate)
+    const tossUpIndex = questions.findIndex(
+      (q) => q.questionLevel === 'Intermediate'
+    );
+    if (tossUpIndex === -1) {
+      throw new ApiError(400, 'No INTERMEDIATE-level question found for toss-up.');
+    }
+
+    const [tossUpQuestion] = questions.splice(tossUpIndex, 1);
+
+    const updatedTossUpQuestion = {
+      ...tossUpQuestion,
+      round: 0,
+      questionNumber: 1,
+    };
+
+    // No Counter in mock mode, but we’ll still build the same shape
+    const groupSize = 3;
+    const teams = ['team1', 'team2'];
+
+    const updatedQuestions = questions.map((q, idx) => {
+      const groupIndex = Math.floor(idx / groupSize);
+      const teamAssignment = teams[groupIndex % teams.length];
+      const questionNumber = (idx % groupSize) + 1;
+
+      let round;
+      if (q.questionLevel === 'Beginner') round = 1;
+      else if (q.questionLevel === 'Intermediate') round = 2;
+      else round = 3;
+
+      return {
+        ...q,
+        questionNumber,
+        teamAssignment,
+        round,
+      };
+    });
+
+    return { updatedTossUpQuestion, updatedQuestions };
+  }
+
+
   const questions = await getQuestions(SCHEMA_MODELS.FINALQUESTION);
 
   if (!questions.length) {

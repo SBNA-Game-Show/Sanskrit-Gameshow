@@ -14,7 +14,7 @@ export default defineConfig({
     headless: false,
     baseURL: FRONTEND_URL,
     trace: 'on-first-retry',
-    launchOptions: { slowMo: 0 },
+    launchOptions: { slowMo: 100 },
   },
 
   // Root-level webServer is supported across Playwright versions
