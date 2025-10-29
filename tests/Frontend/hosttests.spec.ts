@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-async function login(page, username: string, password: string, baseURL?: string) {
+async function login(page: any, username: string, password: string, baseURL?: string) {
   await page.goto(baseURL ?? 'http://localhost:3000/');
   await page.waitForTimeout(10000);
 

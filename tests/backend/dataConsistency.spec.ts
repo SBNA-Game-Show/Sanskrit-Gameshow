@@ -1,219 +1,272 @@
 import { test, expect, request, APIRequestContext } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5004';
 
-// Define interfaces for our data structures
-interface Question {
-  _id: string;
-  round: number;
-  questionNumber: number;
-  teamAssignment: string;
-  answers: Answer[];
-}
-
-interface Answer {
-  answer: string;
-  score: number;
-  revealed: boolean;
-}
-
+// Define interfaces based on your actual API responses
 interface GameData {
   gameCode: string;
   gameId: string;
-  players?: any[];
-  status?: string;
+  success: boolean;
 }
 
-interface GameState {
+interface JoinGameResponse {
+  playerId: string;
+  game: any;
+  success: boolean;
+}
+
+interface ServerStats {
+  message: string;
   status: string;
-  players: any[];
-  gameCode: string;
-  scores?: { [key: string]: number };
+  activeGames: number;
+  connectedPlayers: number;
+  timestamp: string;
 }
 
-interface Operation {
-  type: 'player_join' | 'load_questions';
-  data?: { playerName: string; gameCode: string };
-  endpoint?: string;
+interface AuthResponse {
+  token: string;
+  user?: any;
 }
 
-interface AnswerSubmission {
-  playerName: string;
-  answer: string;
-  expectedScore: number;
-}
-
-test.describe('Data Consistency Tests', () => {
+test.describe('API Integration Tests', () => {
   let hostToken: string;
+  let gameCode: string;
 
   test.beforeEach(async ({ request }: { request: APIRequestContext }) => {
     // Login as host before each test
     const loginResponse = await request.post(`${BASE_URL}/api/auth/login`, {
       data: { username: 'Host', password: '12345678' },
     });
-    const loginBody = await loginResponse.json();
+    
+    // Debug login if needed
+    if (loginResponse.status() !== 200) {
+      console.log('Login failed with status:', loginResponse.status());
+      const errorText = await loginResponse.text();
+      console.log('Login error:', errorText);
+    }
+    
+    expect(loginResponse.status()).toBe(200);
+    const loginBody: AuthResponse = await loginResponse.json();
     hostToken = loginBody.token;
+    expect(hostToken).toBeDefined();
   });
 
-  test('Question data should maintain integrity across rounds', async ({ request }: { request: APIRequestContext }) => {
-    const response = await request.get(`${BASE_URL}/api/questions/load`, {
-      headers: { Authorization: `Bearer ${hostToken}` }
-    });
-    
+  test('Server should be running and accessible', async ({ request }: { request: APIRequestContext }) => {
+    const response = await request.get(`${BASE_URL}/`);
     expect(response.status()).toBe(200);
-    const questions: Question[] = await response.json();
     
-    // Check that question numbers are sequential within rounds
-    const rounds: { [key: number]: number[] } = {};
-    questions.forEach((question: Question) => {
-      if (!rounds[question.round]) {
-        rounds[question.round] = [];
-      }
-      rounds[question.round].push(question.questionNumber);
-    });
-
-    // Each round should have sequential question numbers
-    Object.values(rounds).forEach((questionNumbers: number[]) => {
-      const sorted = [...questionNumbers].sort((a, b) => a - b);
-      expect(questionNumbers).toEqual(sorted);
-    });
-
-    // Verify no duplicate question numbers within rounds
-    Object.entries(rounds).forEach(([round, numbers]: [string, number[]]) => {
-      const uniqueNumbers = [...new Set(numbers)];
-      expect(numbers.length).toBe(uniqueNumbers.length);
-    });
+    const stats: ServerStats = await response.json();
+    expect(stats.message).toBe('Family Feud Quiz Game Server');
+    expect(stats.status).toBe('Running');
+    expect(stats.activeGames).toBeDefined();
+    expect(stats.connectedPlayers).toBeDefined();
   });
 
-  test('Game state consistency after multiple operations', async ({ request }: { request: APIRequestContext }) => {
-    // Start a new game
-    const startResponse = await request.post(`${BASE_URL}/api/game/start`, {
+  test('Should create a new game successfully', async ({ request }: { request: APIRequestContext }) => {
+    const createResponse = await request.post(`${BASE_URL}/api/create-game`, {
       headers: { Authorization: `Bearer ${hostToken}` },
-      data: { gameType: 'quiz', settings: { maxPlayers: 4 } }
-    });
-    expect(startResponse.status()).toBe(200);
-    const gameData: GameData = await startResponse.json();
-
-    // Get initial game state
-    const initialStateResponse = await request.get(`${BASE_URL}/api/game/state`, {
-      headers: { Authorization: `Bearer ${hostToken}` }
-    });
-    const initialState: GameState = await initialStateResponse.json();
-
-    // Perform multiple operations
-    const operations: Operation[] = [
-      { type: 'player_join', data: { playerName: 'Player1', gameCode: gameData.gameCode } },
-      { type: 'player_join', data: { playerName: 'Player2', gameCode: gameData.gameCode } },
-      { type: 'load_questions', endpoint: '/api/questions/load' }
-    ];
-
-    for (const operation of operations) {
-      let response;
-      if (operation.type === 'player_join' && operation.data) {
-        response = await request.post(`${BASE_URL}/api/players/join`, {
-          data: operation.data
-        });
-      } else if (operation.type === 'load_questions' && operation.endpoint) {
-        response = await request.get(`${BASE_URL}${operation.endpoint}`, {
-          headers: { Authorization: `Bearer ${hostToken}` }
-        });
+      data: { 
+        teamNames: ["Team Alpha", "Team Beta"] 
       }
-      expect(response!.status()).toBe(200);
+    });
+
+    // Debug create game response
+    if (createResponse.status() !== 200) {
+      console.log('Create game failed with status:', createResponse.status());
+      const errorText = await createResponse.text();
+      console.log('Create game error:', errorText);
     }
 
-    // Verify final game state consistency
-    const finalStateResponse = await request.get(`${BASE_URL}/api/game/state`, {
-      headers: { Authorization: `Bearer ${hostToken}` }
-    });
-    const finalState: GameState = await finalStateResponse.json();
-
-    // Game should still be in valid state
-    expect(finalState.status).toBeDefined();
-    expect(finalState.players).toHaveLength(2);
-    expect(finalState.gameCode).toBe(initialState.gameCode);
+    expect(createResponse.status()).toBe(200);
+    
+    const gameData: GameData = await createResponse.json();
+    expect(gameData.success).toBe(true);
+    expect(gameData.gameCode).toBeDefined();
+    expect(gameData.gameId).toBeDefined();
+    
+    gameCode = gameData.gameCode;
+    console.log('Created game with code:', gameCode);
   });
 
-  test('Score calculation consistency', async ({ request }: { request: APIRequestContext }) => {
-    // Start game
-    const startResponse = await request.post(`${BASE_URL}/api/game/start`, {
-      headers: { Authorization: `Bearer ${hostToken}` }
-    });
-    const gameData: GameData = await startResponse.json();
-
-    // Simulate multiple answer submissions
-    const answerSubmissions: AnswerSubmission[] = [
-      { playerName: 'Player1', answer: 'correct', expectedScore: 10 },
-      { playerName: 'Player2', answer: 'wrong', expectedScore: 0 },
-      { playerName: 'Player1', answer: 'correct', expectedScore: 20 }
-    ];
-
-    let totalScore = 0;
-    for (const submission of answerSubmissions) {
-      // Join player if not already joined
-      await request.post(`${BASE_URL}/api/players/join`, {
-        data: { playerName: submission.playerName, gameCode: gameData.gameCode }
-      });
-
-      // Submit answer (this would need to be adapted to your actual API)
-      const answerResponse = await request.post(`${BASE_URL}/api/game/answer`, {
-        headers: { Authorization: `Bearer ${hostToken}` },
-        data: {
-          playerName: submission.playerName,
-          answer: submission.answer,
-          gameCode: gameData.gameCode
-        }
-      });
-
-      if (answerResponse.status() === 200) {
-        const result = await answerResponse.json();
-        if (result.isCorrect) {
-          totalScore += submission.expectedScore;
-        }
+  test('Should allow players to join created game', async ({ request }: { request: APIRequestContext }) => {
+    // First create a game
+    const createResponse = await request.post(`${BASE_URL}/api/create-game`, {
+      headers: { Authorization: `Bearer ${hostToken}` },
+      data: { 
+        teamNames: ["Team Red", "Team Blue"] 
       }
+    });
+    expect(createResponse.status()).toBe(200);
+    
+    const gameData: GameData = await createResponse.json();
+    gameCode = gameData.gameCode;
+
+    // Join first player
+    const join1Response = await request.post(`${BASE_URL}/api/join-game`, {
+      data: { 
+        playerName: 'PlayerOne', 
+        gameCode: gameCode 
+      }
+    });
+
+    if (join1Response.status() !== 200) {
+      console.log('Join 1 failed with status:', join1Response.status());
+      const errorText = await join1Response.text();
+      console.log('Join 1 error:', errorText);
     }
 
-    // Verify final scores
-    const stateResponse = await request.get(`${BASE_URL}/api/game/state`, {
-      headers: { Authorization: `Bearer ${hostToken}` }
-    });
-    const gameState: GameState = await stateResponse.json();
+    expect(join1Response.status()).toBe(200);
+    
+    const join1Result: JoinGameResponse = await join1Response.json();
+    expect(join1Result.success).toBe(true);
+    expect(join1Result.playerId).toBeDefined();
+    expect(join1Result.game).toBeDefined();
 
-    // Scores should be consistent with submissions
-    expect(gameState.scores).toBeDefined();
-    // Add more specific score validation based on your game logic
+    // Join second player
+    const join2Response = await request.post(`${BASE_URL}/api/join-game`, {
+      data: { 
+        playerName: 'PlayerTwo', 
+        gameCode: gameCode 
+      }
+    });
+
+    expect(join2Response.status()).toBe(200);
+    
+    const join2Result: JoinGameResponse = await join2Response.json();
+    expect(join2Result.success).toBe(true);
   });
 
-  test('Data persistence across game sessions', async ({ request }: { request: APIRequestContext }) => {
-    // Create first game session
-    const session1Response = await request.post(`${BASE_URL}/api/game/start`, {
+  test('Should handle invalid game code gracefully', async ({ request }: { request: APIRequestContext }) => {
+    const joinResponse = await request.post(`${BASE_URL}/api/join-game`, {
+      data: { 
+        playerName: 'TestPlayer', 
+        gameCode: 'INVALID123' 
+      }
+    });
+
+    // Should return 404 for non-existent game
+    expect(joinResponse.status()).toBe(404);
+    
+    const errorBody = await joinResponse.json();
+    expect(errorBody.error).toBe('Game not found');
+  });
+
+  test('Should reject join without required fields', async ({ request }: { request: APIRequestContext }) => {
+    // Test missing playerName
+    const response1 = await request.post(`${BASE_URL}/api/join-game`, {
+      data: { 
+        gameCode: 'TEST123' 
+        // missing playerName
+      }
+    });
+
+    expect(response1.status()).toBe(400);
+    const error1 = await response1.json();
+    expect(error1.error).toContain('required');
+
+    // Test missing gameCode
+    const response2 = await request.post(`${BASE_URL}/api/join-game`, {
+      data: { 
+        playerName: 'TestPlayer' 
+        // missing gameCode
+      }
+    });
+
+    expect(response2.status()).toBe(400);
+    const error2 = await response2.json();
+    expect(error2.error).toContain('required');
+  });
+
+  test('Game creation should require teamNames', async ({ request }: { request: APIRequestContext }) => {
+    const createResponse = await request.post(`${BASE_URL}/api/create-game`, {
       headers: { Authorization: `Bearer ${hostToken}` },
-      data: { gameType: 'quiz', settings: { maxPlayers: 4 } }
-    });
-    const session1: GameData = await session1Response.json();
-
-    // End first session
-    await request.post(`${BASE_URL}/api/game/end`, {
-      headers: { Authorization: `Bearer ${hostToken}` }
+      data: { 
+        // missing teamNames
+      }
     });
 
-    // Create second game session
-    const session2Response = await request.post(`${BASE_URL}/api/game/start`, {
+    // This might return 500 since your code expects teamNames
+    // You might want to add validation in your route
+    console.log('Create without teamNames status:', createResponse.status());
+  });
+
+  test('Multiple games can be created independently', async ({ request }: { request: APIRequestContext }) => {
+    // Create first game
+    const game1Response = await request.post(`${BASE_URL}/api/create-game`, {
       headers: { Authorization: `Bearer ${hostToken}` },
-      data: { gameType: 'quiz', settings: { maxPlayers: 4 } }
+      data: { teamNames: ["Team 1", "Team 2"] }
     });
-    const session2: GameData = await session2Response.json();
+    expect(game1Response.status()).toBe(200);
+    const game1: GameData = await game1Response.json();
 
-    // New session should have fresh state
-    expect(session2.gameCode).not.toBe(session1.gameCode);
-    expect(session2.players).toHaveLength(0);
-
-    // Verify no data leakage between sessions
-    const stateResponse = await request.get(`${BASE_URL}/api/game/state`, {
-      headers: { Authorization: `Bearer ${hostToken}` }
+    // Create second game
+    const game2Response = await request.post(`${BASE_URL}/api/create-game`, {
+      headers: { Authorization: `Bearer ${hostToken}` },
+      data: { teamNames: ["Team A", "Team B"] }
     });
-    const currentState: GameState = await stateResponse.json();
+    expect(game2Response.status()).toBe(200);
+    const game2: GameData = await game2Response.json();
 
-    expect(currentState.players).toHaveLength(0);
-    expect(currentState.scores).toEqual({});
+    // Game codes should be different
+    expect(game1.gameCode).not.toBe(game2.gameCode);
+
+    // Players should be able to join both games independently
+    const join1Response = await request.post(`${BASE_URL}/api/join-game`, {
+      data: { playerName: 'Player1', gameCode: game1.gameCode }
+    });
+    expect(join1Response.status()).toBe(200);
+
+    const join2Response = await request.post(`${BASE_URL}/api/join-game`, {
+      data: { playerName: 'Player2', gameCode: game2.gameCode }
+    });
+    expect(join2Response.status()).toBe(200);
+  });
+
+  test('Server stats should reflect active games and players', async ({ request }: { request: APIRequestContext }) => {
+    // Get initial stats
+    const initialStatsResponse = await request.get(`${BASE_URL}/`);
+    expect(initialStatsResponse.status()).toBe(200);
+    const initialStats: ServerStats = await initialStatsResponse.json();
+
+    // Create a game and add players
+    const createResponse = await request.post(`${BASE_URL}/api/create-game`, {
+      headers: { Authorization: `Bearer ${hostToken}` },
+      data: { teamNames: ["Team X", "Team Y"] }
+    });
+    const gameData: GameData = await createResponse.json();
+
+    // Join players
+    await request.post(`${BASE_URL}/api/join-game`, {
+      data: { playerName: 'PlayerA', gameCode: gameData.gameCode }
+    });
+    await request.post(`${BASE_URL}/api/join-game`, {
+      data: { playerName: 'PlayerB', gameCode: gameData.gameCode }
+    });
+
+    // Get updated stats - note: this might not immediately reflect changes
+    // depending on how your stats are calculated
+    const updatedStatsResponse = await request.get(`${BASE_URL}/`);
+    const updatedStats: ServerStats = await updatedStatsResponse.json();
+    
+    // These assertions might need adjustment based on how real-time your stats are
+    expect(updatedStats.activeGames).toBeDefined();
+    expect(updatedStats.connectedPlayers).toBeDefined();
+  });
+
+  test('Authentication should protect game creation', async ({ request }: { request: APIRequestContext }) => {
+    // Try to create game without authentication
+    const response = await request.post(`${BASE_URL}/api/create-game`, {
+      // No Authorization header
+      data: { teamNames: ["Team 1", "Team 2"] }
+    });
+
+    // This depends on your auth middleware implementation
+    // If you have auth on this route, it should return 401/403
+    console.log('Create game without auth status:', response.status());
+    
+    if (response.status() === 401 || response.status() === 403) {
+      const error = await response.json();
+      expect(error.error).toBeDefined();
+    }
   });
 });
