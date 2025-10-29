@@ -433,24 +433,33 @@ export function setupHostEvents(socket, io) {
 
     let skipUpdates = {};
     if (game && game.hostId === socket.id) {
-      if (round === 4) {
-        const updatedRoundScoreTeamOne = game.teams[0].roundScores.map((score, idx) => {
-          if (idx === game.currentRound - 1) {
-            return game.teams[0].currentRoundScore
-          }
-          return 0;
-        });
-        const updatedRoundScoreTeamTwo = game.teams[1].roundScores.map((score, idx) => {
-          if (idx === game.currentRound - 1) {
-            return game.teams[1].currentRoundScore
-          }
-          return 0;
-        });
-        const updatedRoundScores = [
-          updatedRoundScoreTeamOne,
-          updatedRoundScoreTeamTwo
-        ]
 
+      game.teams[0].roundScores[game.currentRound - 1] = game.teams[0].currentRoundScore;
+      game.teams[1].roundScores[game.currentRound - 1] = game.teams[1].currentRoundScore;
+
+      const updatedRoundScoreTeamOne = game.teams[0].roundScores.map((score, idx) => {
+        if (idx + 1 < round) {
+          return game.teams[0].roundScores[idx];
+        } else {
+          return 0;
+        }
+      });
+      const updatedRoundScoreTeamTwo = game.teams[1].roundScores.map((score, idx) => {
+        if (idx + 1 < round) {
+          return game.teams[1].roundScores[idx];
+        } else {
+          return 0;
+        }
+      });
+      const updatedRoundScores = [
+        updatedRoundScoreTeamOne,
+        updatedRoundScoreTeamTwo
+      ]
+
+      console.log("UPDATED ROUND SCORES");
+      console.log(updatedRoundScores);
+
+      if (round === 4) {
         skipUpdates = {
           status: "active",
           currentQuestionIndex: 18,
@@ -496,7 +505,10 @@ export function setupHostEvents(socket, io) {
           currentRound: round,
           teams: game.teams.map((team, idx) => ({ 
             ...team, 
+            score: team.roundScores.reduce((total, num) => total + num, 0),
             active: (selectedStartingTeam === "team1" && idx === 0) || (selectedStartingTeam === "team2" && idx === 1),
+            roundScores: updatedRoundScores[idx],
+            currentRoundScore: 0
           })),
           gameState: {
             ...game.gameState,
