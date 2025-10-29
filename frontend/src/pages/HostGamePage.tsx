@@ -559,12 +559,21 @@ const HostGamePage: React.FC = () => {
     }
   };
 
-  const handleSkipToRound = (round: number, radioButtonRef: React.RefObject<HTMLFormElement>) => {
+  const handleSkipToRound = (
+    round: number,
+    radioButtonRef: React.RefObject<HTMLFormElement>
+  ) => {
     if (gameCode && socketRef.current) {
-      const selectedStartingTeam = radioButtonRef.current?.querySelector<HTMLInputElement>(
-        'input[name="starting-team"]:checked'
-      )?.value;
-      socketRef.current.emit("skip-to-round", gameCode, round, selectedStartingTeam );
+      const selectedStartingTeam =
+        radioButtonRef.current?.querySelector<HTMLInputElement>(
+          'input[name="starting-team"]:checked'
+        )?.value;
+      socketRef.current.emit(
+        "skip-to-round",
+        gameCode,
+        round,
+        selectedStartingTeam
+      );
     }
   };
 
@@ -779,14 +788,14 @@ const HostGamePage: React.FC = () => {
         {/* Center Game Area */}
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
           {/* Turn Indicator */}
-          <TurnIndicator
+          {/* <TurnIndicator
             currentTeam={game.gameState.currentTurn}
             teams={game.teams}
             currentQuestion={currentQuestion}
             questionsAnswered={game.gameState.questionsAnswered}
             round={game.currentRound}
             variant="compact"
-          />
+          /> */}
 
           {/* Game Board */}
           <GameBoard
@@ -803,6 +812,11 @@ const HostGamePage: React.FC = () => {
             onNextQuestion={handleNextQuestion}
             onCompleteTossUpRound={handleCompleteTossUpRound}
             onPauseTimer={handlePauseTimer}
+            currentTeam={game.gameState.currentTurn}
+            teams={game.teams}
+            currentQuestion={game.questions[game.currentQuestionIndex]}
+            questionsAnswered={game.gameState.questionsAnswered}
+            round={game.currentRound}
           />
 
           {/* Host Controls - CLEAN VERSION */}
@@ -857,73 +871,74 @@ const HostGamePage: React.FC = () => {
               {role === "Tester" && (
                 <>
                   <Button
-                  data-testid="skip-to-round-1-button"
-                  onClick={() => handleSkipToRound(1, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
+                    data-testid="skip-to-round-1-button"
+                    onClick={() => handleSkipToRound(1, radioButtonRef)}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs py-1 px-3"
                   >
                     Skip to R1
                   </Button>
                   <Button
-                  data-testid="skip-to-round-2-button"
-                  onClick={() => handleSkipToRound(2, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
+                    data-testid="skip-to-round-2-button"
+                    onClick={() => handleSkipToRound(2, radioButtonRef)}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs py-1 px-3"
                   >
                     Skip to R2
                   </Button>
                   <Button
-                  data-testid="skip-to-round-3-button"
-                  onClick={() => handleSkipToRound(3, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
+                    data-testid="skip-to-round-3-button"
+                    onClick={() => handleSkipToRound(3, radioButtonRef)}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs py-1 px-3"
                   >
                     Skip to R3
                   </Button>
                   <Button
-                  data-testid="skip-to-lightning-round-button"
-                  onClick={() => handleSkipToRound(4, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
+                    data-testid="skip-to-lightning-round-button"
+                    onClick={() => handleSkipToRound(4, radioButtonRef)}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs py-1 px-3"
                   >
                     Skip to LR
                   </Button>
 
                   <form className="ml-3" ref={radioButtonRef}>
                     <div className="flex gap-6">
-
                       <div className="inline-flex items-center">
-                        <input 
-                          type="radio" 
+                        <input
+                          type="radio"
                           data-testid="set-starting-team-1-button"
-                          id="team1" 
-                          name="starting-team" 
-                          value="team1" 
+                          id="team1"
+                          name="starting-team"
+                          value="team1"
                           defaultChecked
                         />
-                        <label className="pl-2" htmlFor="team1">{game.teams[0].name}</label>
+                        <label className="pl-2" htmlFor="team1">
+                          {game.teams[0].name}
+                        </label>
                       </div>
 
                       <div className="inline-flex items-center">
-                        <input 
-                          type="radio" 
+                        <input
+                          type="radio"
                           data-testid="set-starting-team-2-button"
-                          id="team2" 
-                          name="starting-team" 
-                          value="team2" 
+                          id="team2"
+                          name="starting-team"
+                          value="team2"
                         />
-                        <label className="pl-2" htmlFor="team2">{game.teams[1].name}</label>
+                        <label className="pl-2" htmlFor="team2">
+                          {game.teams[1].name}
+                        </label>
                       </div>
-
                     </div>
                   </form>
                 </>
               )}
-              
             </div>
           </div>
         </div>

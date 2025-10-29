@@ -15,9 +15,9 @@ const BuzzerButton: React.FC<BuzzerButtonProps> = ({
 }) => {
   return (
     <div className="glass-card p-4 text-center">
-      <h3 className="text-lg font-semibold mb-3 text-blue-300">
+      {/* <h3 className="text-lg font-semibold mb-3 text-blue-300">
         🚀 Ready to answer?
-      </h3>
+      </h3> */}
       <button
         data-testid="buzzer-button"
         onClick={onBuzz}
@@ -40,7 +40,7 @@ const BuzzerButton: React.FC<BuzzerButtonProps> = ({
           </>
         )}
       </button>
-      <p className="text-xs text-blue-200 mt-2">First to buzz gets control!</p>
+      {/* <p className="text-xs text-blue-200 mt-2">First to buzz gets control!</p> */}
     </div>
   );
 };

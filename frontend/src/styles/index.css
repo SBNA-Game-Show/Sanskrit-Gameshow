@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
-@import url('https://db.onlinewebfonts.com/c/7e96eba370659b4e4563309dc4ebb33f?family=Samarkan+Normal+V2');
+@import url("https://db.onlinewebfonts.com/c/7e96eba370659b4e4563309dc4ebb33f?family=Samarkan+Normal+V2");
 
 /* Light Mode Variables Only */
 :root {
@@ -325,7 +325,7 @@ header *,
   /* background: linear-gradient(135deg, var(--bg-secondary), var(--glass)); */
   border: 1px solid var(--border-accent);
   border-radius: 6px;
-  background-color: #FEFEFC;
+  background-color: #fefefc;
 }
 
 .question-header h2 {
@@ -342,19 +342,19 @@ header *,
 .answer-grid {
   display: flex !important;
   flex-direction: column !important;
-  gap: 0.75rem !important; /* Better spacing between tiles */
+  gap: 0.5rem !important; /* Better spacing between tiles */
   flex: 1 !important;
   overflow-y: auto !important;
   padding: 0.5rem;
   justify-content: space-evenly !important; /* Distribute tiles evenly */
   align-items: stretch !important; /* Make all tiles same width */
-  min-height: 45vh;
+  min-height: 30vh;
 }
 
 .answer-card {
   padding: 0.5rem 1rem !important; /* Better proportioned padding */
   border-radius: 12px !important; /* Rounded corners to match question card */
-  min-height: 5rem !important; /* Proper height that looks proportional */
+  min-height: 3rem !important; /* Proper height that looks proportional */
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -363,7 +363,7 @@ header *,
   box-shadow: 0 4px 12px rgba(242, 210, 182, 0.15);
   transition: all 0.3s ease;
   flex: 1 !important; /* Equal size distribution */
-  max-height: 6rem !important; /* Prevent tiles from getting too tall */
+  max-height: 4rem !important; /* Prevent tiles from getting too tall */
 }
 
 .answer-card:hover {
