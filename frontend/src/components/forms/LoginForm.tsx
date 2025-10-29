@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; //Removed Link
 import API from '../../services/auth';
 import { LoginCredentials, LoginResponse } from '../../types/auth';
-import { ROUTES } from '../../utils/constants';
+//import { ROUTES } from '../../utils/constants';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -55,7 +55,7 @@ const LoginForm: React.FC = () => {
     localStorage.setItem("username", res.data.username);
 
     // ✅ Navigate based on user role
-    if (res.data.role === 'Host') {
+    if (res.data.role === 'Host' || res.data.role === 'Tester') {
       navigate('/HostHomePage');
     } else if (res.data.role === 'Player') {
       navigate('/PlayerHomePage');
@@ -133,6 +133,7 @@ const LoginForm: React.FC = () => {
               </label>
               <div className="relative">
                 <input
+                  data-testid="username-input"
                   type="text"
                   id="username"
                   name="username"
@@ -156,6 +157,7 @@ const LoginForm: React.FC = () => {
               </label>
               <div className="relative">
                 <input
+                  data-testid="password-input"
                   type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
@@ -190,26 +192,42 @@ const LoginForm: React.FC = () => {
              
               </label>
             </div>
+            <div className="flex gap-2">
+              <button
+                data-testid="login-button"
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="w-1/2 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Logging in...
+                  </div>
+                ) : (
+                  'Login to Play'
+                )}
+              </button>
 
-            <button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Logging in...
-                </div>
-              ) : (
-                'Login to Play'
-              )}
-            </button>
+              <button 
+                className="w-1/2 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                data-testid="register-here-button"
+                onClick={() => navigate('/register')}
+              >
+                {/* <a href="/register">Register Here</a> */}
+                Register Here
+              </button>
+
+            </div>
           </div>
-
+          {error && (
+            <div className="mt-3 text-center text-red-500">
+              {error}
+            </div>
+          )}
           
 
 

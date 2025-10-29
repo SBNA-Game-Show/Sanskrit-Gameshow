@@ -1,63 +1,25 @@
 import { Counter, GameQuestion } from "../models/gameQuestion.model.js";
 import { ApiError } from "../utils/ApiError.js";
-import { QUESTION_CATEGORY, QUESTION_LEVEL } from "../utils/constants.js";
+import { QUESTION_LEVEL } from "../utils/constants.js";
 import { SCHEMA_MODELS } from "../utils/enums.js";
 import { getQuestions } from "./questionService.js";
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
+function shuffleAnswers(array) {
+  const arr = [...array]
 
-
-export async function prepareGameQuestions() {
-  if (process.env.USE_MOCK_QUESTIONS === 'true') {
-    // Load DB-shaped mock
-    const mod = await import('../data/mockFinalQuestionsDbShape.js');
-    const questions = mod.default; 
-    // ---- From here, reuse your normal branch exactly, but without .toObject() ----
-
-    // Find toss-up (any Intermediate)
-    const tossUpIndex = questions.findIndex(
-      (q) => q.questionLevel === 'Intermediate'
-    );
-    if (tossUpIndex === -1) {
-      throw new ApiError(400, 'No INTERMEDIATE-level question found for toss-up.');
-    }
-
-    const [tossUpQuestion] = questions.splice(tossUpIndex, 1);
-
-    const updatedTossUpQuestion = {
-      ...tossUpQuestion,
-      round: 0,
-      questionNumber: 1,
-    };
-
-    // No Counter in mock mode, but we’ll still build the same shape
-    const groupSize = 3;
-    const teams = ['team1', 'team2'];
-
-    const updatedQuestions = questions.map((q, idx) => {
-      const groupIndex = Math.floor(idx / groupSize);
-      const teamAssignment = teams[groupIndex % teams.length];
-      const questionNumber = (idx % groupSize) + 1;
-
-      let round;
-      if (q.questionLevel === 'Beginner') round = 1;
-      else if (q.questionLevel === 'Intermediate') round = 2;
-      else round = 3;
-
-      return {
-        ...q,
-        questionNumber,
-        teamAssignment,
-        round,
-      };
-    });
-
-    return { updatedTossUpQuestion, updatedQuestions };
+  // Use Fisher-Yates shuffle
+  for (let i = arr.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 
+  return arr;
+}
 
-  const questions = await getQuestions(SCHEMA_MODELS.FINALQUESTION);
+export async function prepareGameQuestions() {
+  const { inputQuestions, mcqQuestions } = await getQuestions(SCHEMA_MODELS.FINALQUESTION);
+
+  const questions = inputQuestions;
 
   if (!questions.length) {
     throw new ApiError(
@@ -66,88 +28,62 @@ export async function prepareGameQuestions() {
     );
   }
 
-  // Get the Index for the toss up Question
+  // --- Toss-Up Logic ---
   const tossUpIndex = questions.findIndex(
     (q) => q.questionLevel === QUESTION_LEVEL.INTERMEDIATE
   );
-
   if (tossUpIndex === -1) {
     throw new ApiError(
       400,
       "No INTERMEDIATE-level question found for toss-up."
     );
   }
-
-  // Remove the toss Up question from the questions Array so i wont show in the game questions again
   const [tossUpQuestion] = questions.splice(tossUpIndex, 1);
-
-  // // Add that question to the index 0 of questions Array
-  // questions.unshift(tossUpQuestion);
-
   const updatedTossUpQuestion = {
-    ...tossUpQuestion.toObject(),
+    ...tossUpQuestion,
     round: 0,
     questionNumber: 1,
   };
-  // Step 2: Extract all valid questionIDs
-  const questionIDs = questions
-    .map((q) => q._id)
-    .filter((id) => typeof id === "string" && id.trim() !== "");
 
-  if (questionIDs.length === 0) {
-    throw new ApiError(400, "No valid Question IDs provided.");
-  }
-
-  // Clean Counter Before giving new questionNumber
-  await Counter.deleteMany();
-
-  // 1. Get and increment counter in one DB call
-  const counter = await Counter.findByIdAndUpdate(
-    { _id: "gameQuestion" },
-    { $inc: { seq: questions.length } },
-    { new: true, upsert: true }
-  );
-
-  // 2. Calculate starting number
-  const startNumber = counter.seq - questions.length + 1;
-
-  // 3. Inject questionNumbers manually
+  // --- Numbering + Team Assignment ---
   const groupSize = 3;
   const teams = ["team1", "team2"];
-
-  const updatedQuestions = questions.map((q, idx) => {
+  const updatedInputQuestions = questions.map((q, idx) => {
     const groupIndex = Math.floor(idx / groupSize);
     const teamAssignment = teams[groupIndex % teams.length];
     const questionNumber = (idx % groupSize) + 1;
     let round;
-    if (q.questionLevel === QUESTION_LEVEL.BEGINNER) {
-      round = 1;
-    } else if (q.questionLevel === QUESTION_LEVEL.INTERMEDIATE) {
-      round = 2;
-    } else {
-      round = 3;
-    }
+    if (q.questionLevel === QUESTION_LEVEL.BEGINNER) round = 1;
+    else if (q.questionLevel === QUESTION_LEVEL.INTERMEDIATE) round = 2;
+    else round = 3;
 
     return {
-      ...q.toObject(),
-      questionNumber: questionNumber,
-      teamAssignment: teamAssignment,
-      round: round,
+      ...q,
+      questionNumber,
+      teamAssignment,
+      round,
     };
   });
 
-  // Clear old ones before inserting
+  // --- Add Round 4 Lightning Questions ---
+  const updatedMcqQuestions = mcqQuestions.map((q, index) => ({
+    ...q,
+    answers: shuffleAnswers(q.answers),
+    round: 4,
+    questionNumber: index + 1,
+    teamAssignment: "shared",
+  }));
+
+  console.log("sdf")
+  console.log(updatedMcqQuestions)
+
+  // --- Save into GameQuestion collection ---
   await GameQuestion.deleteMany();
-  await GameQuestion.insertMany(updatedQuestions);
+  await GameQuestion.insertMany([...updatedInputQuestions, ...updatedMcqQuestions]);
 
-  // Uncomment to set used: true -- to not use the same questions again for a new game
-
-  // await FinalQuestion.updateMany(
-  // { _id: { $in: questionIDs } }
-  // { $set: { used: true } }
-  // );
+  // --- Return combined questions ---
   return {
     updatedTossUpQuestion,
-    updatedQuestions,
+    updatedQuestions: [...updatedInputQuestions, ...updatedMcqQuestions],
   };
 }

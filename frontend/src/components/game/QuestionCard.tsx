@@ -1,77 +1,82 @@
 import React from "react";
-import { Question } from "../../types";
-import AnimatedCard from "../common/AnimatedCard";
+import { useState, useEffect, useRef } from "react";
+import { Game } from "../../types";
 
 interface QuestionCardProps {
-  question: Question;
-  currentRound: number;
-  questionIndex: number;
-  totalQuestions: number;
-  variant?: "default" | "compact";
+  game?: Game;
+  question: string;
+  duration: number;
+  isTimerActive: boolean;
+  onPauseTimer?: () => void;
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({
+  game,
   question,
-  currentRound,
-  questionIndex,
-  totalQuestions,
-  variant = "default",
+  duration,
+  isTimerActive,
+  onPauseTimer,
 }) => {
-  if (variant === "compact") {
-    return (
-      <>
-        {/* Question Header */}
-        <div className="glass-card p-2 mb-2 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
-          <div className="flex justify-between items-center">
-            <h2 className="text-base font-bold">
-              {currentRound === 0
-                ? 'Toss-up Round'
-                : `Round ${currentRound}`} • {question.questionCategory}
-            </h2>
-            <div className="text-xs text-slate-400">
-              Question {currentRound === 0 ? 1 : questionIndex + 1} of{' '}
-              {currentRound === 0 ? 1 : totalQuestions}
-            </div>
-          </div>
-        </div>
 
-        {/* Question */}
-        <div className="glass-card p-3 mb-2">
-          <h2 className="text-lg font-semibold text-center mb-1">
-            {question.question}
-          </h2>
-        </div>
-      </>
-    );
+  const [progress, setProgress] = useState(100);
+
+  // The canAdvance ref ensures that the onNextQuestion function doesn't run twice due to strict mode
+  const canAdvanceRef = useRef(true); 
+  const timerSpeedModifierRef = useRef(1);
+  const timerColorRef = useRef("bg-green-200")
+
+  if (game?.pauseTimer ) {
+    timerSpeedModifierRef.current = 0;
+    timerColorRef.current = "bg-gray-100"; 
+  }
+  else {
+    game?.teams.forEach((team) => {
+      if (team.active && game.currentRound === 4) {
+        timerSpeedModifierRef.current = 0.75;
+        timerColorRef.current = "bg-yellow-100";
+        return;
+      }
+    })
+  }
+  
+
+  if (progress <= 0 && canAdvanceRef.current) {
+    onPauseTimer?.();
+    canAdvanceRef.current = false;
   }
 
+  useEffect(() => {
+    if (isTimerActive) {
+      const interval = 30;
+      const startTime = Date.now()
+      let timePassedInMs;
+
+      canAdvanceRef.current = true;
+      timerSpeedModifierRef.current = 1;
+      timerColorRef.current = "bg-green-200";
+      const timer = setInterval(() => {
+        setProgress((prev) => {
+          if (prev <= 0) {
+            clearInterval(timer);
+            return 0;
+          }
+          timePassedInMs = (Date.now() - startTime) * timerSpeedModifierRef.current;
+          return (duration-timePassedInMs)/duration*100 
+        })
+      }, interval)
+
+      return () => clearInterval(timer);
+    }
+  }, [isTimerActive, duration])
+
   return (
-    <div>
-      {/* Question Header */}
-      <AnimatedCard>
-        <div className="glass-card p-4 mb-4 text-center bg-gradient-to-r from-purple-600/20 to-blue-600/20">
-          <h3 className="text-lg font-bold">
-            {currentRound === 0
-              ? 'Toss-up Round'
-              : `Round ${currentRound}`} • {question.questionCategory}
-          </h3>
-          <p className="text-sm text-slate-400">
-            Question {currentRound === 0 ? 1 : questionIndex + 1} of{' '}
-            {currentRound === 0 ? 1 : totalQuestions}
-          </p>
-        </div>
-      </AnimatedCard>
-
-      {/* Question */}
-      <AnimatedCard delay={100}>
-        <div className="glass-card p-8 mb-6">
-          <h2 className="text-2xl font-semibold text-center mb-4">
-            {question.question}
-          </h2>
-        </div>
-      </AnimatedCard>
-    </div>
+    <>
+      <div className=" question-card flex-shrink-0">
+        {isTimerActive && <div className={`${timerColorRef.current} h-full`} style={{width: `${progress}%`}}></div>}
+        <h2 className="absolute top-7 inset-0">{question}</h2>
+      </div>
+    </>
   );
-};
 
+}
 export default QuestionCard;

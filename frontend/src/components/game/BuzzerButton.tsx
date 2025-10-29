@@ -19,6 +19,7 @@ const BuzzerButton: React.FC<BuzzerButtonProps> = ({
         🚀 Ready to answer?
       </h3>
       <button
+        data-testid="buzzer-button"
         onClick={onBuzz}
         onTouchStart={onBuzz}
         disabled={disabled || loading}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import io, { Socket } from "socket.io-client";
+import { GAME_CONFIG } from "../utils/constants";
 
 // Import components
 import PageLayout from "../components/layout/PageLayout";
@@ -20,10 +21,11 @@ import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
 
 // Import types and utils
-import { Game, Team, RoundSummary, RoundData } from "../types";
-import { getCurrentQuestion, getGameWinner, getTeamName } from "../utils/gameHelper";
+import { Game, RoundSummary, RoundData } from "../types"; //Team
+import { getCurrentQuestion, getTeamName } from "../utils/gameHelper"; //getGameWinner
 import { ROUTES } from "../utils/constants";
 
+const role = localStorage.getItem("role");
 const HostGamePage: React.FC = () => {
   const [gameCode, setGameCode] = useState<string>("");
   const [game, setGame] = useState<Game | null>(null);
@@ -41,6 +43,7 @@ const HostGamePage: React.FC = () => {
   const [overridePoints, setOverridePoints] = useState("0");
 
   const socketRef = useRef<Socket | null>(null);
+  const radioButtonRef = useRef<HTMLFormElement>(null);
 
   const location = useLocation();
 
@@ -66,6 +69,15 @@ const HostGamePage: React.FC = () => {
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
         ],
+        round4: [
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+        ],
       };
     }
     return game.gameState.questionData[teamKey];
@@ -82,7 +94,7 @@ const HostGamePage: React.FC = () => {
       socketRef.current.disconnect();
     }
 
-    const socket = io("http://localhost:5004", {
+    const socket = io(GAME_CONFIG.SOCKET_URL, {
       forceNew: true,
       reconnection: true,
       reconnectionAttempts: 5,
@@ -201,6 +213,12 @@ const HostGamePage: React.FC = () => {
       console.log("👁️ Remaining cards revealed:", data);
       setGame(data.game);
       // Preserve the previous message instead of showing a new one
+
+      if (data.game.currentRound === 4) {
+        setTimeout(() => {
+          socket.emit("advance-question", { gameCode });
+        }, 2500);
+      }
     });
 
     socket.on("turn-changed", (data) => {
@@ -228,36 +246,38 @@ const HostGamePage: React.FC = () => {
       setControlMessage("Question finished. Click Next Question when ready.");
     });
 
-      socket.on("round-complete", (data) => {
-        console.log("🏁 Round completed:", data);
+    socket.on("round-complete", (data) => {
+      console.log("🏁 Round completed:", data);
 
-        // Update game state if provided
-        if (data.game) {
-          setGame(data.game);
-        }
+      // Update game state if provided
+      if (data.game) {
+        setGame(data.game);
+      }
 
-        if (data.roundSummary) {
-          setRoundSummary(data.roundSummary);
-          if (data.roundSummary.round === 0) {
-            setControlMessage(
-              `${data.roundSummary.tossUpWinner?.teamName || "A team"} won the toss-up!`
-            );
-          } else {
-            setControlMessage(
-              `Round ${data.roundSummary.round} completed! ${
-                data.isGameFinished ? "Game finished!" : "Ready for next round."
-              }`
-            );
-          }
-        } else if (typeof data.round !== "undefined") {
-          // Fallback when summary is missing
+      if (data.roundSummary) {
+        setRoundSummary(data.roundSummary);
+        if (data.roundSummary.round === 0) {
           setControlMessage(
-            `Round ${data.round} completed! ${
+            `${
+              data.roundSummary.tossUpWinner?.teamName || "A team"
+            } won the toss-up!`
+          );
+        } else {
+          setControlMessage(
+            `Round ${data.roundSummary.round} completed! ${
               data.isGameFinished ? "Game finished!" : "Ready for next round."
             }`
           );
         }
-      });
+      } else if (typeof data.round !== "undefined") {
+        // Fallback when summary is missing
+        setControlMessage(
+          `Round ${data.round} completed! ${
+            data.isGameFinished ? "Game finished!" : "Ready for next round."
+          }`
+        );
+      }
+    });
 
     socket.on("round-started", (data) => {
       console.log("🆕 New round started:", data);
@@ -298,6 +318,12 @@ const HostGamePage: React.FC = () => {
       setGame(data.game);
       setControlMessage("All answers have been revealed!");
       setOverrideMode(false);
+
+      if (data.game.currentRound === 4) {
+        setTimeout(() => {
+          socket.emit("advance-question", { gameCode });
+        }, 2500);
+      }
     });
 
     socket.on("answer-overridden", (data) => {
@@ -314,6 +340,14 @@ const HostGamePage: React.FC = () => {
       setGame(data.game);
       setRoundSummary(null);
       setControlMessage(data.message || "Game has been reset.");
+      setOverrideMode(false);
+    });
+
+    socket.on("skipped-to-round", (data) => {
+      console.log(data.message);
+      setGame(data.game);
+      setRoundSummary(null);
+      setControlMessage(data.message || "Skipped rounds.");
       setOverrideMode(false);
     });
 
@@ -339,6 +373,49 @@ const HostGamePage: React.FC = () => {
       setupSocket(upper);
     }
   }, [location.search, gameCode, setupSocket]);
+
+  // Validation function to check if game can start
+  const canStartGame = (game: Game | null) => {
+    if (!game || !game.players || game.players.length < 2) {
+      return {
+        canStart: false,
+        reason: "Need at least 2 players to start the game",
+      };
+    }
+
+    // Check if all players have selected a team
+    const playersWithoutTeam = game.players.filter((p) => !p.teamId);
+    if (playersWithoutTeam.length > 0) {
+      return {
+        canStart: false,
+        reason: `${playersWithoutTeam.length} player(s) haven't selected a team yet`,
+      };
+    }
+
+    // Check if each team has at least one member
+    const team1Players = game.players.filter(
+      (p) => p.teamId === game.teams[0]?.id
+    );
+    const team2Players = game.players.filter(
+      (p) => p.teamId === game.teams[1]?.id
+    );
+
+    if (team1Players.length === 0) {
+      return {
+        canStart: false,
+        reason: `Team "${game.teams[0]?.name}" needs at least one player`,
+      };
+    }
+
+    if (team2Players.length === 0) {
+      return {
+        canStart: false,
+        reason: `Team "${game.teams[1]?.name}" needs at least one player`,
+      };
+    }
+
+    return { canStart: true, reason: "" };
+  };
 
   const createGame = async () => {
     console.log(
@@ -396,6 +473,12 @@ const HostGamePage: React.FC = () => {
     }
   };
 
+  const handleCompleteTossUpRound = () => {
+    if (gameCode && socketRef.current) {
+      socketRef.current.emit("complete-toss-up-round", { gameCode });
+    }
+  };
+
   const handleContinueToNextRound = () => {
     if (gameCode && socketRef.current) {
       socketRef.current.emit("continue-to-next-round", { gameCode });
@@ -411,6 +494,12 @@ const HostGamePage: React.FC = () => {
   const handleNextQuestion = () => {
     if (gameCode && socketRef.current) {
       socketRef.current.emit("advance-question", { gameCode });
+    }
+  };
+
+  const handlePauseTimer = () => {
+    if (gameCode && socketRef.current) {
+      socketRef.current.emit("pause-timer", { gameCode });
     }
   };
 
@@ -464,10 +553,18 @@ const HostGamePage: React.FC = () => {
     setOverridePoints("0");
   };
 
-
   const handleResetGame = () => {
     if (gameCode && socketRef.current) {
       socketRef.current.emit("reset-game", { gameCode });
+    }
+  };
+
+  const handleSkipToRound = (round: number, radioButtonRef: React.RefObject<HTMLFormElement>) => {
+    if (gameCode && socketRef.current) {
+      const selectedStartingTeam = radioButtonRef.current?.querySelector<HTMLInputElement>(
+        'input[name="starting-team"]:checked'
+      )?.value;
+      socketRef.current.emit("skip-to-round", gameCode, round, selectedStartingTeam );
     }
   };
 
@@ -526,30 +623,42 @@ const HostGamePage: React.FC = () => {
 
   // Game created but waiting for players
   if (game && game.status === "waiting") {
+    const validation = canStartGame(game);
+
     return (
       <PageLayout gameCode={gameCode}>
         <AnimatedCard>
           <div className="max-w-4xl mx-auto">
-            <div className="glass-card p-8 text-center">
+            <div className="rounded shadow bg-white p-8 text-center">
               <h2 className="text-3xl font-bold mb-6">Game Setup</h2>
 
               <div className="mb-8">
                 <p className="text-lg text-slate-300 mb-2">
                   Share this code with contestants:
                 </p>
-                <div className="text-5xl font-mono font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
+                <div
+                  data-testid="game-code"
+                  className="text-5xl font-mono font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse"
+                >
                   {gameCode}
                 </div>
                 <p className="text-sm text-slate-400 mt-4">
-                  ⭐ Each question allows only 1 attempt!
+                  ⚠️ Each question allows only 1 attempt!
                 </p>
               </div>
 
+              {!validation.canStart && (
+                <div className="mb-4 p-4 bg-gray-200 border-yellow-500/50 rounded">
+                  <p className="text-white text-sm">{validation.reason}</p>
+                </div>
+              )}
+
               <Button
+                data-testid="host-start-game-button"
                 onClick={handleStartGame}
                 variant="success"
                 size="xl"
-                disabled={game.players.length < 2}
+                disabled={!validation.canStart}
                 icon={<span className="text-2xl">🎮</span>}
                 className="mb-6"
               >
@@ -599,7 +708,7 @@ const HostGamePage: React.FC = () => {
             roundSummary={roundSummary}
             teams={game.teams}
             isHost={true}
-            isGameFinished={game.currentRound >= 3}
+            isGameFinished={game.currentRound >= 4}
             onContinueToNextRound={handleContinueToNextRound}
             onBackToHome={() => (window.location.href = ROUTES.HOSTHOME)}
           />
@@ -616,8 +725,42 @@ const HostGamePage: React.FC = () => {
 
     return (
       <PageLayout gameCode={gameCode} timer={timer} variant="game">
-        {/* Left Team Panel with Question Data */}
-        <div className="order-2 md:order-none w-full md:w-48 md:flex-shrink-0">
+        {/* Mobile: Team panels container at bottom */}
+        <div className="order-2 md:hidden w-full flex gap-2">
+          <div className="w-1/2">
+            <TeamPanel
+              team={game.teams[0]}
+              teamIndex={0}
+              isActive={game.teams[0]?.active}
+              showMembers={true}
+              currentRound={game.currentRound}
+              roundScore={game.teams[0].currentRoundScore}
+              questionsAnswered={team1QuestionsAnswered}
+              questionData={getTeamQuestionData("team1")}
+              allTeams={game.teams}
+              activeBorderColor="#dc2626"
+              activeBackgroundColor="#ffd6d6ff"
+            />
+          </div>
+          <div className="w-1/2">
+            <TeamPanel
+              team={game.teams[1]}
+              teamIndex={1}
+              isActive={game.teams[1]?.active}
+              showMembers={true}
+              currentRound={game.currentRound}
+              roundScore={game.teams[1].currentRoundScore}
+              questionsAnswered={team2QuestionsAnswered}
+              questionData={getTeamQuestionData("team2")}
+              allTeams={game.teams}
+              activeBorderColor="#264adcff"
+              activeBackgroundColor="#d6e0ffff"
+            />
+          </div>
+        </div>
+
+        {/* Desktop: Left Team Panel with Question Data */}
+        <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
             team={game.teams[0]}
             teamIndex={0}
@@ -627,6 +770,9 @@ const HostGamePage: React.FC = () => {
             roundScore={game.teams[0].currentRoundScore}
             questionsAnswered={team1QuestionsAnswered}
             questionData={getTeamQuestionData("team1")}
+            allTeams={game.teams}
+            activeBorderColor="#dc2626"
+            activeBackgroundColor="#ffd6d6ff"
           />
         </div>
 
@@ -655,11 +801,12 @@ const HostGamePage: React.FC = () => {
             onConfirmOverride={handleConfirmOverride}
             onSelectAnswer={handleSelectOverride}
             onNextQuestion={handleNextQuestion}
+            onCompleteTossUpRound={handleCompleteTossUpRound}
+            onPauseTimer={handlePauseTimer}
           />
 
-
           {/* Host Controls - CLEAN VERSION */}
-          <div className="glass-card p-3 mt-2">
+          <div className="bg-[#FEFEFC] rounded p-3 mt-2">
             <div className="text-center mb-2">
               <div className="text-sm text-slate-400 mb-2">Host Controls</div>
             </div>
@@ -674,7 +821,13 @@ const HostGamePage: React.FC = () => {
                 ➡️ Next Question
               </Button> */}
               <Button
-                onClick={handleForceNextQuestion}
+                data-testid="force-next-question-button"
+                onClick={
+                  game.currentRound === 4
+                    ? handlePauseTimer
+                    : handleForceNextQuestion
+                }
+                disabled={game.currentRound === 4 && game.pauseTimer}
                 variant="secondary"
                 size="sm"
                 className="text-xs py-1 px-3"
@@ -692,6 +845,7 @@ const HostGamePage: React.FC = () => {
                 </Button>
               )}
               <Button
+                data-testid="reset-game-button"
                 onClick={handleResetGame}
                 variant="secondary"
                 size="sm"
@@ -699,12 +853,83 @@ const HostGamePage: React.FC = () => {
               >
                 🔄 Reset
               </Button>
+
+              {role === "Tester" && (
+                <>
+                  <Button
+                  data-testid="skip-to-round-1-button"
+                  onClick={() => handleSkipToRound(1, radioButtonRef)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs py-1 px-3"
+                  >
+                    Skip to R1
+                  </Button>
+                  <Button
+                  data-testid="skip-to-round-2-button"
+                  onClick={() => handleSkipToRound(2, radioButtonRef)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs py-1 px-3"
+                  >
+                    Skip to R2
+                  </Button>
+                  <Button
+                  data-testid="skip-to-round-3-button"
+                  onClick={() => handleSkipToRound(3, radioButtonRef)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs py-1 px-3"
+                  >
+                    Skip to R3
+                  </Button>
+                  <Button
+                  data-testid="skip-to-lightning-round-button"
+                  onClick={() => handleSkipToRound(4, radioButtonRef)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs py-1 px-3"
+                  >
+                    Skip to LR
+                  </Button>
+
+                  <form className="ml-3" ref={radioButtonRef}>
+                    <div className="flex gap-6">
+
+                      <div className="inline-flex items-center">
+                        <input 
+                          type="radio" 
+                          data-testid="set-starting-team-1-button"
+                          id="team1" 
+                          name="starting-team" 
+                          value="team1" 
+                          defaultChecked
+                        />
+                        <label className="pl-2" htmlFor="team1">{game.teams[0].name}</label>
+                      </div>
+
+                      <div className="inline-flex items-center">
+                        <input 
+                          type="radio" 
+                          data-testid="set-starting-team-2-button"
+                          id="team2" 
+                          name="starting-team" 
+                          value="team2" 
+                        />
+                        <label className="pl-2" htmlFor="team2">{game.teams[1].name}</label>
+                      </div>
+
+                    </div>
+                  </form>
+                </>
+              )}
+              
             </div>
           </div>
         </div>
 
-        {/* Right Team Panel with Question Data */}
-        <div className="order-3 md:order-none w-full md:w-48 md:flex-shrink-0">
+        {/* Desktop: Right Team Panel with Question Data */}
+        <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
             team={game.teams[1]}
             teamIndex={1}
@@ -714,6 +939,9 @@ const HostGamePage: React.FC = () => {
             roundScore={game.teams[1].currentRoundScore}
             questionsAnswered={team2QuestionsAnswered}
             questionData={getTeamQuestionData("team2")}
+            allTeams={game.teams}
+            activeBorderColor="#264adcff"
+            activeBackgroundColor="#d6e0ffff"
           />
         </div>
       </PageLayout>

@@ -27,6 +27,7 @@ interface SocketCallbacks {
   onQuestionForced?: (data: any) => void;
   onQuestionComplete?: (data: any) => void;
   onGameReset?: (data: any) => void;
+  onSkippedToRound?: (data: any) => void;
   onAnswersRevealed?: (data: any) => void;
   // NEW: Card revelation events
   onRemainingCardsRevealed?: (data: any) => void;
@@ -72,11 +73,11 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
         callbacks.onPlayerBuzzed(data);
       }
     });
-    
+
     newSocket.on("buzz-too-late", () => {
       console.error("Too late! Another team already buzzed.");
     });
-    
+
     // Register all callback handlers
     if (callbacks.onPlayerJoined) {
       newSocket.on("player-joined", callbacks.onPlayerJoined);
@@ -95,7 +96,6 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
     }
 
     // Buzzer events handled above via "buzzer-pressed"
-
     if (callbacks.onBuzzTooLate) {
       newSocket.on("buzz-too-late", callbacks.onBuzzTooLate);
     }
@@ -169,13 +169,20 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       newSocket.on("game-reset", callbacks.onGameReset);
     }
 
+    if (callbacks.onSkippedToRound) {
+      newSocket.on("skipped-to-round", callbacks.onSkippedToRound)
+    }
+
     if (callbacks.onAnswersRevealed) {
       newSocket.on("answers-revealed", callbacks.onAnswersRevealed);
     }
 
     // NEW: Card revelation events
     if (callbacks.onRemainingCardsRevealed) {
-      newSocket.on("remaining-cards-revealed", callbacks.onRemainingCardsRevealed);
+      newSocket.on(
+        "remaining-cards-revealed",
+        callbacks.onRemainingCardsRevealed
+      );
     }
 
     if (callbacks.onAnswerOverridden) {
@@ -221,7 +228,7 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
       console.error("❌ Cannot buzz in: socket is not connected.");
       return;
     }
-  
+
     socketRef.current.emit("player-buzz", {
       gameCode: code,
       playerId,
@@ -291,7 +298,11 @@ export const useSocket = (callbacks: SocketCallbacks = {}) => {
 
   const submitAnswer = (gameCode: string, playerId: string, answer: string) => {
     if (socketRef.current) {
-      console.log("📝 Submitting single attempt answer:", { gameCode, playerId, answer });
+      console.log("📝 Submitting single attempt answer:", {
+        gameCode,
+        playerId,
+        answer,
+      });
       socketRef.current.emit("submit-answer", { gameCode, playerId, answer });
     } else {
       console.error("Cannot submit answer: socket not connected");

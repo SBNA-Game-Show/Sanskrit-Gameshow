@@ -21,10 +21,10 @@ const GameResults: React.FC<GameResultsProps> = ({
   const getRoundWinner = (roundIndex: number) => {
     const team1Score = teams[0].roundScores[roundIndex] || 0;
     const team2Score = teams[1].roundScores[roundIndex] || 0;
-    
+
     if (team1Score > team2Score) return 0; // Team 1 wins
     if (team2Score > team1Score) return 1; // Team 2 wins
-    return 'tie'; // Tie
+    return "tie"; // Tie
   };
 
   // Helper to get total score excluding toss-up
@@ -34,12 +34,11 @@ const GameResults: React.FC<GameResultsProps> = ({
   const getFinalWinner = () => {
     const team1Total = getTeamTotal(teams[0]);
     const team2Total = getTeamTotal(teams[1]);
-    
+
     if (team1Total > team2Total) return 0; // Team 1 wins
     if (team2Total > team1Total) return 1; // Team 2 wins
-    return 'tie'; // Tie
+    return "tie"; // Tie
   };
-
   const finalWinner = getFinalWinner();
 
   return (
@@ -52,41 +51,51 @@ const GameResults: React.FC<GameResultsProps> = ({
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent animate-celebration">
               FINAL RESULTS
             </h1>
-            
-            {finalWinner === 'tie' ? (
+
+            {finalWinner === "tie" ? (
               <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black p-6 rounded-2xl mb-4">
                 <h2 className="text-4xl font-bold mb-2">🏆 IT'S A TIE! 🏆</h2>
                 <div className="flex justify-center items-center gap-8">
                   <div className="text-center">
                     <div className="text-2xl font-bold">{teams[0].name}</div>
-                    <div className="text-xl">{getTeamTotal(teams[0])} points</div>
+                    <div className="text-xl">
+                      {getTeamTotal(teams[0])} points
+                    </div>
                   </div>
                   <div className="text-3xl">👑</div>
                   <div className="text-3xl">👑</div>
                   <div className="text-center">
                     <div className="text-2xl font-bold">{teams[1].name}</div>
-                    <div className="text-xl">{getTeamTotal(teams[1])} points</div>
+                    <div className="text-xl">
+                      {getTeamTotal(teams[1])} points
+                    </div>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black p-6 rounded-2xl mb-4">
                 <h2 className="text-4xl font-bold mb-2">🏆 WINNER 🏆</h2>
-                <p className="text-3xl font-bold">{teams[(finalWinner as number)].name}</p>
-                <p className="text-xl mt-2">Final Score: {getTeamTotal(teams[finalWinner as number])} points</p>
+                <p className="text-3xl font-bold">
+                  {teams[finalWinner as number].name}
+                </p>
+                <p className="text-xl mt-2">
+                  Final Score: {getTeamTotal(teams[finalWinner as number])}{" "}
+                  points
+                </p>
               </div>
             )}
           </div>
 
           {/* DETAILED TEAM SUMMARY */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {([...teams]
-              .sort((a, b) => getTeamTotal(b) - getTeamTotal(a)))
+            {[...teams]
+              .sort((a, b) => getTeamTotal(b) - getTeamTotal(a))
               .map((team, index) => {
                 const isWinner =
-                  finalWinner !== 'tie' && team.id === teams[finalWinner as number]?.id;
-                const isTie = finalWinner === 'tie';
-                
+                  finalWinner !== "tie" &&
+                  team.id === teams[finalWinner as number]?.id;
+                const isTie = finalWinner === "tie";
+
                 return (
                   <div
                     key={team.id}
@@ -103,26 +112,38 @@ const GameResults: React.FC<GameResultsProps> = ({
                           <span className="text-yellow-500 text-2xl">👑</span>
                         )}
                       </h3>
-                      
+
                       <div className="text-3xl font-bold mb-4 text-yellow-400">
                         {getTeamTotal(team)} points
                       </div>
 
                       {/* Round breakdown for this team */}
                       <div className="space-y-2 mb-4">
-                        {[1, 2, 3].map((round) => {
+                        {[1, 2, 3, 4].map((round) => {
                           const roundIndex = round - 1;
                           const roundScore = team.roundScores[roundIndex] || 0;
                           const roundWinner = getRoundWinner(roundIndex);
-                          const wonRound = (teams.indexOf(team) === 0 && roundWinner === 0) || 
-                                         (teams.indexOf(team) === 1 && roundWinner === 1);
+                          const wonRound =
+                            (teams.indexOf(team) === 0 && roundWinner === 0) ||
+                            (teams.indexOf(team) === 1 && roundWinner === 1);
                           // Only show crown if there's a clear winner (not a tie)
-                          
+
                           return (
-                            <div key={round} className="flex justify-between items-center">
-                              <span className="text-sm text-slate-400">Round {round}:</span>
-                              <span className={`font-bold ${wonRound ? 'text-yellow-400' : 'text-slate-300'}`}>
-                                {roundScore} {wonRound && '👑'}
+                            <div
+                              key={round}
+                              className="flex justify-between items-center"
+                            >
+                              <span className="text-sm text-slate-400">
+                                Round {round}:
+                              </span>
+                              <span
+                                className={`font-bold ${
+                                  wonRound
+                                    ? "text-yellow-400"
+                                    : "text-slate-300"
+                                }`}
+                              >
+                                {roundScore} {wonRound && "👑"}
                               </span>
                             </div>
                           );
@@ -150,7 +171,7 @@ const GameResults: React.FC<GameResultsProps> = ({
 
           {/* ACTION BUTTONS */}
           <div className="flex gap-4 justify-center">
-            <Link to={role === "Host" ? ROUTES.HOSTHOME : ROUTES.PLAYERHOME}>
+            <Link to={role === "Host" || role === "Tester" ? ROUTES.HOSTHOME : ROUTES.PLAYERHOME}>
               <Button variant="secondary" size="lg">
                 Back to Home
               </Button>

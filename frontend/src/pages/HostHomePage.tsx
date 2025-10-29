@@ -23,6 +23,7 @@ const HomePage: React.FC = () => {
         <div className="flex flex-col md:flex-row gap-6 max-w-2xl mx-auto">
           <AnimatedCard className="flex-1" delay={200}>
             <Button
+              data-testid="host-create-room-button"
               onClick={() => navigate(ROUTES.HOST)}
               variant="primary"
               size="xl"
@@ -38,6 +39,7 @@ const HomePage: React.FC = () => {
           </AnimatedCard>
           <AnimatedCard className="flex-1" delay={400}>
             <Button
+              data-testid="host-join-room-button"
               onClick={() => navigate(ROUTES.HOSTREJOIN)}
               variant="secondary"
               size="xl"

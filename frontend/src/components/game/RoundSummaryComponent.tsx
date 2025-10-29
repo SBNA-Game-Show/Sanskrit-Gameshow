@@ -240,9 +240,10 @@ const RoundSummaryComponent: React.FC<RoundSummaryProps> = ({
             <div className="flex gap-3 justify-center mt-4">
               {isHost &&
                 !isGameFinished &&
-                round < 3 &&
+                round < 4 &&
                 onContinueToNextRound && (
                   <Button
+                    data-testid="next-round-button"
                     onClick={onContinueToNextRound}
                     variant="primary"
                     size="lg"
@@ -275,7 +276,7 @@ const RoundSummaryComponent: React.FC<RoundSummaryProps> = ({
               <div className="mt-6">
                 <div className="text-xs text-slate-400 mb-1">Game Progress</div>
                 <div className="flex justify-center space-x-3">
-                  {[1, 2, 3].map((roundNum) => (
+                  {[1, 2, 3, 4].map((roundNum) => (
                     <div key={roundNum} className="relative">
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -286,9 +287,9 @@ const RoundSummaryComponent: React.FC<RoundSummaryProps> = ({
                             : "bg-slate-300 text-slate-500"
                         }`}
                       >
-                        {roundNum}
+                        {roundNum===4 ? 'LR': roundNum}
                       </div>
-                      {roundNum < 3 && (
+                      {roundNum < 4 && (
                         <div
                           className={`absolute top-1/2 -right-3 w-2 h-0.5 transform -translate-y-1/2 ${
                             roundNum < round ? "bg-green-500" : "bg-slate-300"

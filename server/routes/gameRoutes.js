@@ -47,8 +47,12 @@ router.post("/api/create-game", async (req, res) => {
 
     //Prepare the Questions From FinalQuestion Schema to GameQuestion for the Game
     console.log("Pulling fresh questions from DB...");
-    const { updatedTossUpQuestion, updatedQuestions } =
+    let { updatedTossUpQuestion, updatedQuestions } =
       await prepareGameQuestions();
+
+    
+
+    console.log(updatedQuestions[0].answers);
 
     const { gameCode, gameId } = await createGame(
       updatedQuestions,
@@ -82,7 +86,7 @@ router.post("/api/join-game", (req, res) => {
   try {
     console.log("👤 Join game request received:", req.body);
     //gameCode and playerName are taken from the request when joining a game
-    const { gameCode, playerName } = req.body;
+    const { gameCode, playerName, localPlayerId } = req.body;
 
     if (!gameCode || !playerName) {
       return res.status(400).json({
@@ -90,14 +94,17 @@ router.post("/api/join-game", (req, res) => {
       });
     }
 
-    const { playerId, game } = joinGame(
+    const { playerId, game, teamId, gameFull } = joinGame(
       gameCode.toUpperCase(),
-      playerName.trim()
+      playerName.trim(),
+      localPlayerId
     );
     console.log(`✅ Player joined successfully: ${playerName} in ${gameCode}`);
     res.json({
       playerId,
       game,
+      teamId,
+      gameFull,
       success: true,
     });
   } catch (error) {

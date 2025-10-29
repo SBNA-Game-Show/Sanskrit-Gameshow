@@ -18,6 +18,7 @@ const AnswerGrid: React.FC<AnswerGridProps> = ({
   variant = "default",
 }) => {
   // Only show first 3 answers
+
   const displayAnswers = answers.slice(0, 3);
 
   if (variant === "compact") {
@@ -122,21 +123,27 @@ const AnswerGrid: React.FC<AnswerGridProps> = ({
               <span className="font-semibold text-lg">
                 {/* HOST ALWAYS SEES THE ANSWER TEXT */}
                 {isHost ? (
-                  <span className={answer.revealed ? "text-green-300" : "text-blue-300"}>
+                  <span
+                    className={
+                      answer.revealed ? "text-green-300" : "text-blue-300"
+                    }
+                  >
                     {index + 1}. {answer.answer}
-                    {!answer.revealed && <span className="ml-2 text-xs text-yellow-400">(Click to reveal)</span>}
+                    {!answer.revealed && (
+                      <span className="ml-2 text-xs text-yellow-400">
+                        (Click to reveal)
+                      </span>
+                    )}
+                  </span>
+                ) : // NON-HOST VIEW
+                answer.revealed ? (
+                  <span className="animate-reveal text-green-300">
+                    {index + 1}. {answer.answer}
                   </span>
                 ) : (
-                  // NON-HOST VIEW
-                  answer.revealed ? (
-                    <span className="animate-reveal text-green-300">
-                      {index + 1}. {answer.answer}
-                    </span>
-                  ) : (
-                    <span className="text-slate-400">
-                      {index + 1}. {"\u00A0".repeat(15)}
-                    </span>
-                  )
+                  <span className="text-slate-400">
+                    {index + 1}. {"\u00A0".repeat(15)}
+                  </span>
                 )}
               </span>
               <span

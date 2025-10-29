@@ -9,6 +9,7 @@ export interface RoundData {
   round1: QuestionStatus[];
   round2: QuestionStatus[];
   round3: QuestionStatus[];
+  round4: QuestionStatus[];
 }
 
 export interface Game {
@@ -35,6 +36,7 @@ export interface Game {
       round1: { team1: number; team2: number };
       round2: { team1: number; team2: number };
       round3: { team1: number; team2: number };
+      round4: { team1: number; team2: number };
     };
 
     tossUpQuestion?: Question; // Toss-up question for round 0
@@ -49,6 +51,8 @@ export interface Game {
       team2: RoundData; // Question status for team 2
     };
   };
+
+  pauseTimer: boolean; // Property for pausing the timer in the lightning round
 }
 
 export interface Question {
@@ -58,6 +62,7 @@ export interface Question {
   questionNumber: number; // Question number within the team's turn (1, 2, or 3)
   questionCategory: string;
   question: string;
+  questionType: string;
   answers: Answer[];
 }
 

@@ -34,8 +34,13 @@ const JoinGamePage: React.FC = () => {
   const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
   const [gameMessage, setGameMessage] = useState("");
   const [hasBuzzed, setHasBuzzed] = useState(false);
-  const [buzzFeedback, setBuzzFeedback] = useState("");
+  //const [buzzFeedback, setBuzzFeedback] = useState("");
   const [playerName] = useState(() => localStorage.getItem("username") || "");
+
+  const myTeam = game?.teams.find((team) => team.id === player?.teamId);
+  const isMyTurn = myTeam && myTeam.active;
+  const canAnswer = isMyTurn && player?.teamId;
+
   // Extract question data for teams
   const getTeamQuestionData = (teamKey: "team1" | "team2"): RoundData => {
     if (!game?.gameState?.questionData?.[teamKey]) {
@@ -43,18 +48,27 @@ const JoinGamePage: React.FC = () => {
         round1: [
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 }
+          { firstAttemptCorrect: null, pointsEarned: 0 },
         ],
         round2: [
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 }
+          { firstAttemptCorrect: null, pointsEarned: 0 },
         ],
         round3: [
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 }
-        ]
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+        ],
+        round4: [
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+        ],
       };
     }
     return game.gameState.questionData[teamKey];
@@ -139,10 +153,20 @@ const JoinGamePage: React.FC = () => {
       console.log("Answer incorrect event received (single attempt):", data);
       setGame(data.game);
       setAnswer("");
-      setGameMessage(
-        `❌ ${data.playerName} answered incorrectly.`
-      );
+
+      // Check if it's lightning round and opposing team gets a chance
+      if (data.game?.currentRound === 4 && data.switchToOpposingTeam) {
+        const opposingTeamName = data.opposingTeamName || "Opposing team";
+        setGameMessage(
+          `❌ ${data.playerName} answered incorrectly. ${opposingTeamName} can now attempt to answer!`
+        );
+        // Reset buzz state for opposing team
+        setHasBuzzed(false);
+      } else {
+        setGameMessage(`❌ ${data.playerName} answered incorrectly.`);
+      }
     },
+
     onRemainingCardsRevealed: (data: any) => {
       console.log("Remaining cards revealed:", data);
       setGame(data.game);
@@ -153,43 +177,45 @@ const JoinGamePage: React.FC = () => {
       setGame(data.game);
       setGameMessage(`It's now ${data.teamName}'s turn!`);
     },
-      onNextQuestion: (data: any) => {
-        console.log("Next question event received:", data);
+    onNextQuestion: (data: any) => {
+      console.log("Next question event received:", data);
+      setGame(data.game);
+      setAnswer("");
+      if (data.sameTeam && data.game?.currentRound !== 4) {
+        setGameMessage("Same team continues with their next question.");
+      } else {
+        setGameMessage("Moving to next question.");
+      }
+    },
+    onQuestionComplete: (data: any) => {
+      console.log("Question complete event received:", data);
+      setGame(data.game);
+      setGameMessage("Waiting for host to advance...");
+    },
+    onRoundComplete: (data: any) => {
+      console.log("Round complete event received:", data);
+
+      // Update local game state when provided
+      if (data.game) {
         setGame(data.game);
-        setAnswer("");
-        if (data.sameTeam) {
-          setGameMessage("Same team continues with their next question.");
+      }
+
+      if (data.roundSummary) {
+        setRoundSummary(data.roundSummary);
+        if (data.roundSummary.round === 0) {
+          setGameMessage(
+            `${
+              data.roundSummary.tossUpWinner?.teamName || "A team"
+            } won the toss-up!`
+          );
         } else {
-          setGameMessage("Moving to next question.");
+          setGameMessage(`Round ${data.roundSummary.round} completed!`);
         }
-      },
-      onQuestionComplete: (data: any) => {
-        console.log("Question complete event received:", data);
-        setGame(data.game);
-        setGameMessage("Waiting for host to advance...");
-      },
-      onRoundComplete: (data: any) => {
-        console.log("Round complete event received:", data);
-
-        // Update local game state when provided
-        if (data.game) {
-          setGame(data.game);
-        }
-
-        if (data.roundSummary) {
-          setRoundSummary(data.roundSummary);
-          if (data.roundSummary.round === 0) {
-            setGameMessage(
-              `${data.roundSummary.tossUpWinner?.teamName || "A team"} won the toss-up!`
-            );
-          } else {
-            setGameMessage(`Round ${data.roundSummary.round} completed!`);
-          }
-        } else if (typeof data.round !== "undefined") {
-          // Fallback to a simple message when summary is missing
-          setGameMessage(`Round ${data.round} completed!`);
-        }
-      },
+      } else if (typeof data.round !== "undefined") {
+        // Fallback to a simple message when summary is missing
+        setGameMessage(`Round ${data.round} completed!`);
+      }
+    },
     onRoundStarted: (data: any) => {
       console.log("Round started event received:", data);
       setGame(data.game);
@@ -256,6 +282,12 @@ const JoinGamePage: React.FC = () => {
       setRoundSummary(null);
       setGameMessage(data.message || "Game has been reset.");
     },
+    onSkippedToRound: (data: any) => {
+      console.log("Game reset received:", data);
+      setGame(data.game);
+      setRoundSummary(null);
+      setGameMessage(data.message || "Game has been reset.");
+    },
   });
 
   // Periodically request updated player list from server
@@ -275,6 +307,7 @@ const JoinGamePage: React.FC = () => {
     };
   }, [game, player, requestPlayersList]);
 
+  //Player gets to choose their team after they enter the room
   const joinGame = async () => {
     if (!gameCode.trim() || !playerName.trim()) {
       setError("Please enter both game code and your name");
@@ -284,55 +317,47 @@ const JoinGamePage: React.FC = () => {
     setIsLoading(true);
     setError("");
 
+    let localPlayerId = localStorage.getItem("playerId") ?? undefined;
+
     try {
       const response = await gameApi.joinGame({
         gameCode: gameCode.toUpperCase(),
         playerName: playerName.trim(),
+        localPlayerId: localPlayerId,
       });
 
-      const { playerId, game: gameData } = response;
+      if (response.gameFull) {
+        throw new Error("Game is full!");
+      }
 
-      // Auto-assign to team with fewer members
-      const team1Count = gameData.players.filter(
-        (p: Player) => p.teamId === gameData.teams[0].id
-      ).length;
+      localStorage.setItem("playerId", response.playerId);
 
-      const team2Count = gameData.players.filter(
-        (p: Player) => p.teamId === gameData.teams[1].id
-      ).length;
-
-      const autoTeamId =
-        team1Count <= team2Count ? gameData.teams[0].id : gameData.teams[1].id;
+      const { playerId, game: gameData, teamId } = response;
 
       setPlayer({
         id: playerId,
         name: playerName.trim(),
         gameCode: gameCode.toUpperCase(),
         connected: true,
-        teamId: autoTeamId,
+        teamId: teamId, // Player hasn't chosen a team yet
       });
       setGame(gameData);
 
       connect();
       playerJoinGame(gameCode.toUpperCase(), playerId);
-
-      // Auto-join the team
-      setTimeout(() => {
-        joinTeam(gameCode.toUpperCase(), playerId, autoTeamId);
-      }, 500);
     } catch (error: any) {
       console.error("Error joining game:", error);
-      setError(error.response?.data?.error || "Failed to join game");
+      setError(error.message || error.response?.data?.error || "Failed to join game");
     }
     setIsLoading(false);
   };
-// Buzz-in handler
+
+  // Buzz-in handler
   const handleBuzzIn = () => {
     if (player && game && !hasBuzzed && !game.buzzedTeamId) {
       buzzIn(game.code, player.id);
     }
   };
-
 
   const handleJoinTeam = (teamId: string) => {
     if (player && game) {
@@ -347,7 +372,7 @@ const JoinGamePage: React.FC = () => {
     }
   };
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = (answer: string) => {
     if (player && game && answer.trim()) {
       console.log("Submitting single attempt answer:", answer.trim());
       submitAnswer(game.code, player.id, answer.trim());
@@ -357,8 +382,12 @@ const JoinGamePage: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && answer.trim()) {
-      handleSubmitAnswer();
+      handleSubmitAnswer(answer.trim());
     }
+  };
+
+  const handleSubmitMCQAnswer = (answer: string) => {
+    if (game?.currentRound === 4 && canAnswer) handleSubmitAnswer(answer);
   };
 
   // Initial render - show join form
@@ -414,7 +443,7 @@ const JoinGamePage: React.FC = () => {
             roundSummary={roundSummary}
             teams={game.teams}
             isHost={false}
-            isGameFinished={game.currentRound >= 3}
+            isGameFinished={game.currentRound >= 4}
           />
         </div>
       </PageLayout>
@@ -432,9 +461,9 @@ const JoinGamePage: React.FC = () => {
 
   // Active game - SINGLE ATTEMPT LAYOUT WITH CLEAN UI
   if (game && game.status === "active") {
-    const myTeam = game.teams.find((team) => team.id === player.teamId);
-    const isMyTurn = myTeam && myTeam.active;
-    const canAnswer = isMyTurn && player.teamId;
+    // const myTeam = game.teams.find((team) => team.id === player.teamId);
+    // const isMyTurn = myTeam && myTeam.active;
+    // const canAnswer = isMyTurn && player.teamId;
 
     // Calculate questions answered for each team in current round
     const team1QuestionsAnswered = game.gameState.questionsAnswered.team1 || 0;
@@ -442,8 +471,50 @@ const JoinGamePage: React.FC = () => {
 
     return (
       <PageLayout gameCode={game.code} variant="game">
-        {/* Left Team Panel with Question Data */}
-        <div className="w-full md:w-48 md:flex-shrink-0">
+        {/* Mobile: Team panels container at bottom */}
+        <div className="order-2 md:hidden w-full flex gap-2">
+          <div className="w-1/2">
+            <TeamPanel
+              team={game.teams[0]}
+              teamIndex={0}
+              isActive={game.teams[0]?.active}
+              showMembers={false}
+              playerName={
+                player.teamId === game.teams[0].id ? player.name : undefined
+              }
+              isPlayerTeam={player.teamId === game.teams[0].id}
+              currentRound={game.currentRound}
+              roundScore={game.teams[0].currentRoundScore}
+              questionsAnswered={team1QuestionsAnswered}
+              questionData={getTeamQuestionData("team1")}
+              allTeams={game.teams}
+              activeBorderColor="#dc2626"
+              activeBackgroundColor="#ffd6d6ff"
+            />
+          </div>
+          <div className="w-1/2">
+            <TeamPanel
+              team={game.teams[1]}
+              teamIndex={1}
+              isActive={game.teams[1]?.active}
+              showMembers={false}
+              playerName={
+                player.teamId === game.teams[1].id ? player.name : undefined
+              }
+              isPlayerTeam={player.teamId === game.teams[1].id}
+              currentRound={game.currentRound}
+              roundScore={game.teams[1].currentRoundScore}
+              questionsAnswered={team2QuestionsAnswered}
+              questionData={getTeamQuestionData("team2")}
+              allTeams={game.teams}
+              activeBorderColor="#264adcff"
+              activeBackgroundColor="#d6e0ffff"
+            />
+          </div>
+        </div>
+
+        {/* Desktop: Left Team Panel */}
+        <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
             team={game.teams[0]}
             teamIndex={0}
@@ -457,11 +528,14 @@ const JoinGamePage: React.FC = () => {
             roundScore={game.teams[0].currentRoundScore}
             questionsAnswered={team1QuestionsAnswered}
             questionData={getTeamQuestionData("team1")}
+            allTeams={game.teams}
+            activeBorderColor="#dc2626"
+            activeBackgroundColor="#ffd6d6ff"
           />
         </div>
 
         {/* Center Game Area */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
           {/* Turn Indicator */}
           <TurnIndicator
             currentTeam={game.gameState.currentTurn}
@@ -473,10 +547,15 @@ const JoinGamePage: React.FC = () => {
           />
 
           {/* Game Board */}
-          <GameBoard game={game} variant="player" />
+          <GameBoard
+            game={game}
+            variant="player"
+            onClickAnswerCard={handleSubmitMCQAnswer}
+          />
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
-          <div className="glass-card p-4 mt-2">
+          <div className="bg-[#FEFEFC] rounded p-4 mt-2">
+            {/* START OF PLAYER INPUT FIELDS (answer input, buzzer, etc) */}
             {player.teamId ? (
               <div>
                 {/* Game Status Message */}
@@ -494,20 +573,25 @@ const JoinGamePage: React.FC = () => {
                     <p className="text-red-300 text-sm text-center">{error}</p>
                   </div>
                 )}
-  
-                {/* Toss-up or Answer input */}
+
+                {/* TOSS UP ROUND */}
                 {game.currentRound === 0 ? (
                   !game.buzzedTeamId ? (
                     <div className="flex justify-center my-4">
                       <BuzzerButton
                         onBuzz={handleBuzzIn}
-                        disabled={hasBuzzed || !!game.buzzedTeamId}
+                        disabled={
+                          hasBuzzed ||
+                          !!game.buzzedTeamId ||
+                          game.gameState.canAdvance
+                        }
                         teamName={myTeam?.name}
                       />
                     </div>
-                  ) : (
+                  ) : canAnswer && game?.activeTeamId ? (
                     <div className="max-w-md mx-auto">
                       <input
+                        data-testid="answer-input"
                         type="text"
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
@@ -518,7 +602,8 @@ const JoinGamePage: React.FC = () => {
                         className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
                       />
                       <button
-                        onClick={handleSubmitAnswer}
+                        data-testid="submit-answer-button"
+                        onClick={() => handleSubmitAnswer(answer)}
                         disabled={!answer.trim() || !canAnswer}
                         className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
                           canAnswer && answer.trim()
@@ -529,8 +614,50 @@ const JoinGamePage: React.FC = () => {
                         {answer.trim() ? "Submit Answer" : "Type an answer..."}
                       </button>
                     </div>
+                  ) : (
+                    <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
+                      <div className="flex items-center justify-center gap-3 mb-3">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
+                        <p className="text-gray-300 font-medium">
+                          {game.teams.find((t) => t.active)?.name ||
+                            "Other team"}{" "}
+                          is answering...
+                        </p>
+                      </div>
+                    </div>
                   )
-                ) : isMyTurn ? (
+                ) : // LIGHTNING ROUND
+                game.currentRound === 4 ? (
+                  !game.buzzedTeamId ? (
+                    <div className="flex justify-center my-4">
+                      <BuzzerButton
+                        onBuzz={handleBuzzIn}
+                        disabled={
+                          hasBuzzed || !!game.buzzedTeamId || game.pauseTimer
+                        }
+                        teamName={myTeam?.name}
+                      />
+                    </div>
+                  ) : canAnswer ? (
+                    <div className="p-4 bg-blue-500/20 border border-blue-500/50 rounded text-center">
+                      <p className="text-blue-300 font-medium">
+                        Click on an answer card above to submit your answer
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
+                      <div className="flex items-center justify-center gap-3 mb-3">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
+                        <p className="text-gray-300 font-medium">
+                          {game.teams.find((t) => t.active)?.name ||
+                            "Other team"}{" "}
+                          is answering...
+                        </p>
+                      </div>
+                    </div>
+                  )
+                ) : // STANDARD ROUNDS
+                isMyTurn && game?.activeTeamId ? (
                   <div className="max-w-md mx-auto">
                     <input
                       type="text"
@@ -543,7 +670,7 @@ const JoinGamePage: React.FC = () => {
                       className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
                     />
                     <button
-                      onClick={handleSubmitAnswer}
+                      onClick={() => handleSubmitAnswer(answer)}
                       disabled={!answer.trim() || !canAnswer}
                       className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
                         canAnswer && answer.trim()
@@ -559,7 +686,8 @@ const JoinGamePage: React.FC = () => {
                     <div className="flex items-center justify-center gap-3 mb-3">
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
                       <p className="text-gray-300 font-medium">
-                        {game.teams.find((t) => t.active)?.name || "Other team"} is answering...
+                        {game.teams.find((t) => t.active)?.name || "Other team"}{" "}
+                        is answering...
                       </p>
                     </div>
                   </div>
@@ -573,11 +701,12 @@ const JoinGamePage: React.FC = () => {
                 </p>
               </div>
             )}
+            {/* END OF PLAYER INPUT FIELDS */}
           </div>
         </div>
 
-        {/* Right Team Panel with Question Data */}
-        <div className="w-full md:w-48 md:flex-shrink-0">
+        {/* Desktop: Right Team Panel */}
+        <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
             team={game.teams[1]}
             teamIndex={1}
@@ -591,6 +720,9 @@ const JoinGamePage: React.FC = () => {
             roundScore={game.teams[1].currentRoundScore}
             questionsAnswered={team2QuestionsAnswered}
             questionData={getTeamQuestionData("team2")}
+            allTeams={game.teams}
+            activeBorderColor="#264adcff"
+            activeBackgroundColor="#d6e0ffff"
           />
         </div>
       </PageLayout>

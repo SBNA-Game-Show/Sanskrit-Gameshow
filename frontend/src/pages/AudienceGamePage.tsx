@@ -40,6 +40,15 @@ const AudienceGamePage: React.FC = () => {
           { firstAttemptCorrect: null, pointsEarned: 0 },
           { firstAttemptCorrect: null, pointsEarned: 0 },
         ],
+        round4: [
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+          { firstAttemptCorrect: null, pointsEarned: 0 },
+        ],
       };
     }
     return game.gameState.questionData[teamKey];
@@ -206,7 +215,7 @@ const AudienceGamePage: React.FC = () => {
             roundSummary={roundSummary}
             teams={game.teams}
             isHost={false}
-            isGameFinished={game.currentRound >= 3}
+            isGameFinished={game.currentRound >= 4}
           />
         </div>
       </PageLayout>
@@ -236,6 +245,9 @@ const AudienceGamePage: React.FC = () => {
             roundScore={game.teams[0].currentRoundScore}
             questionsAnswered={team1Answered}
             questionData={getTeamQuestionData("team1")}
+            allTeams={game.teams}
+            activeBorderColor="#dc2626"
+            activeBackgroundColor="#ffd6d6ff"
           />
         </div>
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
@@ -268,6 +280,9 @@ const AudienceGamePage: React.FC = () => {
             roundScore={game.teams[1].currentRoundScore}
             questionsAnswered={team2Answered}
             questionData={getTeamQuestionData("team2")}
+            allTeams={game.teams}
+            activeBorderColor="#264adcff"
+            activeBackgroundColor="#d6e0ffff"
           />
         </div>
       </PageLayout>
