@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import PageLayout from "../components/layout/PageLayout";
 import AudienceJoinForm from "../components/forms/AudienceJoinForm";
 import GameBoard from "../components/game/GameBoard";
@@ -7,7 +7,10 @@ import TurnIndicator from "../components/game/TurnIndicator";
 import RoundSummaryComponent from "../components/game/RoundSummaryComponent";
 import GameResults from "../components/game/GameResults";
 import PlayerList from "../components/game/PlayerList";
-import { useSocket } from "../hooks/useSocket";
+import { useSetupSocket } from "../hooks/useSetupSocket";
+import { useSocketAudienceEvents } from "../hooks/useSocketAudienceEvents";
+import { useSocketActions } from "../hooks/useSocketActions";
+import { SocketContext } from "store/socket-context";
 import { Game, RoundData } from "../types";
 import { getCurrentQuestion, getTeamName } from "../utils/gameHelper";
 
@@ -20,6 +23,12 @@ const AudienceGamePage: React.FC = () => {
     text: string;
     type: "info" | "success" | "error";
   } | null>(null);
+
+  const socketContext = useContext(SocketContext);
+  if (!socketContext) {
+    throw new Error("AudienceGamePage must be used within a SocketProvider");
+  }
+  const { socketRef } = socketContext;
 
   const getTeamQuestionData = (teamKey: "team1" | "team2"): RoundData => {
     if (!game?.gameState?.questionData?.[teamKey]) {
@@ -53,94 +62,9 @@ const AudienceGamePage: React.FC = () => {
     return game.gameState.questionData[teamKey];
   };
 
-  const { connect, audienceJoinGame, requestPlayersList } = useSocket({
-    onAudienceJoined: (data: any) => {
-      setGame(data.game);
-    },
-    onGameStarted: (data: any) => {
-      setGame(data.game);
-      if (data.activeTeam) {
-        const teamName = getTeamName(data.game, data.activeTeam);
-        setMessage({
-          text: `Game started! ${teamName} goes first.`,
-          type: "info",
-        });
-      } else {
-        setMessage({
-          text: "Game started! Buzz in for the toss-up question.",
-          type: "info",
-        });
-      }
-    },
-    onPlayerBuzzed: (data: any) => {
-      setGame(data.game);
-      setMessage({
-        text: `🔔 ${data.teamName} buzzed in! ${data.playerName}, answer now!`,
-        type: "info",
-      });
-    },
-    onAnswerCorrect: (data: any) => {
-      setGame(data.game);
-      setMessage({
-        text: `✅ ${data.teamName} answered "${data.submittedText}" correctly! +${data.pointsAwarded} points.`,
-        type: "success",
-      });
-    },
-    onAnswerIncorrect: (data: any) => {
-      setGame(data.game);
-      setMessage({
-        text: `❌ ${data.teamName} answered "${data.submittedText}" incorrectly.`,
-        type: "error",
-      });
-    },
-    onAnswerOverridden: (data: any) => {
-      setGame(data.game);
-      setMessage({
-        text: `✅ Host awarded ${data.pointsAwarded} points to ${data.teamName}.`,
-        type: "success",
-      });
-    },
-    onRemainingCardsRevealed: (data: any) => {
-      setGame(data.game);
-      // Keep the previous message rather than displaying a new one
-    },
-    onAnswersRevealed: (data: any) => {
-      setGame(data.game);
-      setMessage({ text: "All answers have been revealed!", type: "info" });
-    },
-    onTurnChanged: (data: any) => {
-      setGame(data.game);
-      setMessage({ text: `Turn switched to ${data.teamName}!`, type: "info" });
-    },
-    onNextQuestion: (data: any) => {
-      setGame(data.game);
-    },
-    onQuestionComplete: (data: any) => {
-      setGame(data.game);
-    },
-    onRoundComplete: (data: any) => {
-      if (data.game) setGame(data.game);
-    },
-    onRoundStarted: (data: any) => {
-      setGame(data.game);
-      const teamName = getTeamName(data.game, data.activeTeam);
-      setMessage({
-        text: `Round ${data.round} started! ${teamName} goes first.`,
-        type: "info",
-      });
-    },
-    onGameOver: (data: any) => {
-      setGame(data.game);
-    },
-    onPlayersListReceived: (data: any) => {
-      if (game) {
-        setGame((prev) => {
-          if (!prev) return null;
-          return { ...prev, players: data.players };
-        });
-      }
-    },
-  });
+  const {connect, disconnect, isConnected} = useSetupSocket(socketRef);
+  useSocketAudienceEvents(socketRef, game, isConnected, setGame, setMessage);
+  const {audienceJoinGame, requestPlayersList} = useSocketActions(socketRef);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -163,7 +87,7 @@ const AudienceGamePage: React.FC = () => {
     setIsLoading(true);
     setError("");
     try {
-      connect();
+      connect(gameCode.toUpperCase());
       audienceJoinGame(gameCode.toUpperCase());
     } catch (err: any) {
       console.error(err);

@@ -13,6 +13,7 @@ import HostRejoinPage from "./pages/HostRejoinPage";
 import RegisterPage from "./pages/Register";
 // Import constants
 import { ROUTES } from "./utils/constants";
+import { SocketProvider } from "store/socket-context";
 
 const App: React.FC = () => {
   return (
@@ -22,10 +23,34 @@ const App: React.FC = () => {
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
         <Route path={ROUTES.HOSTHOME} element={<HostHomePage />} />
         <Route path={ROUTES.PLAYERHOME} element={<PlayerHomePage />} />
-        <Route path={ROUTES.HOST} element={<HostGamePage />} />
+
+        <Route
+          path={ROUTES.HOST}
+          element={
+            <SocketProvider>
+              <HostGamePage />
+            </SocketProvider>
+          }
+        />
+
         <Route path={ROUTES.HOSTREJOIN} element={<HostRejoinPage />} />
-        <Route path={ROUTES.JOIN} element={<JoinGamePage />} />
-        <Route path={ROUTES.AUDIENCE} element={<AudienceGamePage />} />
+
+        <Route
+          path={ROUTES.JOIN}
+          element={
+            <SocketProvider>
+              <JoinGamePage />
+            </SocketProvider>
+          }
+        />
+        <Route
+          path={ROUTES.AUDIENCE}
+          element={
+            <SocketProvider>
+              <AudienceGamePage />
+            </SocketProvider>
+          }
+        />
       </Routes>
     </Router>
   );
