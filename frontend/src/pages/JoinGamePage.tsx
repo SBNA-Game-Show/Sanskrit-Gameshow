@@ -533,6 +533,7 @@ const JoinGamePage: React.FC = () => {
               allTeams={game.teams}
               activeBorderColor="#dc2626"
               activeBackgroundColor="#ffd6d6ff"
+              players={game.players}
             />
           </div>
           <div className="w-1/2">
@@ -552,6 +553,7 @@ const JoinGamePage: React.FC = () => {
               allTeams={game.teams}
               activeBorderColor="#264adcff"
               activeBackgroundColor="#d6e0ffff"
+              players={game.players}
             />
           </div>
         </div>
@@ -574,6 +576,7 @@ const JoinGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
+            players={game.players}
           />
         </div>
 
@@ -771,6 +774,7 @@ const JoinGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
+            players={game.players}
           />
         </div>
       </PageLayout>

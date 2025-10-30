@@ -254,17 +254,18 @@ const AudienceGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
+            players={game.players}
           />
         </div>
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
-          <TurnIndicator
+          {/* <TurnIndicator
             currentTeam={game.gameState.currentTurn}
             teams={game.teams}
             currentQuestion={currentQuestion}
             questionsAnswered={game.gameState.questionsAnswered}
             round={game.currentRound}
             variant="compact"
-          />
+          /> */}
           <GameBoard
             game={game}
             variant="host"
@@ -296,6 +297,7 @@ const AudienceGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
+            players={game.players}
           />
         </div>
       </PageLayout>

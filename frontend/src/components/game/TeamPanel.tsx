@@ -28,6 +28,7 @@ interface TeamPanelProps {
   allTeams?: Team[];
   activeBorderColor: string;
   activeBackgroundColor: string;
+  players: Player[];
 }
 
 const TeamPanel: React.FC<TeamPanelProps> = ({
@@ -69,6 +70,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   allTeams = [],
   activeBorderColor,
   activeBackgroundColor,
+  players,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showRoundHistory, setShowRoundHistory] = useState(false);
@@ -199,6 +201,9 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   };
 
   const currentRoundData = getCurrentRoundData();
+  const teamMembers = players
+    .filter((p) => p.teamId === team.id)
+    .map((p) => p.name);
 
   // Mobile compact view
   const mobileCompactView = (
@@ -264,7 +269,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg text-center font-bold flex items-center gap-2">
                 {team.name}
-                {isPlayerTeam && <span className="text-yellow-400">👤</span>}
+                {/* {isPlayerTeam && <span className="text-yellow-400">👤</span>} */}
               </h3>
               <button
                 onClick={() => setIsExpanded(false)}
@@ -286,11 +291,11 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
               </button>
             </div>
 
-            {isPlayerTeam && playerName && (
+            {/* {isPlayerTeam && playerName && (
               <div className="text-xs text-yellow-600 mb-2 font-medium text-center">
                 {playerName}
               </div>
-            )}
+            )} */}
 
             <div
               className={`text-2xl font-bold mb-4 ${colorClasses.primary} text-center`}
@@ -425,13 +430,13 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       <div className="text-center mb-4">
         <h3 className="text-lg font-bold mb-2 flex items-center justify-center gap-2">
           {team.name}
-          {isPlayerTeam && <span className="text-yellow-400">👤</span>}
+          {/* {isPlayerTeam && <span className="text-yellow-400">👤</span>} */}
         </h3>
-        {isPlayerTeam && playerName && (
+        {/* {isPlayerTeam && playerName && (
           <div className="text-xs text-yellow-300 mb-2 font-medium">
             {playerName}
           </div>
-        )}
+        )} */}
         <div
           className={`text-2xl font-bold mb-1 animate-score ${colorClasses.primary}`}
         >
@@ -483,6 +488,25 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
           View Round History
         </button>
       )}
+
+      <div className="mb-3 pt-2">
+        <h4 className="text-xs font-semibold text-black mb-2 text-center">
+          All Team Members
+        </h4>
+        <div className="space-y-1 pt-1">
+          {teamMembers
+            .filter((member) => member.trim() !== "")
+            .map((member) => (
+              <div
+                key={member}
+                className="text-center  bg-[#FEFCF0] shadow-lg rounded h-6 "
+              >
+                {member}
+                {playerName === member && "👤"}
+              </div>
+            ))}
+        </div>
+      </div>
 
       <div className="flex-grow"></div>
 

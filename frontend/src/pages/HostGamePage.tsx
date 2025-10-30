@@ -4,6 +4,7 @@ import io, { Socket } from "socket.io-client";
 import { GAME_CONFIG } from "../utils/constants";
 
 // Import components
+import CopyGameCode from "../components/game/CopyGameCode";
 import PageLayout from "../components/layout/PageLayout";
 import AnimatedCard from "../components/common/AnimatedCard";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -641,20 +642,7 @@ const HostGamePage: React.FC = () => {
             <div className="rounded shadow bg-white p-8 text-center">
               <h2 className="text-3xl font-bold mb-6">Game Setup</h2>
 
-              <div className="mb-8">
-                <p className="text-lg text-slate-300 mb-2">
-                  Share this code with contestants:
-                </p>
-                <div
-                  data-testid="game-code"
-                  className="text-5xl font-mono font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse"
-                >
-                  {gameCode}
-                </div>
-                <p className="text-sm text-slate-400 mt-4">
-                  ⚠️ Each question allows only 1 attempt!
-                </p>
-              </div>
+              <CopyGameCode gameCode={gameCode} />
 
               {!validation.canStart && (
                 <div className="mb-4 p-4 bg-gray-200 border-yellow-500/50 rounded">
@@ -749,6 +737,7 @@ const HostGamePage: React.FC = () => {
               allTeams={game.teams}
               activeBorderColor="#dc2626"
               activeBackgroundColor="#ffd6d6ff"
+              players={game.players}
             />
           </div>
           <div className="w-1/2">
@@ -764,6 +753,7 @@ const HostGamePage: React.FC = () => {
               allTeams={game.teams}
               activeBorderColor="#264adcff"
               activeBackgroundColor="#d6e0ffff"
+              players={game.players}
             />
           </div>
         </div>
@@ -782,6 +772,7 @@ const HostGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
+            players={game.players}
           />
         </div>
 
@@ -957,6 +948,7 @@ const HostGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
+            players={game.players}
           />
         </div>
       </PageLayout>
