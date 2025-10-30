@@ -4,6 +4,8 @@ import Button from "../common/Button";
 import Input from "../common/Input";
 import { getCurrentQuestion } from "../../utils/gameHelper";
 import QuestionCard from "./QuestionCard";
+import { Team } from "../../types";
+import { Question } from "../../types";
 
 interface GameBoardProps {
   game: Game;
@@ -21,6 +23,11 @@ interface GameBoardProps {
   onCancelOverride?: () => void;
   onConfirmOverride?: () => void;
   onClickAnswerCard?: (answer: string) => void;
+  currentTeam: "team1" | "team2" | null;
+  teams: Team[];
+  currentQuestion: Question | null;
+  questionsAnswered: { team1: number; team2: number };
+  round: number;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -39,6 +46,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onCancelOverride,
   onConfirmOverride,
   onClickAnswerCard,
+  currentTeam,
+  teams,
+  // currentQuestion,
+  questionsAnswered,
+  round,
 }) => {
   const currentQuestion = getCurrentQuestion(game);
 
@@ -83,7 +95,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       ))}
     </div>
   );
-
+  const activeTeam = teams.find((t) => t.active);
   if (variant === "player") {
     return (
       <div className="flex-1 flex flex-col overflow-y-auto">
@@ -92,11 +104,29 @@ const GameBoard: React.FC<GameBoardProps> = ({
           {/* Question Header - Compact with Round Status */}
           <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
             <div className="flex justify-between items-center">
-              <div>
-                <h2 className="font-bold">
-                  {game.currentRound === 0 ? "Toss-up Round" : ""}
-                </h2>
+              {/* Left section - Question info */}
+              <div
+                className={`flex ${
+                  game.currentRound === 0 ? "flex-col" : "flex-row gap-2"
+                }`}
+              >
+                {game.currentRound === 0 && (
+                  <h2 className="font-bold">Toss-up Round</h2>
+                )}
+                <div className="text-xs text-slate-400">
+                  Question{" "}
+                  {game.currentRound === 0 ? 1 : game.currentQuestionIndex + 1}{" "}
+                  of {game.currentRound === 0 ? 1 : game.questions.length} -{" "}
+                  {currentQuestion.questionCategory}
+                </div>
               </div>
+
+              {/* Center section - Active team */}
+              <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2">
+                🎯 {activeTeam?.name}'s Turn
+              </h3>
+
+              {/* Right section - Round status */}
               <RoundStatus />
             </div>
           </div>
@@ -174,13 +204,31 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Keep question visible on mobile by sticking it to the top */}
       <div className="sticky top-0 z-10">
         {/* Question Header with Round Status */}
-        <div className=" question-header flex-shrink-0 bg-[#FEFEFC]">
+        <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
           <div className="flex justify-between items-center">
-            <div>
-              <h2 className="font-bold">
-                {game.currentRound === 0 ? "Toss-up Round" : ""}
-              </h2>
+            {/* Left section - Question info */}
+            <div
+              className={`flex ${
+                game.currentRound === 0 ? "flex-col" : "flex-row gap-2"
+              }`}
+            >
+              {game.currentRound === 0 && (
+                <h2 className="font-bold">Toss-up Round</h2>
+              )}
+              <div className="text-xs text-slate-400">
+                Question{" "}
+                {game.currentRound === 0 ? 1 : game.currentQuestionIndex + 1} of{" "}
+                {game.currentRound === 0 ? 1 : game.questions.length} -{" "}
+                {currentQuestion.questionCategory}
+              </div>
             </div>
+
+            {/* Center section - Active team */}
+            <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2">
+              🎯 {activeTeam?.name}'s Turn
+            </h3>
+
+            {/* Right section - Round status */}
             <RoundStatus />
           </div>
         </div>

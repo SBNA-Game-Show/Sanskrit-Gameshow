@@ -347,7 +347,9 @@ const JoinGamePage: React.FC = () => {
       playerJoinGame(gameCode.toUpperCase(), playerId);
     } catch (error: any) {
       console.error("Error joining game:", error);
-      setError(error.message || error.response?.data?.error || "Failed to join game");
+      setError(
+        error.message || error.response?.data?.error || "Failed to join game"
+      );
     }
     setIsLoading(false);
   };
@@ -490,6 +492,7 @@ const JoinGamePage: React.FC = () => {
               allTeams={game.teams}
               activeBorderColor="#dc2626"
               activeBackgroundColor="#ffd6d6ff"
+              players={game.players}
             />
           </div>
           <div className="w-1/2">
@@ -509,6 +512,7 @@ const JoinGamePage: React.FC = () => {
               allTeams={game.teams}
               activeBorderColor="#264adcff"
               activeBackgroundColor="#d6e0ffff"
+              players={game.players}
             />
           </div>
         </div>
@@ -531,26 +535,32 @@ const JoinGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
+            players={game.players}
           />
         </div>
 
         {/* Center Game Area */}
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
           {/* Turn Indicator */}
-          <TurnIndicator
+          {/* <TurnIndicator
             currentTeam={game.gameState.currentTurn}
             teams={game.teams}
             currentQuestion={game.questions[game.currentQuestionIndex]}
             questionsAnswered={game.gameState.questionsAnswered}
             round={game.currentRound}
             variant="compact"
-          />
+          /> */}
 
           {/* Game Board */}
           <GameBoard
             game={game}
             variant="player"
             onClickAnswerCard={handleSubmitMCQAnswer}
+            currentTeam={game.gameState.currentTurn}
+            teams={game.teams}
+            currentQuestion={game.questions[game.currentQuestionIndex]}
+            questionsAnswered={game.gameState.questionsAnswered}
+            round={game.currentRound}
           />
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
@@ -723,6 +733,7 @@ const JoinGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
+            players={game.players}
           />
         </div>
       </PageLayout>

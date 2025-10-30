@@ -17,10 +17,10 @@ const AudienceGamePage: React.FC = () => {
   const [error, setError] = useState("");
   const [game, setGame] = useState<Game | null>(null);
   const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
-  const [message, setMessage] = useState<
-    | { text: string; type: "info" | "success" | "error" }
-    | null
-  >(null);
+  const [message, setMessage] = useState<{
+    text: string;
+    type: "info" | "success" | "error";
+  } | null>(null);
 
   const getTeamQuestionData = (teamKey: "team1" | "team2"): RoundData => {
     if (!game?.gameState?.questionData?.[teamKey]) {
@@ -196,11 +196,17 @@ const AudienceGamePage: React.FC = () => {
       <PageLayout gameCode={game.code}>
         <div className="max-w-4xl mx-auto">
           <div className="glass-card p-6 text-center mb-6">
-            <p className="text-xl text-slate-300 mb-2">Waiting for the host to start…</p>
+            <p className="text-xl text-slate-300 mb-2">
+              Waiting for the host to start…
+            </p>
             <p className="text-sm text-slate-500">Game code: {game.code}</p>
           </div>
           {game.players.length > 0 && (
-            <PlayerList players={game.players} teams={game.teams} variant="waiting" />
+            <PlayerList
+              players={game.players}
+              teams={game.teams}
+              variant="waiting"
+            />
           )}
         </div>
       </PageLayout>
@@ -248,24 +254,32 @@ const AudienceGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
+            players={game.players}
           />
         </div>
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
-          <TurnIndicator
+          {/* <TurnIndicator
             currentTeam={game.gameState.currentTurn}
             teams={game.teams}
             currentQuestion={currentQuestion}
             questionsAnswered={game.gameState.questionsAnswered}
             round={game.currentRound}
             variant="compact"
-          />
+          /> */}
           <GameBoard
             game={game}
             variant="host"
             isHost={false}
+            currentTeam={game.gameState.currentTurn}
+            teams={game.teams}
+            currentQuestion={game.questions[game.currentQuestionIndex]}
+            questionsAnswered={game.gameState.questionsAnswered}
+            round={game.currentRound}
           />
           {message && (
-            <div className={`glass-card audience-message game-message ${message.type}`}>
+            <div
+              className={`glass-card audience-message game-message ${message.type}`}
+            >
               {message.text}
             </div>
           )}
@@ -283,6 +297,7 @@ const AudienceGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
+            players={game.players}
           />
         </div>
       </PageLayout>
