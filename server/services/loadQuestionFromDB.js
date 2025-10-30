@@ -74,7 +74,6 @@ export async function prepareGameQuestions() {
     teamAssignment: "shared",
   }));
 
-  console.log("sdf")
   console.log(updatedMcqQuestions)
 
   // --- Save into GameQuestion collection ---
