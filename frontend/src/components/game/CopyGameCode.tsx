@@ -30,6 +30,7 @@ const CopyGameCode: React.FC<CopyGameCodeProps> = ({ gameCode }) => {
           {gameCode}
         </div>
         <button
+          data-testid="copy-code"
           onClick={handleCopy}
           className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 active:scale-95 ${
             copied
