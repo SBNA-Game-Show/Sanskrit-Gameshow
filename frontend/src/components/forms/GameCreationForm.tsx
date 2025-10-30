@@ -46,7 +46,7 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
 
           <div className="space-y-4 mb-8">
             <Input
-              data-testid="host-team1-input"
+              testid="host-team1-input"
               id="team1"
               label="Team 1 Name"
               value={team1Name}
@@ -55,7 +55,7 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
               disabled={isLoading}
             />
             <Input
-              data-testid="host-team2-input"
+              testid="host-team2-input"
               id="team2"
               label="Team 2 Name"
               value={team2Name}
@@ -72,6 +72,7 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
 )}
 
 <Button
+  testid="host-create-game-button"
   onClick={onCreateGame}
   disabled={isLoading || !team1Name.trim() || !team2Name.trim() || duplicateNames}
   variant="primary"

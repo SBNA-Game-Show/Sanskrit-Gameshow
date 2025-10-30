@@ -24,7 +24,7 @@ const HomePage: React.FC = () => {
 
           <AnimatedCard className="flex-1" delay={400}>
             <Button
-              data-testid="player-join-room-button"
+              testid="player-join-room-button"
               onClick={() => navigate(ROUTES.JOIN)}
               variant="success"
               size="xl"
@@ -42,7 +42,7 @@ const HomePage: React.FC = () => {
           </AnimatedCard>
           <AnimatedCard className="flex-1" delay={600}>
             <Button
-              data-testid="audience-join-room-button"
+              testid="audience-join-room-button"
               onClick={() => navigate(ROUTES.AUDIENCE)}
               variant="primary"
               size="xl"
