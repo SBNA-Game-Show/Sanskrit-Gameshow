@@ -113,11 +113,21 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 {game.currentRound === 0 && (
                   <h2 className="font-bold">Toss-up Round</h2>
                 )}
+
                 <div className="text-xs text-slate-400">
                   Question{" "}
-                  {game.currentRound === 0 ? 1 : game.currentQuestionIndex + 1}{" "}
-                  of {game.currentRound === 0 ? 1 : game.questions.length} -{" "}
-                  {currentQuestion.questionCategory}
+                  {game.currentRound === 0
+                    ? 1
+                    : currentTeam
+                    ? questionsAnswered[currentTeam] + 1
+                    : game.currentQuestionIndex + 1}{" "}
+                  of{" "}
+                  {game.currentRound === 0
+                    ? 1
+                    : game.currentRound === 4
+                    ? 7
+                    : 3}{" "}
+                  • {currentQuestion.questionCategory}
                 </div>
               </div>
 
@@ -217,9 +227,14 @@ const GameBoard: React.FC<GameBoardProps> = ({
               )}
               <div className="text-xs text-slate-400">
                 Question{" "}
-                {game.currentRound === 0 ? 1 : game.currentQuestionIndex + 1} of{" "}
-                {game.currentRound === 0 ? 1 : game.questions.length} -{" "}
-                {currentQuestion.questionCategory}
+                {game.currentRound === 0
+                  ? 1
+                  : currentTeam
+                  ? questionsAnswered[currentTeam] + 1
+                  : game.currentQuestionIndex + 1}{" "}
+                of{" "}
+                {game.currentRound === 0 ? 1 : game.currentRound === 4 ? 7 : 3}{" "}
+                • {currentQuestion.questionCategory}
               </div>
             </div>
 
