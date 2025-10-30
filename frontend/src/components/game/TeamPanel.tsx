@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Team } from "../../types";
+import { Player, Team } from "../../types";
 import { getTeamColorClasses, getTeamRoundTotal } from "../../utils/gameHelper";
 
 interface QuestionStatus {
@@ -28,6 +28,7 @@ interface TeamPanelProps {
   allTeams?: Team[];
   activeBorderColor: string;
   activeBackgroundColor: string;
+  players: Player[];
 }
 
 const TeamPanel: React.FC<TeamPanelProps> = ({
@@ -69,8 +70,10 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   allTeams = [],
   activeBorderColor,
   activeBackgroundColor,
+  players,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showRoundHistory, setShowRoundHistory] = useState(false);
   const colorClasses = getTeamColorClasses(teamIndex);
 
   const getCurrentRoundData = () => {
@@ -198,6 +201,9 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   };
 
   const currentRoundData = getCurrentRoundData();
+  const teamMembers = players
+    .filter((p) => p.teamId === team.id)
+    .map((p) => p.name);
 
   // Mobile compact view
   const mobileCompactView = (
@@ -263,7 +269,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg text-center font-bold flex items-center gap-2">
                 {team.name}
-                {isPlayerTeam && <span className="text-yellow-400">👤</span>}
+                {/* {isPlayerTeam && <span className="text-yellow-400">👤</span>} */}
               </h3>
               <button
                 onClick={() => setIsExpanded(false)}
@@ -285,40 +291,17 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
               </button>
             </div>
 
-            {isPlayerTeam && playerName && (
+            {/* {isPlayerTeam && playerName && (
               <div className="text-xs text-yellow-600 mb-2 font-medium text-center">
                 {playerName}
               </div>
-            )}
+            )} */}
 
             <div
               className={`text-2xl font-bold mb-4 ${colorClasses.primary} text-center`}
             >
               {team.currentRoundScore || 0}
             </div>
-
-            {showMembers && team.members && team.members.length > 0 && (
-              <div className="mb-4">
-                <h4 className="text-xs font-semibold text-slate-400 mb-2">
-                  Team Members
-                </h4>
-                <div className="space-y-1">
-                  {team.members
-                    .filter((member) => member.trim() !== "")
-                    .map((member, idx) => (
-                      <div
-                        key={idx}
-                        className="text-xs glass-card p-1 flex items-center gap-1"
-                      >
-                        {idx === 0 && (
-                          <span className="text-yellow-400">👑</span>
-                        )}
-                        {member}
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
 
             <div
               className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${
@@ -356,21 +339,13 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             </div>
 
             {currentRound >= 2 && (
-              <div className="mb-3">
-                {renderRoundSummary(1, questionData.round1)}
-              </div>
-            )}
-
-            {currentRound >= 3 && (
-              <div className="mb-3">
-                {renderRoundSummary(2, questionData.round2)}
-              </div>
-            )}
-
-            {currentRound >= 4 && (
-              <div className="mb-3">
-                {renderRoundSummary(3, questionData.round3)}
-              </div>
+              <button
+                data-testid="view-round-history"
+                onClick={() => setShowRoundHistory(true)}
+                className="w-full mb-3 bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-2 text-sm font-medium transition-colors"
+              >
+                View Round History
+              </button>
             )}
 
             <div className="bg-white text-black rounded px-2 py-1 text-center border-2 border-gray-300">
@@ -378,6 +353,58 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
               <div className="text-xs">Total Score</div>
             </div>
           </div>
+
+          {/* Round History Popup */}
+          {showRoundHistory && (
+            <>
+              <div
+                className="fixed inset-0 bg-black bg-opacity-50 z-50"
+                onClick={() => setShowRoundHistory(false)}
+              />
+              <div className="fixed inset-x-4 top-20 bottom-20 bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold">Round History</h3>
+                  <button
+                    data-testid="close-round-history"
+                    onClick={() => setShowRoundHistory(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {currentRound >= 2 && (
+                  <div className="mb-3">
+                    {renderRoundSummary(1, questionData.round1)}
+                  </div>
+                )}
+
+                {currentRound >= 3 && (
+                  <div className="mb-3">
+                    {renderRoundSummary(2, questionData.round2)}
+                  </div>
+                )}
+
+                {currentRound >= 4 && (
+                  <div className="mb-3">
+                    {renderRoundSummary(3, questionData.round3)}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
@@ -405,13 +432,13 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       <div className="text-center mb-4">
         <h3 className="text-lg font-bold mb-2 flex items-center justify-center gap-2">
           {team.name}
-          {isPlayerTeam && <span className="text-yellow-400">👤</span>}
+          {/* {isPlayerTeam && <span className="text-yellow-400">👤</span>} */}
         </h3>
-        {isPlayerTeam && playerName && (
+        {/* {isPlayerTeam && playerName && (
           <div className="text-xs text-yellow-300 mb-2 font-medium">
             {playerName}
           </div>
-        )}
+        )} */}
         <div
           className={`text-2xl font-bold mb-1 animate-score ${colorClasses.primary}`}
         >
@@ -419,27 +446,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         </div>
       </div>
 
-      {showMembers && team.members && team.members.length > 0 && (
-        <div className="mb-4">
-          <h4 className="text-xs font-semibold text-slate-400 mb-2">
-            Team Members
-          </h4>
-          <div className="space-y-1">
-            {team.members
-              .filter((member) => member.trim() !== "")
-              .map((member, idx) => (
-                <div
-                  key={idx}
-                  className="text-xs glass-card p-1 flex items-center gap-1"
-                >
-                  {idx === 0 && <span className="text-yellow-400">👑</span>}
-                  {member}
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
+      {/* Active round summary */}
       <div
         className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${
           currentRound === 4 ? "pb-3" : ""
@@ -475,24 +482,93 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         )}
       </div>
 
-      <div className="flex-grow"></div>
-
       {currentRound >= 2 && (
-        <div className="mb-3">{renderRoundSummary(1, questionData.round1)}</div>
+        <button
+          data-testid="view-round-history"
+          onClick={() => setShowRoundHistory(true)}
+          className="w-full mb-3 bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-2 text-sm font-medium transition-colors"
+        >
+          View Round History
+        </button>
       )}
 
-      {currentRound >= 3 && (
-        <div className="mb-3">{renderRoundSummary(2, questionData.round2)}</div>
-      )}
+      <div className="mb-3 pt-2">
+        <h4 className="text-xs font-semibold text-black mb-2 text-center">
+          All Team Members
+        </h4>
+        <div className="space-y-1 pt-1">
+          {teamMembers
+            .filter((member) => member.trim() !== "")
+            .map((member) => (
+              <div
+                key={member}
+                className="text-center  bg-[#FEFCF0] shadow-lg rounded h-6 "
+              >
+                {member}
+                {playerName === member && "👤"}
+              </div>
+            ))}
+        </div>
+      </div>
 
-      {currentRound >= 4 && (
-        <div className="mb-3">{renderRoundSummary(3, questionData.round3)}</div>
-      )}
+      <div className="flex-grow"></div>
 
       <div className="bg-white text-black rounded px-2 py-1 text-center">
         <div className="text-xl font-bold">{getTeamRoundTotal(team)}</div>
         <div className="text-xs">Total Score</div>
       </div>
+
+      {/* Round History Popup */}
+      {showRoundHistory && (
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setShowRoundHistory(false)}
+          />
+          <div className="fixed inset-x-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-96 top-20 bottom-20 bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Round History</h3>
+              <button
+                data-testid="close-round-history"
+                onClick={() => setShowRoundHistory(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {currentRound >= 2 && (
+              <div className="mb-3">
+                {renderRoundSummary(1, questionData.round1)}
+              </div>
+            )}
+
+            {currentRound >= 3 && (
+              <div className="mb-3">
+                {renderRoundSummary(2, questionData.round2)}
+              </div>
+            )}
+
+            {currentRound >= 4 && (
+              <div className="mb-3">
+                {renderRoundSummary(3, questionData.round3)}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 

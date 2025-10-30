@@ -11,7 +11,7 @@ import GameResults from "../components/game/GameResults";
 import PlayerList from "../components/game/PlayerList";
 import TeamPanel from "../components/game/TeamPanel";
 import Button from "../components/common/Button";
-import TurnIndicator from "../components/game/TurnIndicator";
+// import TurnIndicator from "../components/game/TurnIndicator";
 import RoundSummaryComponent from "../components/game/RoundSummaryComponent";
 import BuzzerButton from "../components/game/BuzzerButton";
 
@@ -107,10 +107,51 @@ const JoinGamePage: React.FC = () => {
         });
       }
     },
+    // Update the onTeamUpdated handler in useSocket
+
     onTeamUpdated: (data: any) => {
       console.log("Team updated event received:", data);
-      setGame(data.game);
 
+      setGame((prevGame) => {
+        if (!prevGame) return null;
+
+        // Update the game with new team data
+        const updatedGame = data.game || prevGame;
+
+        // Update the player's team assignment in the players array
+        const updatedPlayers = prevGame.players.map((p) =>
+          p.id === data.playerId ? { ...p, teamId: data.teamId } : p
+        );
+
+        // Update team members arrays
+        const updatedTeams = prevGame.teams.map((team) => {
+          // Remove player from all teams first
+          const membersWithoutPlayer = team.members.filter(
+            (memberId) => memberId !== data.playerId
+          );
+
+          // Add player to their new team
+          if (team.id === data.teamId) {
+            return {
+              ...team,
+              members: [...membersWithoutPlayer, data.playerId],
+            };
+          }
+          console.log(team.members);
+          return {
+            ...team,
+            members: membersWithoutPlayer,
+          };
+        });
+
+        return {
+          ...updatedGame,
+          players: updatedPlayers,
+          teams: updatedTeams,
+        };
+      });
+
+      // Update local player state
       if (player && data.playerId === player.id) {
         setPlayer({
           ...player,
@@ -339,7 +380,9 @@ const JoinGamePage: React.FC = () => {
       playerJoinGame(gameData.code.toUpperCase(), playerId);
     } catch (error: any) {
       console.error("Error joining game:", error);
-      setError(error.message || error.response?.data?.error || "Failed to join game");
+      setError(
+        error.message || error.response?.data?.error || "Failed to join game"
+      );
     }
     setIsLoading(false);
   };
@@ -482,6 +525,7 @@ const JoinGamePage: React.FC = () => {
               allTeams={game.teams}
               activeBorderColor="#dc2626"
               activeBackgroundColor="#ffd6d6ff"
+              players={game.players}
             />
           </div>
           <div className="w-1/2">
@@ -501,6 +545,7 @@ const JoinGamePage: React.FC = () => {
               allTeams={game.teams}
               activeBorderColor="#264adcff"
               activeBackgroundColor="#d6e0ffff"
+              players={game.players}
             />
           </div>
         </div>
@@ -523,26 +568,32 @@ const JoinGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
+            players={game.players}
           />
         </div>
 
         {/* Center Game Area */}
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
           {/* Turn Indicator */}
-          <TurnIndicator
+          {/* <TurnIndicator
             currentTeam={game.gameState.currentTurn}
             teams={game.teams}
             currentQuestion={game.questions[game.currentQuestionIndex]}
             questionsAnswered={game.gameState.questionsAnswered}
             round={game.currentRound}
             variant="compact"
-          />
+          /> */}
 
           {/* Game Board */}
           <GameBoard
             game={game}
             variant="player"
             onClickAnswerCard={handleSubmitMCQAnswer}
+            currentTeam={game.gameState.currentTurn}
+            teams={game.teams}
+            currentQuestion={game.questions[game.currentQuestionIndex]}
+            questionsAnswered={game.gameState.questionsAnswered}
+            round={game.currentRound}
           />
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
@@ -715,6 +766,7 @@ const JoinGamePage: React.FC = () => {
             allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
+            players={game.players}
           />
         </div>
       </PageLayout>

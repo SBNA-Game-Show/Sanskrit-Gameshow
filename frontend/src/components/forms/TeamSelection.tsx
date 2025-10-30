@@ -22,15 +22,13 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
 
       <div className="mb-6">
         <div>
-          <h3 className="text-xl font-semibold mb-4">
-            Choose your team
-          </h3>
+          <h3 className="text-xl font-semibold mb-4">Choose your team</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {teams.map((team, index) => (
               <AnimatedCard key={team.id} delay={index * 100}>
                 <button
                   onClick={() => onSelectTeam(team.id)}
-                  data-testid={`join-team-${index+1}-button`}
+                  data-testid={`join-team-${index + 1}-button`}
                   disabled={team.id === selectedTeamId}
                   className={`w-full p-6 rounded-xl text-left transition-all transform ${
                     team.id === selectedTeamId
@@ -46,13 +44,11 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
                       </span>
                     )}
                   </div>
-        
- 
                 </button>
               </AnimatedCard>
             ))}
           </div>
-          
+
           {selectedTeamId && (
             <div className="mt-6 p-4  rounded-lg border border-blue-500/30 shadow bg-gray-100">
               <p className="text-blue-300 font-medium">
@@ -66,9 +62,10 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
           )}
         </div>
       </div>
-      
+
       <p className="text-slate-400 mt-4">
-        Please select a team - the game cannot start until all players have chosen a team
+        Please select a team - the game cannot start until all players have
+        chosen a team
       </p>
     </div>
   );
