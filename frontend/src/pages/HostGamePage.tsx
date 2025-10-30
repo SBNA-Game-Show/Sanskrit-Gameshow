@@ -6,7 +6,6 @@ import { GAME_CONFIG } from "../utils/constants";
 // Import components
 import PageLayout from "../components/layout/PageLayout";
 import AnimatedCard from "../components/common/AnimatedCard";
-import LoadingSpinner from "../components/common/LoadingSpinner";
 import TeamPanel from "../components/game/TeamPanel";
 import GameBoard from "../components/game/GameBoard";
 import GameResults from "../components/game/GameResults";
@@ -21,19 +20,17 @@ import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
 
 // Import types and utils
-import { Game, RoundSummary, RoundData } from "../types"; //Team
+import { Game, RoundData } from "../types"; //Team
 import { getCurrentQuestion, getTeamName } from "../utils/gameHelper"; //getGameWinner
 import { ROUTES } from "../utils/constants";
 
 const role = localStorage.getItem("role");
 const HostGamePage: React.FC = () => {
-  const [gameCode, setGameCode] = useState<string>("");
   const [game, setGame] = useState<Game | null>(null);
   const [team1Name, setTeam1Name] = useState("");
   const [team2Name, setTeam2Name] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [controlMessage, setControlMessage] = useState<string>("");
-  const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
   const [overrideMode, setOverrideMode] = useState(false);
   const [pendingOverride, setPendingOverride] = useState<{
     teamId: string;
@@ -249,30 +246,27 @@ const HostGamePage: React.FC = () => {
     socket.on("round-complete", (data) => {
       console.log("🏁 Round completed:", data);
 
-      // Update game state if provided
+      console.log(data.game)
+
+      // Update game state
       if (data.game) {
         setGame(data.game);
-      }
-
-      if (data.roundSummary) {
-        setRoundSummary(data.roundSummary);
-        if (data.roundSummary.round === 0) {
+        if (data.game.currentRound === 0) {
           setControlMessage(
             `${
-              data.roundSummary.tossUpWinner?.teamName || "A team"
+              data.game.tossUpWinner?.teamName || "A team"
             } won the toss-up!`
           );
         } else {
           setControlMessage(
-            `Round ${data.roundSummary.round} completed! ${
+            `Round ${data.game.currentRound} completed! ${
               data.isGameFinished ? "Game finished!" : "Ready for next round."
             }`
           );
         }
-      } else if (typeof data.round !== "undefined") {
-        // Fallback when summary is missing
+      } else {
         setControlMessage(
-          `Round ${data.round} completed! ${
+          `Round ${data.game.currentRound} completed! ${
             data.isGameFinished ? "Game finished!" : "Ready for next round."
           }`
         );
@@ -282,7 +276,6 @@ const HostGamePage: React.FC = () => {
     socket.on("round-started", (data) => {
       console.log("🆕 New round started:", data);
       setGame(data.game);
-      setRoundSummary(null);
       const teamName = getTeamName(data.game, data.activeTeam);
       setControlMessage(
         `Round ${data.round} started! ${teamName} goes first. Each question allows only 1 attempt.`
@@ -338,7 +331,6 @@ const HostGamePage: React.FC = () => {
     socket.on("game-reset", (data) => {
       console.log("🔄 Game reset:", data);
       setGame(data.game);
-      setRoundSummary(null);
       setControlMessage(data.message || "Game has been reset.");
       setOverrideMode(false);
     });
@@ -346,7 +338,6 @@ const HostGamePage: React.FC = () => {
     socket.on("skipped-to-round", (data) => {
       console.log(data.message);
       setGame(data.game);
-      setRoundSummary(null);
       setControlMessage(data.message || "Skipped rounds.");
       setOverrideMode(false);
     });
@@ -367,12 +358,11 @@ const HostGamePage: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const code = params.get("code");
-    if (code && !gameCode) {
+    if (code && !game) {
       const upper = code.toUpperCase();
-      setGameCode(upper);
       setupSocket(upper);
     }
-  }, [location.search, gameCode, setupSocket]);
+  }, [location.search, game, setupSocket]);
 
   // Validation function to check if game can start
   const canStartGame = (game: Game | null) => {
@@ -434,13 +424,15 @@ const HostGamePage: React.FC = () => {
       });
       console.log("✅ Game creation response:", response);
 
-      const { gameCode: newGameCode } = response;
-      setGameCode(newGameCode);
+      const { game: newGame } = response;
+
+      setGame(newGame);
+
       setControlMessage(
-        `Game created successfully! Code: ${newGameCode}. Each question allows only 1 attempt.`
+        `Game created successfully! Code: ${newGame.code}. Each question allows only 1 attempt.`
       );
 
-      setupSocket(newGameCode);
+      setupSocket(newGame.code);
     } catch (error: unknown) {
       console.error("❌ Error creating game:", error);
 
@@ -465,8 +457,8 @@ const HostGamePage: React.FC = () => {
   const handleStartGame = () => {
     console.log("🎮 Starting single-attempt game with question tracking...");
 
-    if (gameCode && socketRef.current && socketRef.current.connected) {
-      socketRef.current.emit("start-game", { gameCode });
+    if (game && socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit("start-game", { gameCode: game.code });
     } else {
       console.error("❌ Cannot start game - missing requirements");
       setControlMessage("Cannot start game. Please check your connection.");
@@ -474,32 +466,32 @@ const HostGamePage: React.FC = () => {
   };
 
   const handleCompleteTossUpRound = () => {
-    if (gameCode && socketRef.current) {
-      socketRef.current.emit("complete-toss-up-round", { gameCode });
+    if (game && socketRef.current) {
+      socketRef.current.emit("complete-toss-up-round", { gameCode: game.code });
     }
   };
 
   const handleContinueToNextRound = () => {
-    if (gameCode && socketRef.current) {
-      socketRef.current.emit("continue-to-next-round", { gameCode });
+    if (game && socketRef.current) {
+      socketRef.current.emit("continue-to-next-round", { gameCode: game.code });
     }
   };
 
   const handleForceNextQuestion = () => {
-    if (gameCode && socketRef.current) {
-      socketRef.current.emit("force-next-question", { gameCode });
+    if (game && socketRef.current) {
+      socketRef.current.emit("force-next-question", { gameCode: game.code });
     }
   };
 
   const handleNextQuestion = () => {
-    if (gameCode && socketRef.current) {
-      socketRef.current.emit("advance-question", { gameCode });
+    if (game && socketRef.current) {
+      socketRef.current.emit("advance-question", { gameCode: game.code });
     }
   };
 
   const handlePauseTimer = () => {
-    if (gameCode && socketRef.current) {
-      socketRef.current.emit("pause-timer", { gameCode });
+    if (game && socketRef.current) {
+      socketRef.current.emit("pause-timer", { gameCode: game.code });
     }
   };
 
@@ -512,10 +504,10 @@ const HostGamePage: React.FC = () => {
   };
 
   const handleSelectOverride = (answerIndex: number) => {
-    if (pendingOverride && socketRef.current && currentQuestion) {
+    if (game && pendingOverride && socketRef.current && currentQuestion) {
       const points = currentQuestion.answers[answerIndex]?.score || 0;
       socketRef.current.emit("override-answer", {
-        gameCode,
+        gameCode: game.code,
         teamId: pendingOverride.teamId,
         round: pendingOverride.round,
         questionNumber: pendingOverride.questionNumber,
@@ -531,10 +523,10 @@ const HostGamePage: React.FC = () => {
   };
 
   const handleConfirmOverride = () => {
-    if (pendingOverride && socketRef.current) {
+    if (game && pendingOverride && socketRef.current) {
       const points = parseInt(overridePoints, 10) || 0;
       socketRef.current.emit("override-answer", {
-        gameCode,
+        gameCode: game.code,
         teamId: pendingOverride.teamId,
         round: pendingOverride.round,
         questionNumber: pendingOverride.questionNumber,
@@ -554,17 +546,17 @@ const HostGamePage: React.FC = () => {
   };
 
   const handleResetGame = () => {
-    if (gameCode && socketRef.current) {
-      socketRef.current.emit("reset-game", { gameCode });
+    if (game && socketRef.current) {
+      socketRef.current.emit("reset-game", { gameCode: game.code });
     }
   };
 
   const handleSkipToRound = (round: number, radioButtonRef: React.RefObject<HTMLFormElement>) => {
-    if (gameCode && socketRef.current) {
+    if (game && socketRef.current) {
       const selectedStartingTeam = radioButtonRef.current?.querySelector<HTMLInputElement>(
         'input[name="starting-team"]:checked'
       )?.value;
-      socketRef.current.emit("skip-to-round", gameCode, round, selectedStartingTeam );
+      socketRef.current.emit("skip-to-round", game.code , round, selectedStartingTeam );
     }
   };
 
@@ -573,11 +565,11 @@ const HostGamePage: React.FC = () => {
     let interval: NodeJS.Timeout;
 
     if (game && game.status === "waiting" && socketRef.current) {
-      socketRef.current.emit("get-players", { gameCode });
+      socketRef.current.emit("get-players", { gameCode: game.code });
 
       interval = setInterval(() => {
         if (socketRef.current?.connected) {
-          socketRef.current.emit("get-players", { gameCode });
+          socketRef.current.emit("get-players", { gameCode: game.code });
         }
       }, 3000);
     }
@@ -585,7 +577,7 @@ const HostGamePage: React.FC = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [game, gameCode]);
+  }, [game]);
 
   // Cleanup socket on unmount
   useEffect(() => {
@@ -599,7 +591,7 @@ const HostGamePage: React.FC = () => {
   const currentQuestion = game ? getCurrentQuestion(game) : null;
 
   // Not created yet - show creation form
-  if (!gameCode) {
+  if (!game) {
     return (
       <PageLayout>
         <div className="flex justify-center">
@@ -626,7 +618,7 @@ const HostGamePage: React.FC = () => {
     const validation = canStartGame(game);
 
     return (
-      <PageLayout gameCode={gameCode}>
+      <PageLayout gameCode={game.code}>
         <AnimatedCard>
           <div className="max-w-4xl mx-auto">
             <div className="rounded shadow bg-white p-8 text-center">
@@ -640,7 +632,7 @@ const HostGamePage: React.FC = () => {
                   data-testid="game-code"
                   className="text-5xl font-mono font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse"
                 >
-                  {gameCode}
+                  {game.code}
                 </div>
                 <p className="text-sm text-slate-400 mt-4">
                   ⚠️ Each question allows only 1 attempt!
@@ -679,33 +671,13 @@ const HostGamePage: React.FC = () => {
     );
   }
 
-  // If we have a gameCode but no game, show a loading state
-  if (gameCode && !game) {
-    return (
-      <PageLayout>
-        <div className="flex items-center justify-center h-full">
-          <div className="glass-card p-8 text-center">
-            <LoadingSpinner />
-            <p className="mt-4 text-slate-400">
-              Setting up single-attempt game with question tracking...
-            </p>
-            <p className="text-sm text-slate-500 mt-2">Game Code: {gameCode}</p>
-            {controlMessage && (
-              <p className="text-sm text-blue-400 mt-2">{controlMessage}</p>
-            )}
-          </div>
-        </div>
-      </PageLayout>
-    );
-  }
-
   // Round Summary Screen
-  if (game?.status === "round-summary" && roundSummary) {
+  if (game && game.status === "round-summary") {
     return (
-      <PageLayout gameCode={gameCode} timer={timer} variant="game">
+      <PageLayout gameCode={game.code} timer={timer} variant="game">
         <div className="p-4">
           <RoundSummaryComponent
-            roundSummary={roundSummary}
+            game={game}
             teams={game.teams}
             isHost={true}
             isGameFinished={game.currentRound >= 4}
@@ -724,7 +696,7 @@ const HostGamePage: React.FC = () => {
     const team2QuestionsAnswered = game.gameState.questionsAnswered.team2 || 0;
 
     return (
-      <PageLayout gameCode={gameCode} timer={timer} variant="game">
+      <PageLayout gameCode={game.code} timer={timer} variant="game">
         {/* Mobile: Team panels container at bottom */}
         <div className="order-2 md:hidden w-full flex gap-2">
           <div className="w-1/2">
@@ -951,7 +923,7 @@ const HostGamePage: React.FC = () => {
   // Results Screen
   if (game?.status === "finished") {
     return (
-      <PageLayout gameCode={gameCode} timer={timer}>
+      <PageLayout gameCode={game.code} timer={timer}>
         <GameResults
           teams={game.teams}
           onCreateNewGame={createGame}
@@ -963,10 +935,10 @@ const HostGamePage: React.FC = () => {
 
   // Fallback for any unexpected game state
   return (
-    <PageLayout gameCode={gameCode}>
+    <PageLayout gameCode={game.code}>
       <AnimatedCard>
         <div className="glass-card p-8 text-center">
-          <p className="text-xl font-bold mb-4">Unexpected Game State</p>
+          <p className="text-xl font-bold mb-4">Unexpected Game State {game?.status}</p>
           <p className="text-slate-400 mb-4">
             The game is in an unexpected state. Please refresh the page or
             create a new game.

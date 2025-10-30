@@ -25,6 +25,8 @@ export interface Game {
   players: Player[];
   hostId: string | null;
   createdAt: Date;
+  tossUpWinner?: { teamId: string; teamName: string };
+  tossUpAnswers?: TossUpAnswer[];
   // Turn-based game state with 3-attempt rule
   gameState: {
     currentTurn: "team1" | "team2" | null; // Which team is currently answering
@@ -103,6 +105,7 @@ export interface Player {
   socketId?: string;
 }
 
+// NOW UNUSED
 // Round summary data
 export interface RoundSummary {
   round: number;
