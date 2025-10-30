@@ -392,7 +392,7 @@ const HostGamePage: React.FC = () => {
               )}
 
               <Button
-                data-testid="host-start-game-button"
+                testid="host-start-game-button"
                 onClick={() => startGame(game.code)}
                 variant="success"
                 size="xl"
@@ -538,7 +538,7 @@ const HostGamePage: React.FC = () => {
             </div>
             <div className="flex gap-2 justify-center flex-wrap">
               <Button
-                data-testid="force-next-question-button"
+                testid="force-next-question-button"
                 onClick={
                   game.currentRound === 4
                     ? () => pauseTimer(game.code)
@@ -553,6 +553,7 @@ const HostGamePage: React.FC = () => {
               </Button>
               {pendingOverride && !overrideMode && (
                 <Button
+                  testid="override-answer-button"
                   onClick={handleOverrideAnswer}
                   variant="secondary"
                   size="sm"
@@ -562,7 +563,7 @@ const HostGamePage: React.FC = () => {
                 </Button>
               )}
               <Button
-                data-testid="reset-game-button"
+                testid="reset-game-button"
                 onClick={() => resetGame(game.code)}
                 variant="secondary"
                 size="sm"
@@ -574,7 +575,7 @@ const HostGamePage: React.FC = () => {
               {role === "Tester" && (
                 <>
                   <Button
-                  data-testid="skip-to-round-1-button"
+                  testid="skip-to-round-1-button"
                   onClick={() => skipToRound(game.code, 1, radioButtonRef)}
                   variant="secondary"
                   size="sm"
@@ -583,7 +584,7 @@ const HostGamePage: React.FC = () => {
                     Skip to R1
                   </Button>
                   <Button
-                  data-testid="skip-to-round-2-button"
+                  testid="skip-to-round-2-button"
                   onClick={() => skipToRound(game.code, 2, radioButtonRef)}
                   variant="secondary"
                   size="sm"
@@ -592,7 +593,7 @@ const HostGamePage: React.FC = () => {
                     Skip to R2
                   </Button>
                   <Button
-                  data-testid="skip-to-round-3-button"
+                  testid="skip-to-round-3-button"
                   onClick={() => skipToRound(game.code, 3, radioButtonRef)}
                   variant="secondary"
                   size="sm"
@@ -601,7 +602,7 @@ const HostGamePage: React.FC = () => {
                     Skip to R3
                   </Button>
                   <Button
-                  data-testid="skip-to-lightning-round-button"
+                  testid="skip-to-lightning-round-button"
                   onClick={() => skipToRound(game.code, 4, radioButtonRef)}
                   variant="secondary"
                   size="sm"
