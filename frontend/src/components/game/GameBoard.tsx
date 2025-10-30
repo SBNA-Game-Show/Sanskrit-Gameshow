@@ -126,8 +126,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     ? 1
                     : game.currentRound === 4
                     ? 7
-                    : 3}{" "}
-                  • {currentQuestion.questionCategory}
+                    : 3}
                 </div>
               </div>
 
@@ -234,7 +233,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   : game.currentQuestionIndex + 1}{" "}
                 of{" "}
                 {game.currentRound === 0 ? 1 : game.currentRound === 4 ? 7 : 3}{" "}
-                • {currentQuestion.questionCategory}
               </div>
             </div>
 
