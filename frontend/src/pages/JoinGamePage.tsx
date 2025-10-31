@@ -605,13 +605,13 @@ const JoinGamePage: React.FC = () => {
           />
 
           {/* Answer Input Area - COMPLETELY CLEAN */}
-          <div className="bg-[#FEFEFC] rounded p-4 mt-2">
+          <div className="bg-[#FEFEFC] rounded p-2 mt-2">
             {/* START OF PLAYER INPUT FIELDS (answer input, buzzer, etc) */}
             {player.teamId ? (
               <div>
                 {/* Game Status Message */}
                 {gameMessage && (
-                  <div className="mb-3 p-2 bg-blue-500/20 border border-blue-500/50 rounded">
+                  <div className="mb-3 p-1 bg-blue-500/20 border border-blue-500/50 rounded">
                     <p className="text-blue-300 text-sm text-center">
                       {gameMessage}
                     </p>
