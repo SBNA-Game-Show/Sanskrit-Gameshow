@@ -2,6 +2,7 @@ import React from "react";
 
 interface ButtonProps {
   children: React.ReactNode;
+  testid?: string;
   onClick?: () => void;
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
@@ -14,6 +15,7 @@ interface ButtonProps {
 
 const Button: React.FC<ButtonProps> = ({
   children,
+  testid,
   onClick,
   disabled = false,
   type = "button",
@@ -45,6 +47,7 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      data-testid={testid}
       type={type}
       onClick={onClick}
       disabled={disabled || loading}

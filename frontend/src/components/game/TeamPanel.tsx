@@ -340,7 +340,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
             {currentRound >= 2 && (
               <button
-                data-testid="view-round-history"
+                data-testid={`view-team${teamIndex + 1}-round-history`}
                 onClick={() => setShowRoundHistory(true)}
                 className="w-full mb-3 bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-2 text-sm font-medium transition-colors"
               >
@@ -365,7 +365,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold">Round History</h3>
                   <button
-                    data-testid="close-round-history"
+                    data-testid="close-round-history-button"
                     onClick={() => setShowRoundHistory(false)}
                     className="p-2 hover:bg-gray-100 rounded-full"
                   >
@@ -484,7 +484,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
       {currentRound >= 2 && (
         <button
-          data-testid="view-round-history"
+          data-testid={`view-team${teamIndex + 1}-round-history`}
           onClick={() => setShowRoundHistory(true)}
           className="w-full mb-3 bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-2 text-sm font-medium transition-colors"
         >
@@ -529,7 +529,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold">Round History</h3>
               <button
-                data-testid="close-round-history"
+                data-testid="close-round-history-button"
                 onClick={() => setShowRoundHistory(false)}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >

@@ -54,19 +54,18 @@ router.post("/api/create-game", async (req, res) => {
 
     console.log(updatedQuestions[0].answers);
 
-    const { gameCode, gameId } = await createGame(
+    const { game } = await createGame(
       updatedQuestions,
       updatedTossUpQuestion,
       teamNames
     );
-    if (!gameCode) {
+    if (!game.code) {
       throw new ApiError(500, "No GameCode Created");
     }
     //successful game creation returns JSON format for gameCode, gameId
-    console.log(`✅ Game created successfully: ${gameCode}`);
+    console.log(`✅ Game created successfully: ${game.code}`);
     res.json({
-      gameCode,
-      gameId,
+      game,
       success: true,
     });
   } catch (error) {

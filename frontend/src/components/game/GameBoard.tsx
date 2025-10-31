@@ -347,6 +347,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   <div className="flex justify-center items-center gap-2 mt-1">
                     <Input
                       id="overridePoints"
+                      testid="override-points-input"
                       type="number"
                       value={overridePoints ?? ""}
                       onChange={(e) =>
@@ -359,6 +360,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     />
                     {onConfirmOverride && (
                       <Button
+                        testid="confirm-override-button"
                         onClick={onConfirmOverride}
                         variant="primary"
                         size="sm"
@@ -369,6 +371,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     )}
                     {onCancelOverride && (
                       <Button
+                        testid="cancel-override-button"
                         onClick={onCancelOverride}
                         variant="secondary"
                         size="sm"
@@ -385,7 +388,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               )}
               {game.gameState.canAdvance && !overrideMode && (
                 <Button
-                  data-testid="host-next-question-button"
+                  testid="host-next-question-button"
                   onClick={
                     game.currentRound === 0
                       ? onCompleteTossUpRound
