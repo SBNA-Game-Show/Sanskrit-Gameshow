@@ -75,6 +75,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showRoundHistory, setShowRoundHistory] = useState(false);
   const colorClasses = getTeamColorClasses(teamIndex);
+  const [showPlayerList, setShowPlayerList] = useState(false);
 
   const getCurrentRoundData = () => {
     if (currentRound === 0) {
@@ -290,19 +291,16 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 </svg>
               </button>
             </div>
-
             {/* {isPlayerTeam && playerName && (
               <div className="text-xs text-yellow-600 mb-2 font-medium text-center">
                 {playerName}
               </div>
             )} */}
-
             <div
               className={`text-2xl font-bold mb-4 ${colorClasses.primary} text-center`}
             >
               {team.currentRoundScore || 0}
             </div>
-
             <div
               className={`bg-[#FEFCF0] rounded shadow-xl p-2 mb-3 border-red-500/30 ${
                 currentRound === 4 ? "pb-3" : ""
@@ -337,7 +335,6 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 </div>
               )}
             </div>
-
             {currentRound >= 2 && (
               <button
                 data-testid={`view-team${teamIndex + 1}-round-history`}
@@ -348,12 +345,42 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
               </button>
             )}
 
+            <div className="mb-4 pt-3 border-t border-gray-200">
+              <h4 className="text-sm font-semibold text-black mb-3 text-center">
+                Team Members
+              </h4>
+              <div className="space-y-2">
+                {teamMembers
+                  .filter((member) => member.trim() !== "")
+                  .map((member) => (
+                    <div
+                      key={member}
+                      className="flex items-center justify-center p-2 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <span className="text-center text-gray-800 font-medium">
+                        {member}
+                      </span>
+                      {playerName === member && (
+                        <span className="ml-2 text-yellow-500 text-sm font-semibold">
+                          (You)
+                        </span>
+                      )}
+                    </div>
+                  ))}
+              </div>
+
+              {teamMembers.length === 0 && (
+                <div className="text-center text-gray-500 py-4">
+                  No team members found
+                </div>
+              )}
+            </div>
+
             <div className="bg-white text-black rounded px-2 py-1 text-center border-2 border-gray-300">
               <div className="text-xl font-bold">{getTeamRoundTotal(team)}</div>
               <div className="text-xs">Total Score</div>
             </div>
           </div>
-
           {/* Round History Popup */}
           {showRoundHistory && (
             <>
@@ -400,6 +427,65 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 {currentRound >= 4 && (
                   <div className="mb-3">
                     {renderRoundSummary(3, questionData.round3)}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          {showPlayerList && (
+            <>
+              <div
+                className="fixed inset-0 bg-black bg-opacity-50 z-50"
+                onClick={() => setShowPlayerList(false)}
+              />
+              <div className="fixed inset-x-4 top-20 bottom-20 bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold">
+                    Team Members - {team.name}
+                  </h3>
+                  <button
+                    onClick={() => setShowPlayerList(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {teamMembers
+                    .filter((member) => member.trim() !== "")
+                    .map((member, index) => (
+                      <div
+                        key={member}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                      >
+                        <span className="font-medium text-gray-800">
+                          {member}
+                        </span>
+                        {playerName === member && (
+                          <span className="text-yellow-500 text-sm font-semibold bg-yellow-50 px-2 py-1 rounded">
+                            You
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                </div>
+
+                {teamMembers.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">
+                    No team members found
                   </div>
                 )}
               </div>
