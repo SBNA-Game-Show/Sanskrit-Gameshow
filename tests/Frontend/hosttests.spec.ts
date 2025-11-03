@@ -1,19 +1,23 @@
 import { expect, test } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    testIdAttribute: 'data-testid',   
+  },
+});
 
 async function login(page: any, username: string, password: string, baseURL?: string) {
   await page.goto(baseURL ?? 'http://localhost:3000/');
-  await page.waitForTimeout(10000);
+  await page.waitForTimeout(5000);
 
-  await page.locator('#username').fill(username);
-  await page.locator('#password').fill(password);
+  await page.getByTestId('username-input').fill(username);
+  await page.getByTestId('password-input').fill(password);
 
-  const loginBtn = page.getByRole('button', { name: /login to play/i });
+  const loginBtn = page.getByTestId('login-button');
   await expect(loginBtn).toBeEnabled();
 
-  await Promise.all([
-    page.waitForLoadState('networkidle'),
-    loginBtn.click(),
-  ]);
+  await Promise.all([ page.waitForLoadState('networkidle'), loginBtn.click(), ]);
 }
 
 test('Host creates game and Player1 logs in (two separate pages)', async ({ browser, baseURL }) => {
@@ -23,17 +27,20 @@ test('Host creates game and Player1 logs in (two separate pages)', async ({ brow
 
   await login(hostPage, 'Host', '12345678', baseURL);
 
-  await hostPage.getByRole('button', { name: /create room/i }).click();
-  await hostPage.getByRole('textbox', { name: 'Team 1 Name' }).fill('Red');
-  await hostPage.getByRole('textbox', { name: 'Team 2 Name' }).fill('Blue');
-  await hostPage.getByRole('button', { name: /🚀 create game/i }).click();
+  const createRoomBtn = hostPage.getByTestId('host-create-room-button');
+  await expect(createRoomBtn).toBeVisible();
+  await expect(createRoomBtn).toBeEnabled();
+  await Promise.all([hostPage.waitForURL(/\/host$/), createRoomBtn.click()]);
+  await hostPage.getByTestId('host-team1-input').fill('Red');
+  await hostPage.getByTestId('host-team2-input').fill('Blue');
+  await hostPage.getByTestId('host-create-game-button').click();
 });
 
 
 test('check if Join Room button exists', async ({ page }) => {
   await page.goto('http://localhost:3000/HostHomePage');
 
-  const joinRoomButton = page.getByRole('button', {name: '🔄 Join Room'});
+  const joinRoomButton = page.getByTestId('host-join-room-button');
 
   const isVisible = await joinRoomButton.isVisible();
 
@@ -47,7 +54,7 @@ test('check if Join Room button exists', async ({ page }) => {
 test('check if Join Room button works', async ({ page }) => {
   await page.goto('http://localhost:3000/HostHomePage');
 
-  const joinRoomButton = page.getByRole('button', { name: '🔄 Join Room' });
+  const joinRoomButton = page.getByTestId('host-join-room-button');
 
   await Promise.all([
     page.waitForLoadState('networkidle'),
@@ -61,7 +68,7 @@ test('check if Join Room button works', async ({ page }) => {
 test('check if Create Room button exists', async ({ page }) => {
   await page.goto('http://localhost:3000/HostHomePage');
 
-  const createRoomButton = page.getByRole('button', {name: '👑 Create Room'});
+  const createRoomButton = page.getByTestId('host-create-room-button');
 
   const isVisible = await createRoomButton.isVisible();
 
@@ -72,10 +79,11 @@ test('check if Create Room button exists', async ({ page }) => {
   }
 });
 
+
 test('check if Create Room button works', async ({ page }) => {
   await page.goto('http://localhost:3000/HostHomePage');
 
-  const createRoomButton = page.getByRole('button', { name: '👑 Create Room' });
+  const createRoomButton = page.getByTestId('host-create-room-button');
 
   await Promise.all([
     page.waitForLoadState('networkidle'),
@@ -85,6 +93,7 @@ test('check if Create Room button works', async ({ page }) => {
   await expect(page).toHaveURL('http://localhost:3000/host');
   console.log('✅ Create Room button works correctly.');
 });
+
 
 test('check if Delete Room button doesnot exists', async ({ page }) => {
   await page.goto('http://localhost:3000/HostHomePage');
@@ -125,10 +134,11 @@ test('Check if Team 3 Name input doesnot exists', async ({ page }) => {
   await expect(team3Input).toBeHidden();
 });
 
+
 test('check if Create Game button exists on Host Page', async ({ page }) => {
   await page.goto('http://localhost:3000/host');
 
-  const createGameButton = page.getByRole('button', {name: '🚀 CREATE GAME'});
+  const createGameButton = page.getByTestId('host-create-game-button');
 
   const isVisible = await createGameButton.isVisible();
 
@@ -147,6 +157,7 @@ test('Check if "← Back to Home" link exists', async ({ page }) => {
   await expect(backLink).toBeVisible();
 });
 
+
 test('Check if "Next" link exists', async ({ page }) => {
   await page.goto('http://localhost:3000/host');
 
@@ -154,7 +165,6 @@ test('Check if "Next" link exists', async ({ page }) => {
 
   await expect(nextLink).toBeHidden();
 });
-
 
 test('Host can enter team names and create game successfully', async ({ page }) => {
   await page.goto('http://localhost:3000/host');
@@ -168,7 +178,7 @@ test('Host can enter team names and create game successfully', async ({ page }) 
   await team1Input.fill('Red Team');
   await team2Input.fill('Blue Team');
 
-  const createGameButton = page.getByRole('button', { name: /🚀 create game/i });
+  const createGameButton = page.getByTestId('host-create-game-button');
   await expect(createGameButton).toBeEnabled();
 
   await Promise.all([
@@ -199,7 +209,7 @@ test('Check if game code is visible after game creation', async ({ page }) => {
   await team1Input.fill('Red Team');
   await team2Input.fill('Blue Team');
 
-  const createGameButton = page.getByRole('button', { name: /🚀 create game/i });
+  const createGameButton = page.getByTestId('host-create-game-button');
   await expect(createGameButton).toBeEnabled();
   await Promise.all([
     page.waitForLoadState('networkidle'),
@@ -223,14 +233,14 @@ test('Begin single attempt button exists at Host Game Creation Page', async ({ p
   await team1Input.fill('Red Team');
   await team2Input.fill('Blue Team');
 
-  const createGameButton = page.getByRole('button', { name: /🚀 create game/i });
+  const createGameButton = page.getByTestId('host-create-game-button');
   await expect(createGameButton).toBeEnabled();
   await Promise.all([
     page.waitForLoadState('networkidle'),
     createGameButton.click(),
   ]);
 
-  const attemptGameButton = page.getByRole('button', {name: '🎮 BEGIN SINGLE-ATTEMPT COMPETITION'});
+  const attemptGameButton = page.getByTestId('host-start-game-button');
 
   const isVisible = await attemptGameButton.isVisible();
 
@@ -240,4 +250,3 @@ test('Begin single attempt button exists at Host Game Creation Page', async ({ p
     console.log('❌ Button does not exist or is hidden.');
   }
 });
-

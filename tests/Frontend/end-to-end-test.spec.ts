@@ -5,9 +5,9 @@ import type { Page, Locator } from '@playwright/test';
 async function login(page: Page, username: string, password: string, baseURL?: string) {
   await page.goto(baseURL ?? 'http://localhost:3000/');
   await page.waitForTimeout(2000);
-  await page.locator('#username').fill(username);
-  await page.locator('#password').fill(password);
-  const loginBtn = page.getByRole('button', { name: /login to play/i });
+  await page.getByTestId('username-input').fill(username);
+  await page.getByTestId('password-input').fill(password);
+  const loginBtn = page.getByTestId('login-button');
   await expect(loginBtn).toBeEnabled();
   await Promise.all([page.waitForLoadState('networkidle'), loginBtn.click()]);
 }
