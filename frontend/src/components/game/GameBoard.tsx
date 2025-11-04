@@ -133,7 +133,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
               {/* Center section - Active team */}
               <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2 translate-y-9 md:translate-y-0">
-                🎯 {activeTeam?.name}'s Turn
+                {activeTeam ? `🎯 ${activeTeam.name}'s Turn` : "Buzz in"}
               </h3>
 
               {/* Right section - Round status */}
@@ -240,7 +240,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
             {/* Center section - Active team */}
             <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2 translate-y-9 md:translate-y-0">
-              🎯 {activeTeam?.name}'s Turn
+              {activeTeam ? `🎯 ${activeTeam.name}'s Turn` : "Buzz in"}
             </h3>
 
             {/* Right section - Round status */}

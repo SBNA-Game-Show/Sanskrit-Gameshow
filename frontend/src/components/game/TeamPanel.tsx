@@ -229,9 +229,9 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         <div className="flex-1">
           <h3 className="text-sm font-bold mb-1 flex items-center gap-1">
             {team.name}
-            {isPlayerTeam && (
+            {/* {isPlayerTeam && (
               <span className="text-yellow-400 text-xs">👤</span>
-            )}
+            )} */}
           </h3>
           <div className="text-xl font-bold text-gray-900">
             {team.currentRoundScore || 0} pts
@@ -266,15 +266,16 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setIsExpanded(false)}
           />
-          <div className="fixed inset-x-4 top-20 bottom-20 bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg text-center font-bold flex items-center gap-2">
+          <div className="fixed inset-x-4 top-20 max-h-[calc(100vh-5rem)] bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+            {" "}
+            <div className="flex justify-center items-center mb-4 relative">
+              <h3 className="text-lg font-bold flex items-center gap-2">
                 {team.name}
                 {/* {isPlayerTeam && <span className="text-yellow-400">👤</span>} */}
               </h3>
               <button
                 onClick={() => setIsExpanded(false)}
-                className="p-2 hover:bg-gray-100 rounded-full"
+                className="absolute right-0 p-2 hover:bg-gray-100 rounded-full"
               >
                 <svg
                   className="w-6 h-6"
@@ -344,8 +345,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 View Round History
               </button>
             )}
-
-            <div className="mb-4 pt-3 border-t border-gray-200">
+            <div className="mb-4 pt-10 border-t border-gray-200">
               <h4 className="text-sm font-semibold text-black mb-3 text-center">
                 Team Members
               </h4>
@@ -362,7 +362,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                       </span>
                       {playerName === member && (
                         <span className="ml-2 text-yellow-500 text-sm font-semibold">
-                          (You)
+                          👤
                         </span>
                       )}
                     </div>
@@ -375,7 +375,6 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 </div>
               )}
             </div>
-
             <div className="bg-white text-black rounded px-2 py-1 text-center border-2 border-gray-300">
               <div className="text-xl font-bold">{getTeamRoundTotal(team)}</div>
               <div className="text-xs">Total Score</div>
@@ -388,7 +387,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 className="fixed inset-0 bg-black bg-opacity-50 z-50"
                 onClick={() => setShowRoundHistory(false)}
               />
-              <div className="fixed inset-x-4 top-20 bottom-20 bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+              <div className="fixed inset-x-4 top-20 max-h-[calc(100vh-5rem)] bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+                {" "}
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold">Round History</h3>
                   <button
@@ -411,19 +411,16 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                     </svg>
                   </button>
                 </div>
-
                 {currentRound >= 2 && (
                   <div className="mb-3">
                     {renderRoundSummary(1, questionData.round1)}
                   </div>
                 )}
-
                 {currentRound >= 3 && (
                   <div className="mb-3">
                     {renderRoundSummary(2, questionData.round2)}
                   </div>
                 )}
-
                 {currentRound >= 4 && (
                   <div className="mb-3">
                     {renderRoundSummary(3, questionData.round3)}
@@ -476,7 +473,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                         </span>
                         {playerName === member && (
                           <span className="text-yellow-500 text-sm font-semibold bg-yellow-50 px-2 py-1 rounded">
-                            You
+                            👤
                           </span>
                         )}
                       </div>
@@ -611,7 +608,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setShowRoundHistory(false)}
           />
-          <div className="fixed inset-x-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-96 top-20 bottom-20 bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+          <div className="fixed inset-x-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-96 top-20 max-h-[calc(100vh-5rem)] bg-white rounded-lg shadow-2xl z-50 overflow-y-auto p-4">
+            {" "}
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold">Round History</h3>
               <button
@@ -634,19 +632,16 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 </svg>
               </button>
             </div>
-
             {currentRound >= 2 && (
               <div className="mb-3">
                 {renderRoundSummary(1, questionData.round1)}
               </div>
             )}
-
             {currentRound >= 3 && (
               <div className="mb-3">
                 {renderRoundSummary(2, questionData.round2)}
               </div>
             )}
-
             {currentRound >= 4 && (
               <div className="mb-3">
                 {renderRoundSummary(3, questionData.round3)}
