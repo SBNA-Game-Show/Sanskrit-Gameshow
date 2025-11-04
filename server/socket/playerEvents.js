@@ -154,6 +154,9 @@ export function setupPlayerEvents(socket, io) {
 
       // ✅ Both teams have answered — reveal and decide winner
       if (game.tossUpSubmittedTeams.length === 2) {
+        game.disableForceNext = true;
+        updateGame(gameCode, game);
+        
         setTimeout(() => {
           const currentQuestion = getCurrentQuestion(game);
 
@@ -351,6 +354,8 @@ export function setupPlayerEvents(socket, io) {
         });
 
         if (result.revealRemainingAfterDelay) {
+          game.disableForceNext = true;
+          updateGame(gameCode, game);
           setTimeout(() => {
             const updatedGame = getGame(gameCode);
             const currentQuestion = getCurrentQuestion(updatedGame);
@@ -362,18 +367,13 @@ export function setupPlayerEvents(socket, io) {
               });
             }
 
-            setTimeout(() => {
-              const readyGame = getGame(gameCode);
-              if (readyGame) {
-                readyGame.gameState.canAdvance = true;
-                updateGame(gameCode, readyGame);
+            updatedGame.gameState.canAdvance = true;
+            updateGame(gameCode, updatedGame);
 
-                io.to(gameCode).emit("question-complete", {
-                  game: readyGame,
-                  currentQuestion: getCurrentQuestion(readyGame),
-                });
-              }
-            }, 3000);
+            io.to(gameCode).emit("question-complete", {
+              game: updatedGame,
+              currentQuestion: getCurrentQuestion(updatedGame),
+            });
           }, 2000);
         }
       } else {
@@ -383,6 +383,9 @@ export function setupPlayerEvents(socket, io) {
           singleAttempt: true,
           allCardsRevealed: true,
         });
+
+        game.disableForceNext = true;
+        updateGame(gameCode, game);
 
         setTimeout(() => {
           const readyGame = getGame(gameCode);
@@ -395,7 +398,7 @@ export function setupPlayerEvents(socket, io) {
               currentQuestion: getCurrentQuestion(readyGame),
             });
           }
-        }, 3000);
+        }, 2000);
       }
     }
   });

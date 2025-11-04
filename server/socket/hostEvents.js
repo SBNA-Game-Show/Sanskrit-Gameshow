@@ -130,6 +130,8 @@ export function setupHostEvents(socket, io) {
         game.activeTeamId = summary.tossUpWinner.teamId;
       }
 
+      game.disableForceNext = false;
+
       io.to(gameCode).emit("round-complete", {
         game,
         isGameFinished: false,
@@ -179,7 +181,7 @@ export function setupHostEvents(socket, io) {
     const { gameCode } = data;
     const game = getGame(gameCode);
 
-    if (game && game.hostId === socket.id && game.status === "active") {
+    if (game && game.hostId === socket.id && game.status === "active" && !game.disableForceNext) {
       console.log(`⚠️ Host forcing next question in game: ${gameCode}`);
 
       const currentQuestion = getCurrentQuestion(game);
@@ -240,6 +242,9 @@ export function setupHostEvents(socket, io) {
     if (activeTeam) {
       game.activeTeamId = activeTeam.id
     }
+
+    // Reset disable force next button
+    game.disableForceNext = false;
 
     if (
       game &&
@@ -350,6 +355,7 @@ export function setupHostEvents(socket, io) {
         status: "waiting",
         currentQuestionIndex: 0,
         currentRound: 0,
+        disableForceNext: false,
         gameState: {
           ...game.gameState,
           currentTurn: null,
@@ -471,6 +477,7 @@ export function setupHostEvents(socket, io) {
             roundScores: updatedRoundScores[idx],
             currentRoundScore: 0
           })),
+          disableForceNext: false,
           gameState: {
             ...game.gameState,
             currentTurn: null,
@@ -510,6 +517,7 @@ export function setupHostEvents(socket, io) {
             roundScores: updatedRoundScores[idx],
             currentRoundScore: 0
           })),
+          disableForceNext: false,
           gameState: {
             ...game.gameState,
             currentTurn: selectedStartingTeam,
