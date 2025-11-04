@@ -102,23 +102,23 @@ const JoinGamePage: React.FC = () => {
     requestPlayersList,
   } = useSocketActions(socketRef);
 
-  // CURRENTLY BROKEN (re-rendering rapidly)
-  // // Periodically request updated player list from server
-  // useEffect(() => {
-  //   let interval: NodeJS.Timeout;
 
-  //   if (game && player) {
-  //     requestPlayersList(game.code);
+  // Periodically request updated player list from server
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
 
-  //     interval = setInterval(() => {
-  //       requestPlayersList(game.code);
-  //     }, 3000);
-  //   }
+    if (game) {
+      requestPlayersList(game.code);
 
-  //   return () => {
-  //     if (interval) clearInterval(interval);
-  //   };
-  // }, [game, player, requestPlayersList]);
+      interval = setInterval(() => {
+        requestPlayersList(game.code);
+      }, 3000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [game, requestPlayersList]);
 
   //Player gets to choose their team after they enter the room
   const joinGame = async () => {

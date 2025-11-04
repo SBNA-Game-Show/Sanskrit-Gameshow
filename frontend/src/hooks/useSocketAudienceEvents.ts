@@ -115,9 +115,19 @@ export const useSocketAudienceEvents = (
 
     socket.on("players-list", (data) => {
       if (game) {
-        setGame((prev) => {
-          if (!prev) return null;
-          return { ...prev, players: data.players };
+        setGame((prevGame) => {
+          if (!prevGame) return null;
+
+          const same = prevGame.players.length === data.players.length && 
+          prevGame.players.every((player, idx) => player.id === data.players[idx].id);
+
+          if (same) {
+            return prevGame;
+          }
+          return {
+            ...prevGame,
+            players: data.players,
+          };
         });
       }
     });
