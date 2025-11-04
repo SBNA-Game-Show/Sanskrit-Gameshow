@@ -255,6 +255,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
     // Stores the winning team of the toss-up round so that
     // subsequent rounds start with the correct team
     tossUpWinner: null,
+    disableForceNext: false,
     gameState: {
       currentTurn: null,
       questionsAnswered: {
