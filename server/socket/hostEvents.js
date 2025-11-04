@@ -315,18 +315,18 @@ export function setupHostEvents(socket, io) {
 
   // Host overrides a player's answer
   socket.on("override-answer", (data) => {
-    const { gameCode, teamId, round, questionNumber, isCorrect, pointsAwarded, answerIndex } = data;
+    const { gameCode, pointsAwarded, answerIndex } = data;
     const game = getGame(gameCode);
 
     if (game && game.hostId === socket.id) {
       const result = overrideAnswer(
-        gameCode,
-        teamId,
-        round,
-        questionNumber,
-        isCorrect,
-        pointsAwarded,
-        answerIndex
+        gameCode, // the game code
+        game.teams.find(team => team.active)?.id, // the id of the team that just answered
+        game.currentRound, // the current round
+        game.currentQuestionIndex % 3 + 1, // the question number (1-3)
+        true, // is correct?
+        pointsAwarded, // points overrided and awarded
+        answerIndex // the index of the answer that was clicked
       );
 
       if (result.success) {
