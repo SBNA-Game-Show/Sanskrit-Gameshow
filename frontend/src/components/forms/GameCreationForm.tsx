@@ -65,7 +65,7 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
             variant="primary"
             size="xl"
             loading={isLoading}
-            className="bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg border border-slate-700"
+            className="!bg-gradient-to-r !from-orange-600 !to-orange-300 hover:!from-orange-600 hover:!to-orange-700 text-white shadow-lg border border-orange-700"
             icon={!isLoading ? <span className="text-2xl">🚀</span> : undefined}
           >
             {isLoading ? "Creating..." : "CREATE GAME"}
@@ -74,7 +74,7 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
           <div className="mt-6">
             <Link
               to={ROUTES.HOSTHOME}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="!text-orange-600 !font-bold hover:!text-orange-500 transition-colors"
             >
               ← Back to Home
             </Link>

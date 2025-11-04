@@ -61,12 +61,12 @@ const AudienceJoinForm: React.FC<AudienceJoinFormProps> = ({
             size="xl"
             loading={isLoading}
             icon={!isLoading ? <span className="text-2xl">🎥</span> : undefined}
-            className="mb-6"
+            className="!bg-gradient-to-r !from-orange-500 !to-orange-400 hover:!from-orange-400 hover:!to-orange-500 text-white shadow-md border border-orange-600 mb-6"
           >
             {isLoading ? "Joining..." : "WATCH"}
           </Button>
           <div className="mt-6">
-            <Link to={ROUTES.PLAYERHOME} className="text-slate-400 hover:text-white transition-colors">
+            <Link to={ROUTES.PLAYERHOME} className="!text-orange-600 !font-bold hover:!text-orange-500 transition-colors">
               ← Back to Home
             </Link>
           </div>

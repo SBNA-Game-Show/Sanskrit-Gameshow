@@ -26,14 +26,14 @@ const HomePage: React.FC = () => {
               onClick={() => navigate(ROUTES.HOST)}
               variant="primary"
               size="xl"
-              className="w-full py-6 text-xl group"
+               className="w-full py-6 text-xl group !bg-gradient-to-r !from-orange-600 !to-orange-300 hover:!from-orange-600 hover:!to-orange-700 text-white shadow-lg border border-orange-700"
               icon={
                 <span className="text-3xl mr-3 group-hover:animate-bounce">
                   👑
                 </span>
               }
             >
-              <span className="block text-sm text-blue-200 mt-1">Create Room</span>
+              <span className="block text-sm text-blue-400 mt-1">Create Room</span>
             </Button>
           </AnimatedCard>
           <AnimatedCard className="flex-1" delay={400}>
@@ -48,7 +48,7 @@ const HomePage: React.FC = () => {
                 </span>
               }
             >
-              <span className="block text-sm text-blue-200 mt-1">Join Room</span>
+              <span className="block text-sm text-blue-400 mt-1">Join Room</span>
             </Button>
           </AnimatedCard>
         </div>

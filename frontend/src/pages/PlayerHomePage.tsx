@@ -34,7 +34,7 @@ const HomePage: React.FC = () => {
                 </span>
               }
             >
-              <span className="block text-sm text-green-200 mt-1">
+              <span className="block text-sm text-green-300 mt-1">
                 Enter as a contestant
               </span>
             </Button>
@@ -44,10 +44,10 @@ const HomePage: React.FC = () => {
               onClick={() => navigate(ROUTES.AUDIENCE)}
               variant="primary"
               size="xl"
-              className="w-full py-6 text-xl group"
+              className="w-full py-6 text-xl group !bg-gradient-to-r !from-orange-600 !to-orange-300 hover:!from-orange-600 hover:!to-orange-700 text-white shadow-lg border border-orange-700"
               icon={<span className="text-3xl mr-3 group-hover:animate-bounce">👀</span>}
             >
-              <span className="block text-sm text-blue-200 mt-1">Watch as audience</span>
+              <span className="block text-sm text-blue-400 mt-1">Watch as audience</span>
             </Button>
           </AnimatedCard>
         </div>
