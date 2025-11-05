@@ -55,6 +55,7 @@ const JoinGameForm: React.FC<JoinGameFormProps> = ({
 
           <div className="space-y-4 mb-8">
             <Input
+              testid="join-game-code-input"
               id="gameCode"
               value={gameCode}
               onChange={(e) => onGameCodeChange(e.target.value.toUpperCase())}
@@ -67,6 +68,7 @@ const JoinGameForm: React.FC<JoinGameFormProps> = ({
             />
 
             <Input
+              testid="join-player-name-input"
               id="playerName"
               value={playerName}
               onChange={(e) => onPlayerNameChange(e.target.value)}
@@ -78,6 +80,7 @@ const JoinGameForm: React.FC<JoinGameFormProps> = ({
           </div>
 
           <Button
+            testid="join-game-button"
             onClick={onJoinGame}
             disabled={isLoading || !gameCode.trim() || !playerName.trim()}
             variant="success"

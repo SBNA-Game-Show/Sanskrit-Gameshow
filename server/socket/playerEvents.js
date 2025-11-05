@@ -6,8 +6,6 @@ import {
   updateGame,
   advanceGameState,
   getCurrentQuestion,
-  calculateRoundSummary,
-  calculateTossUpSummary,
   getGameWinner,
 } from "../services/gameService.js";
 
@@ -183,9 +181,7 @@ export function setupPlayerEvents(socket, io) {
             t.active = false;
           });
 
-          const summary = calculateTossUpSummary(game);
-
-          game.status = "round-summary";
+          game.gameState.canAdvance = true;
           game.gameState.currentTurn = null;
           game.tossUpWinner = {
             teamId: winnerTeamId,
@@ -194,13 +190,10 @@ export function setupPlayerEvents(socket, io) {
 
           updateGame(gameCode, game);
 
-          io.to(gameCode).emit("round-complete", {
-            game,
-            roundSummary: summary,
-            isGameFinished: false,
+          io.to(gameCode).emit("question-complete", {
+            game: game,
+            currentQuestion: getCurrentQuestion(game),
           });
-
-          console.log(`🏆 Toss-up round winner: ${winnerTeamId}`);
         }, 2000);
       } else {
         // ✅ Switch turn to the other team (buzzer logic)
@@ -473,11 +466,9 @@ export function handleGameStateAdvancement(gameCode, advancedGame, io, result) {
   // Check what happened after advancing
   if (advancedGame.status === "round-summary") {
     // Round completed - emit round summary
-    const roundSummary = calculateRoundSummary(advancedGame);
 
     io.to(gameCode).emit("round-complete", {
       game: advancedGame,
-      roundSummary: roundSummary,
       isGameFinished: advancedGame.currentRound >= 3,
     });
 
@@ -485,12 +476,10 @@ export function handleGameStateAdvancement(gameCode, advancedGame, io, result) {
   } else if (advancedGame.status === "finished") {
     // Game finished - include round summary for final round
     const winner = getGameWinner(advancedGame);
-    const roundSummary = calculateRoundSummary(advancedGame);
 
     io.to(gameCode).emit("game-over", {
       game: advancedGame,
       winner: winner,
-      roundSummary,
     });
 
     console.log(`🏆 Game finished: ${gameCode}`);

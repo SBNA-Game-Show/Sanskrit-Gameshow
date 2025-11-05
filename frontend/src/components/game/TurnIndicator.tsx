@@ -21,7 +21,6 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
   if (!currentTeam || !currentQuestion) {
     return null;
   }
-
   const activeTeam = teams.find((t) => t.active);
   const waitingTeam = teams.find((t) => !t.active);
 
@@ -31,17 +30,13 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
   if (variant === "compact") {
     return (
       <div className="bg-[#FEFCF0] rounded p-3 mb-4  border-blue-500/30">
-        {/* <div className="absolute top-3 right-2 z-10">
-          <CountdownTimer seconds={10} size={60} />
-        </div> */}
-
         <div className="text-center">
           <h3 className="text-lg font-bold text-blue-300 mb-1">
             🎯 {activeTeam?.name}'s Turn
           </h3>
           <p className="text-sm text-slate-300">
-            Question {questionNumber} of {round === 0 ? 1 : 3} •{' '}
-            {round === 0 ? 'Toss-up Round' : `Round ${round}`}
+            Question {questionNumber} of {round === 0 ? 1 : round === 4 ? 7 : 3}{" "}
+            • {round === 0 ? "Toss-up Round" : `Round ${round}`}
           </p>
           <p className="text-xs text-slate-400 mt-1">
             {waitingTeam?.name} is waiting
@@ -53,7 +48,6 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
 
   return (
     <div className="glass-card p-6 mb-6 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/30">
-
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="text-3xl animate-pulse">🎯</div>
@@ -67,7 +61,7 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
           <div className="bg-slate-700/30 rounded-lg p-3">
             <div className="text-lg font-semibold text-slate-300">Round</div>
             <div className="text-2xl font-bold text-orange-400">
-              {round === 0 ? 'Toss-up' : round}
+              {round === 0 ? "Toss-up" : round}
             </div>
           </div>
 
@@ -88,7 +82,7 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
 
         <div className="mt-4 text-sm text-slate-400">
           {waitingTeam?.name} will answer after {activeTeam?.name} completes
-          {round === 0 ? ' the toss-up question' : ' their 3 questions'}
+          {round === 0 ? " the toss-up question" : " their 3 questions"}
         </div>
 
         {/* Progress Bar for Current Team */}
@@ -99,17 +93,18 @@ const TurnIndicator: React.FC<TurnIndicatorProps> = ({
           <div className="flex justify-center space-x-2">
             {Array.from({ length: round === 0 ? 1 : 3 }, (_, i) => i + 1).map(
               (qNum) => (
-              <div
-                key={qNum}
-                className={`w-4 h-4 rounded-full ${
-                  qNum <= currentTeamQuestionsAnswered
-                    ? "bg-green-500"
-                    : qNum === questionNumber
-                    ? "bg-yellow-500 animate-pulse"
-                    : "bg-slate-600"
-                }`}
-              />
-            ))}
+                <div
+                  key={qNum}
+                  className={`w-4 h-4 rounded-full ${
+                    qNum <= currentTeamQuestionsAnswered
+                      ? "bg-green-500"
+                      : qNum === questionNumber
+                      ? "bg-yellow-500 animate-pulse"
+                      : "bg-slate-600"
+                  }`}
+                />
+              )
+            )}
           </div>
         </div>
       </div>

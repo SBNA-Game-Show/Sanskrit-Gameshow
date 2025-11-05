@@ -44,6 +44,7 @@ const AudienceJoinForm: React.FC<AudienceJoinFormProps> = ({
           <div className="space-y-4 mb-8">
             <Input
               id="gameCode"
+              testid="audience-game-code-input"
               value={gameCode}
               onChange={(e) => onGameCodeChange(e.target.value.toUpperCase())}
               onKeyDown={handleKeyDown}
@@ -55,6 +56,7 @@ const AudienceJoinForm: React.FC<AudienceJoinFormProps> = ({
             />
           </div>
           <Button
+            testid="audience-join-game-button"
             onClick={onJoin}
             disabled={isLoading || !gameCode.trim()}
             variant="primary"

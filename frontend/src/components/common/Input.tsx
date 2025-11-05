@@ -2,6 +2,7 @@ import React from "react";
 
 interface InputProps {
   id?: string;
+  testid?: string;
   type?: "text" | "email" | "password" | "number";
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -18,6 +19,7 @@ interface InputProps {
 
 const Input: React.FC<InputProps> = ({
   id,
+  testid,
   type = "text",
   value,
   onChange,
@@ -52,6 +54,7 @@ const Input: React.FC<InputProps> = ({
       )}
       <input
         id={id}
+        data-testid={testid}
         type={type}
         value={value}
         onChange={onChange}

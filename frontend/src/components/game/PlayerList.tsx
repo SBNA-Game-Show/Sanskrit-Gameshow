@@ -50,7 +50,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
 
   return (
     <AnimatedCard delay={200}>
-      <div className="glass-card p-6">
+      <div className="border shadow rounded bg-white p-6">
         <h3 className="text-lg font-semibold mb-4">
           Connected Players ({players.length})
         </h3>
@@ -59,7 +59,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
           {players.map((player, index) => (
             <div
               key={player.id}
-              className={`glass-card p-3 text-center ${
+              className={`border shadow rounded bg-white p-3 text-center ${
                 player.id === currentPlayerId
                   ? "border-yellow-400/50 bg-yellow-400/10"
                   : ""

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { GAME_CONFIG } from "../utils/constants";
+import { Game } from "@types";
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
@@ -11,17 +12,20 @@ const apiClient = axios.create({
 });
 
 export interface CreateGameResponse {
-  gameCode: string;
+  game: Game;
 }
 
 export interface JoinGameResponse {
   playerId: string;
   game: any; // Game type from types
+  teamId: string;
+  gameFull: boolean;
 }
 
 export interface JoinGameRequest {
   gameCode: string;
   playerName: string;
+  localPlayerId?: string;
 }
 
 export const gameApi = {

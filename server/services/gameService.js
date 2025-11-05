@@ -137,98 +137,6 @@ export function isRoundComplete(game) {
   );
 }
 
-// Calculate round summary
-export function calculateRoundSummary(game) {
-  const round = game.currentRound;
-  const team1 = game.teams.find(
-    (t) => t.id.includes("team1") || t.name.includes("1")
-  );
-  const team2 = game.teams.find(
-    (t) => t.id.includes("team2") || t.name.includes("2")
-  );
-
-  const team1BaseTotal = team1.roundScores.reduce((sum, s) => sum + s, 0);
-  const team2BaseTotal = team2.roundScores.reduce((sum, s) => sum + s, 0);
-
-  const includeCurrentRound =
-    game.status === "round-summary" && round > 0;
-
-  const team1Total =
-    team1BaseTotal +
-    (includeCurrentRound && team1.roundScores[round - 1] === 0
-      ? team1.currentRoundScore
-      : 0);
-  const team2Total =
-    team2BaseTotal +
-    (includeCurrentRound && team2.roundScores[round - 1] === 0
-      ? team2.currentRoundScore
-      : 0);
-
-  return {
-    round,
-    teamScores: {
-      team1: {
-        roundScore: team1.currentRoundScore,
-        totalScore: team1Total,
-        teamName: team1.name,
-      },
-      team2: {
-        roundScore: team2.currentRoundScore,
-        totalScore: team2Total,
-        teamName: team2.name,
-      },
-    },
-    questionsAnswered: {
-      team1: game.questions.filter(
-        (q) => q.teamAssignment === "team1" && q.round === round
-      ),
-      team2: game.questions.filter(
-        (q) => q.teamAssignment === "team2" && q.round === round
-      ),
-    },
-  };
-}
-
-// Create a summary object for the toss-up round
-export function calculateTossUpSummary(game) {
-  const team1 = getTeamByAssignment(game, "team1");
-  const team2 = getTeamByAssignment(game, "team2");
-
-  let winner = null;
-  if (game.tossUpAnswers && game.tossUpAnswers.length > 0) {
-    winner = game.tossUpAnswers.reduce((a, b) => (a.score > b.score ? a : b));
-  }
-
-  const team1Answer =
-    game.tossUpAnswers?.find((a) => a.teamId === team1?.id) || null;
-  const team2Answer =
-    game.tossUpAnswers?.find((a) => a.teamId === team2?.id) || null;
-
-  return {
-    round: 0,
-    tossUpWinner: winner
-      ? { teamId: winner.teamId, teamName: winner.teamName }
-      : null,
-    tossUpAnswers: game.tossUpAnswers || [],
-    teamScores: {
-      team1: {
-        roundScore: team1Answer ? team1Answer.score : 0,
-        totalScore: team1 ? team1.roundScores.reduce((sum, s) => sum + s, 0) : 0,
-        teamName: team1 ? team1.name : "",
-      },
-      team2: {
-        roundScore: team2Answer ? team2Answer.score : 0,
-        totalScore: team2 ? team2.roundScores.reduce((sum, s) => sum + s, 0) : 0,
-        teamName: team2 ? team2.name : "",
-      },
-    },
-    questionsAnswered: {
-      team1: [],
-      team2: [],
-    },
-  };
-}
-
 // Start new round
 function startNewRound(game) {
   game.currentRound += 1;
@@ -266,21 +174,21 @@ function startNewRound(game) {
         (q) => q._id === firstQuestion._id
       );
     }
-  }
-else {
-  // ⚡ Lightning Round (Round 4) fix
-  const firstLightningQuestion = game.questions.find(q => q.round === 4);
-  if (firstLightningQuestion) {
-    game.currentQuestionIndex = game.questions.findIndex(
-      q => q._id === firstLightningQuestion._id
-    );
-    console.log(`⚡ Lightning Round started at index ${game.currentQuestionIndex}`);
   } else {
-    console.error("⚠️ No Lightning Round questions found in game.questions!");
-    game.currentQuestionIndex = 0; // safe fallback
+    // ⚡ Lightning Round (Round 4) fix
+    const firstLightningQuestion = game.questions.find((q) => q.round === 4);
+    if (firstLightningQuestion) {
+      game.currentQuestionIndex = game.questions.findIndex(
+        (q) => q._id === firstLightningQuestion._id
+      );
+      console.log(
+        `⚡ Lightning Round started at index ${game.currentQuestionIndex}`
+      );
+    } else {
+      console.error("⚠️ No Lightning Round questions found in game.questions!");
+      game.currentQuestionIndex = 0; // safe fallback
+    }
   }
-}
-
 
   // Update team active status
   updateTeamActiveStatus(game);
@@ -301,6 +209,10 @@ export function updateTeamActiveStatus(game) {
 
 // Create a new game (SINGLE ATTEMPT + Question Data)
 export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
+  if (teamNames?.team1?.trim().toLowerCase() === teamNames?.team2?.trim().toLowerCase()) {
+    throw new Error("Team names must be different (case-insensitive).");
+  }
+
   const gameCode = generateGameCode();
   const gameId = uuidv4();
 
@@ -322,7 +234,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
         score: 0,
         active: false,
         members: [],
-        roundScores: [0, 0, 0],
+        roundScores: [0, 0, 0, 0],
         currentRoundScore: 0,
       },
       {
@@ -331,7 +243,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
         score: 0,
         active: false,
         members: [],
-        roundScores: [0, 0, 0],
+        roundScores: [0, 0, 0, 0],
         currentRoundScore: 0,
       },
     ],
@@ -353,6 +265,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
         round1: { team1: 0, team2: 0 },
         round2: { team1: 0, team2: 0 },
         round3: { team1: 0, team2: 0 },
+        round4: { team1: 0, team2: 0 },
       },
       tossUpQuestion: JSON.parse(JSON.stringify(tossUpQuestion)),
       tossUpAnswers: [], // Stores both team responses
@@ -369,7 +282,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
   console.log(
     `🎮 Single-attempt game created with question tracking: ${gameCode}`
   );
-  return { gameCode, gameId };
+  return { game: games[gameCode]};
 }
 
 // Start the game (called by host)
@@ -434,12 +347,26 @@ export function updateQuestionData(
 }
 
 // Override question data in game state (host override)
-export function overrideQuestionData(game, teamKey, round, questionNumber, isCorrect, points) {
+export function overrideQuestionData(
+  game,
+  teamKey,
+  round,
+  questionNumber,
+  isCorrect,
+  points
+) {
   const roundKey = `round${round}`;
   const questionIndex = questionNumber - 1;
-  if (game.gameState.questionData[teamKey] && game.gameState.questionData[teamKey][roundKey] && game.gameState.questionData[teamKey][roundKey][questionIndex]) {
-    game.gameState.questionData[teamKey][roundKey][questionIndex].firstAttemptCorrect = isCorrect;
-    game.gameState.questionData[teamKey][roundKey][questionIndex].pointsEarned = points;
+  if (
+    game.gameState.questionData[teamKey] &&
+    game.gameState.questionData[teamKey][roundKey] &&
+    game.gameState.questionData[teamKey][roundKey][questionIndex]
+  ) {
+    game.gameState.questionData[teamKey][roundKey][
+      questionIndex
+    ].firstAttemptCorrect = isCorrect;
+    game.gameState.questionData[teamKey][roundKey][questionIndex].pointsEarned =
+      points;
   }
 }
 
@@ -458,7 +385,10 @@ export function overrideAnswer(
   const team = game.teams.find((t) => t.id === teamId);
   if (!team) return { success: false, message: "Team not found" };
   const teamKey = teamId.includes("team1") ? "team1" : "team2";
-  const currentPoints = game.gameState.questionData?.[teamKey]?.[`round${round}`]?.[questionNumber - 1]?.pointsEarned || 0;
+  const currentPoints =
+    game.gameState.questionData?.[teamKey]?.[`round${round}`]?.[
+      questionNumber - 1
+    ]?.pointsEarned || 0;
   const diff = points - currentPoints;
   team.score += diff;
   team.currentRoundScore += diff;
@@ -478,11 +408,19 @@ export function overrideAnswer(
   }
 
   updateGame(gameCode, game);
-  return { success: true, game, teamId, teamName: team.name, round, questionNumber, pointsAwarded: points, isCorrect };
+  return {
+    success: true,
+    game,
+    teamId,
+    teamName: team.name,
+    round,
+    questionNumber,
+    pointsAwarded: points,
+    isCorrect,
+  };
 }
 
-
-// Submit an answer - UPDATED: Single attempt system
+// Submit an answer
 export function submitAnswer(gameCode, playerId, answerText) {
   const game = games[gameCode];
   const player = players[playerId];
@@ -519,7 +457,7 @@ export function submitAnswer(gameCode, playerId, answerText) {
     );
     const score = matchingAnswer ? matchingAnswer.score : 0;
     if (score > 0) {
-      playerTeam.score += score;
+      playerTeam.currentRoundScore = score;
     }
 
     game.tossUpAnswers.push({
@@ -566,21 +504,32 @@ export function submitAnswer(gameCode, playerId, answerText) {
     return response;
   }
 
-  // LIGHTNING ROUND LOGIC
-  if (game.currentRound === 4) { 
-    if (!game.lightningRoundSubmittedTeams) game.lightningRoundSubmittedTeams = [];
+  // ✅ LIGHTNING ROUND LOGIC (Round 4)
+  // ✅ LIGHTNING ROUND LOGIC (Round 4)
+  if (game.currentRound === 4) {
+    if (!game.lightningRoundSubmittedTeams)
+      game.lightningRoundSubmittedTeams = [];
 
-    if (game.lightningRoundSubmittedTeams.includes(player.teamId)) {
-      console.log(game.lightningRoundSubmittedTeams.join(", ") + " test");
+    // Check if this team has already answered THIS SPECIFIC QUESTION
+    const currentQuestionId = currentQuestion._id;
+    const teamQuestionKey = `${currentQuestionId}_${player.teamId}`;
+
+    if (game.lightningRoundSubmittedTeams.includes(teamQuestionKey)) {
       return {
         success: false,
-        message: "Your team has already answered the question",
+        message: "Your team has already answered this question",
       };
     }
 
-    const matchingAnswer = checkAnswerMatch(answerText, currentQuestion.answers);
+    const matchingAnswer = checkAnswerMatch(
+      answerText,
+      currentQuestion.answers
+    );
+    const teamKey = player.teamId.includes("team1") ? "team1" : "team2";
+    const otherTeamKey = teamKey === "team1" ? "team2" : "team1";
 
-    game.lightningRoundSubmittedTeams.push(player.teamId);
+    // Mark this team as having answered this specific question
+    game.lightningRoundSubmittedTeams.push(teamQuestionKey);
 
     let result = {
       success: true,
@@ -591,61 +540,97 @@ export function submitAnswer(gameCode, playerId, answerText) {
       teamName: playerTeam.name,
       teamId: playerTeam.id,
       game: null,
-      shouldAdvance: true,
+      shouldAdvance: false, // Don't auto-advance in lightning round
       revealAllCards: false,
       revealRemainingAfterDelay: false,
       submittedText: answerText,
       singleAttempt: true,
+      lightningRound: true,
     };
-    
-    if (matchingAnswer) {
+
+    if (matchingAnswer && matchingAnswer.score > 0) {
+      // Correct answer
       matchingAnswer.revealed = true;
       const points = matchingAnswer.score * game.currentRound;
 
       playerTeam.score += points;
       playerTeam.currentRoundScore += points;
 
-      // Matching answers worth 0 points are considered incorrect
-      if (matchingAnswer.score <= 0) {
-        result.isCorrect = false;
-      }
-      else {
-        result.isCorrect = true;
-      }
-      
+      result.isCorrect = true;
       result.pointsAwarded = points;
       result.matchingAnswer = matchingAnswer;
-      result.revealRemainingAfterDelay = true; // Reveal remaining cards after 2 seconds
+      result.revealRemainingAfterDelay = true;
+      result.shouldAdvance = true; // Advance to next question on correct answer
 
-      // Update question data
-      const teamKey = game.gameState.currentTurn;
-      const currentRound = game.currentRound;
-      const questionNumber = game.gameState.questionsAnswered[teamKey] + 1;
-      updateQuestionData(
-        game,
-        teamKey,
-        currentRound,
-        questionNumber,
-        true,
-        points
+      // Update question data for CORRECT team
+      const questionNumber =
+        game.currentQuestionIndex -
+        game.questions.findIndex((q) => q.round === 4) +
+        1;
+      updateQuestionData(game, teamKey, 4, questionNumber, true, points);
+
+      // Mark the OTHER team as incorrect for this question (they didn't get it right)
+      updateQuestionData(game, otherTeamKey, 4, questionNumber, false, 0);
+
+      console.log(
+        `✅ Lightning Round: ${playerTeam.name} answered correctly: "${answerText}" = "${matchingAnswer.answer}" (+${points} pts)`
+      );
+    } else {
+      // Wrong answer - reveal the clicked answer as incorrect
+      const clickedAnswer = currentQuestion.answers.find(
+        (a) => a.answer.toLowerCase().trim() === answerText.toLowerCase().trim()
       );
 
-      if (result.isCorrect) {
+      if (clickedAnswer) {
+        clickedAnswer.revealed = true;
+      }
+
+      result.isCorrect = false;
+      result.revealAllCards = false;
+      result.shouldAdvance = false; // Don't advance yet - wait to see if other team answers
+
+      // Update question data for WRONG attempt
+      const questionNumber =
+        game.currentQuestionIndex -
+        game.questions.findIndex((q) => q.round === 4) +
+        1;
+      updateQuestionData(game, teamKey, 4, questionNumber, false, 0);
+
+      console.log(
+        `❌ Lightning Round: ${playerTeam.name} answered incorrectly: "${answerText}"`
+      );
+
+      // Check if the other team has already answered this question
+      const otherTeamQuestionKey = `${currentQuestionId}_${
+        game.teams.find((t) => t.id.includes(otherTeamKey)).id
+      }`;
+      const otherTeamAnswered =
+        game.lightningRoundSubmittedTeams.includes(otherTeamQuestionKey);
+
+      if (!otherTeamAnswered) {
+        // Other team hasn't answered yet - wait for them
         console.log(
-        `✅ Correct answer: "${answerText}" = "${matchingAnswer.answer}" (+${points} pts) - Will reveal remaining cards after 2s`
+          `🔄 Lightning Round: Waiting for ${otherTeamKey} to answer`
+        );
+        result.waitingForOtherTeam = true;
+      } else {
+        // Both teams answered incorrectly - reveal all and move on
+        currentQuestion.answers.forEach((answer) => {
+          answer.revealed = true;
+        });
+        result.revealAllCards = true;
+        result.shouldAdvance = true;
+        console.log(
+          `❌ Lightning Round: Both teams answered incorrectly - revealing all answers and advancing`
         );
       }
-      else {
-        console.log(
-        `❌ Wrong answer: "${answerText}" `
-        );
-      }
-    } 
+    }
+
     result.game = games[gameCode];
     return result;
   }
 
-  // ✅ REGULAR ROUND LOGIC
+  // ✅ REGULAR ROUND LOGIC (Rounds 1-3)
   if (!playerTeam.active) {
     return { success: false, message: "Not your team's turn" };
   }
@@ -721,98 +706,132 @@ export function submitAnswer(gameCode, playerId, answerText) {
   return result;
 }
 
-// UPDATED: Advance game state (called after delay) - single attempt system
 export function advanceGameState(gameCode) {
   const game = games[gameCode];
   if (!game) return null;
 
-  const currentTeam = game.gameState.currentTurn;
-  const otherTeam = currentTeam === "team1" ? "team2" : "team1";
+  // Lightning round has different advancement logic
+  if (game.currentRound === 4) {
+    // Simply move to the next question
+    const nextQuestionIndex = game.currentQuestionIndex + 1;
 
-  // Increment questions answered count
-  game.gameState.questionsAnswered[currentTeam] += 1;
+    // Check if we've reached the end of lightning round questions
+    const lightningQuestions = game.questions.filter((q) => q.round === 4);
+    const currentLightningIndex =
+      game.currentQuestionIndex -
+      game.questions.findIndex((q) => q.round === 4);
 
-  if (game.currentQuestionIndex === 24) {
-    // Game finished
-    const roundKey = `round${game.currentRound}`;
-    const team1 = game.teams.find((t) => t.id.includes("team1"));
-    const team2 = game.teams.find((t) => t.id.includes("team2"));
+    if (currentLightningIndex >= lightningQuestions.length - 1) {
+      const roundKey = `round${game.currentRound}`;
+      const team1 = game.teams.find((t) => t.id.includes("team1"));
+      const team2 = game.teams.find((t) => t.id.includes("team2"));
 
-    if (team1 && team2) {
-      game.gameState.roundScores[roundKey] = {
-        team1: team1.currentRoundScore,
-        team2: team2.currentRoundScore,
-      };
+      if (team1 && team2) {
+        game.gameState.roundScores[roundKey] = {
+          team1: team1.currentRoundScore,
+          team2: team2.currentRoundScore,
+        };
 
-      team1.roundScores[game.currentRound - 1] = team1.currentRoundScore;
-      team2.roundScores[game.currentRound - 1] = team2.currentRoundScore;
-    }
-
-    game.status = "finished";
-    game.gameState.currentTurn = null;
-    updateTeamActiveStatus(game);
-  }
-  else if (game.currentRound === 4) {
-    // Continue with same team's next question
-    const nextQuestionIndex = getNextQuestionIndex(game);
-    game.currentQuestionIndex = nextQuestionIndex;
-  }
-  else {
-    // Check if the current team has answered all 3 questions
-    if (game.gameState.questionsAnswered[currentTeam] >= 3) {
-      if (game.gameState.questionsAnswered[otherTeam] < 3) {
-        // Switch to the other team
-        game.gameState.currentTurn = otherTeam;
-        updateTeamActiveStatus(game);
-
-        // Jump to the other team's next unanswered question
-        const questionNumber = game.gameState.questionsAnswered[otherTeam] + 1;
-        const nextQuestion = game.questions.find(
-          (q) =>
-            q.teamAssignment === otherTeam &&
-            q.round === game.currentRound &&
-            q.questionNumber === questionNumber
-        );
-
-        if (nextQuestion) {
-          game.currentQuestionIndex = game.questions.findIndex(
-            (q) => q._id === nextQuestion._id
-          );
-        }
-      } else {
-        // Both teams finished - round complete
-        if (game.currentRound < 4) {
-          game.status = "round-summary";
-          game.gameState.currentTurn = null;
-          updateTeamActiveStatus(game);
-        } else {
-          // Game finished
-          const roundKey = `round${game.currentRound}`;
-          const team1 = game.teams.find((t) => t.id.includes("team1"));
-          const team2 = game.teams.find((t) => t.id.includes("team2"));
-
-          if (team1 && team2) {
-            game.gameState.roundScores[roundKey] = {
-              team1: team1.currentRoundScore,
-              team2: team2.currentRoundScore,
-            };
-
-            team1.roundScores[game.currentRound - 1] = team1.currentRoundScore;
-            team2.roundScores[game.currentRound - 1] = team2.currentRoundScore;
-          }
-
-          game.status = "finished";
-          game.gameState.currentTurn = null;
-          updateTeamActiveStatus(game);
-        }
+        team1.roundScores[game.currentRound - 1] = team1.currentRoundScore;
+        team2.roundScores[game.currentRound - 1] = team2.currentRoundScore;
       }
+
+      game.status = "finished";
+      game.gameState.currentTurn = null;
+      updateTeamActiveStatus(game);
     } else {
-      // Continue with same team's next question
-      const nextQuestionIndex = getNextQuestionIndex(game);
+      // Move to next lightning round question
       game.currentQuestionIndex = nextQuestionIndex;
     }
+
+    game.gameState.questionsAnswered.team1 += 1;
+    game.gameState.questionsAnswered.team2 += 1;
+  } else {
+    // Original logic for rounds 1-3
+    const currentTeam = game.gameState.currentTurn;
+    const otherTeam = currentTeam === "team1" ? "team2" : "team1";
+
+    // Increment questions answered count
+    game.gameState.questionsAnswered[currentTeam] += 1;
+
+    if (game.currentQuestionIndex === 24) {
+      // Game finished
+      const roundKey = `round${game.currentRound}`;
+      const team1 = game.teams.find((t) => t.id.includes("team1"));
+      const team2 = game.teams.find((t) => t.id.includes("team2"));
+
+      if (team1 && team2) {
+        game.gameState.roundScores[roundKey] = {
+          team1: team1.currentRoundScore,
+          team2: team2.currentRoundScore,
+        };
+
+        team1.roundScores[game.currentRound - 1] = team1.currentRoundScore;
+        team2.roundScores[game.currentRound - 1] = team2.currentRoundScore;
+      }
+
+      game.status = "finished";
+      game.gameState.currentTurn = null;
+      updateTeamActiveStatus(game);
+    } else {
+      // Check if the current team has answered all 3 questions
+      if (game.gameState.questionsAnswered[currentTeam] >= 3) {
+        if (game.gameState.questionsAnswered[otherTeam] < 3) {
+          // Switch to the other team
+          game.gameState.currentTurn = otherTeam;
+          updateTeamActiveStatus(game);
+
+          // Jump to the other team's next unanswered question
+          const questionNumber =
+            game.gameState.questionsAnswered[otherTeam] + 1;
+          const nextQuestion = game.questions.find(
+            (q) =>
+              q.teamAssignment === otherTeam &&
+              q.round === game.currentRound &&
+              q.questionNumber === questionNumber
+          );
+
+          if (nextQuestion) {
+            game.currentQuestionIndex = game.questions.findIndex(
+              (q) => q._id === nextQuestion._id
+            );
+          }
+        } else {
+          // Both teams finished - round complete
+          if (game.currentRound < 4) {
+            game.status = "round-summary";
+            game.gameState.currentTurn = null;
+            updateTeamActiveStatus(game);
+          } else {
+            // Game finished
+            const roundKey = `round${game.currentRound}`;
+            const team1 = game.teams.find((t) => t.id.includes("team1"));
+            const team2 = game.teams.find((t) => t.id.includes("team2"));
+
+            if (team1 && team2) {
+              game.gameState.roundScores[roundKey] = {
+                team1: team1.currentRoundScore,
+                team2: team2.currentRoundScore,
+              };
+
+              team1.roundScores[game.currentRound - 1] =
+                team1.currentRoundScore;
+              team2.roundScores[game.currentRound - 1] =
+                team2.currentRoundScore;
+            }
+
+            game.status = "finished";
+            game.gameState.currentTurn = null;
+            updateTeamActiveStatus(game);
+          }
+        }
+      } else {
+        // Continue with same team's next question
+        const nextQuestionIndex = getNextQuestionIndex(game);
+        game.currentQuestionIndex = nextQuestionIndex;
+      }
+    }
   }
-  
 
   return updateGame(gameCode, game);
 }
@@ -848,7 +867,7 @@ export function continueToNextRound(gameCode) {
     if (game.currentRound === 4) {
       game.teams.forEach((team) => {
         team.active = false;
-      })
+      });
     }
   } else {
     game.status = "finished";
@@ -858,25 +877,47 @@ export function continueToNextRound(gameCode) {
 }
 
 // Join a game
-export function joinGame(gameCode, playerName) {
+export function joinGame(gameCode, playerName, localPlayerId) {
   if (!games[gameCode]) {
     throw new Error("Game not found");
   }
 
-  const playerId = uuidv4();
-  const player = {
-    id: playerId,
-    name: playerName,
-    gameCode,
-    connected: true,
-    teamId: null,
-  };
 
-  players[playerId] = player;
-  games[gameCode].players.push(player);
+  if (games[gameCode].players.length < 10) {
+    let playerId = "";
+    if (!localPlayerId) {
+      playerId = uuidv4();
+    }
+    else {
+      playerId = localPlayerId;
+    }
 
-  console.log(`👤 Player joined: ${playerName} in game ${gameCode}`);
-  return { playerId, game: games[gameCode] };
+    let player = games[gameCode].players.find(p => p.id === playerId);
+
+    if (player) {
+      console.log("PLAYER EXISTS")
+      player.connected = true;
+    }
+    else {
+      console.log("PLAYER DOESN'T EXIST")
+      player = {
+        id: playerId,
+        name: playerName,
+        gameCode,
+        connected: true,
+        teamId: null,
+      };
+
+      players[playerId] = player;
+      games[gameCode].players.push(player);
+    }
+
+    console.log(`👤 Player joined: ${playerName} in game ${gameCode}`);
+    return { playerId, game: games[gameCode], teamId: player.teamId, gameFull: false };
+  }
+  else {
+    return { playerId: null, game: null, teamId: null, gameFull: true }
+  }
 }
 
 // Get game by code
@@ -947,7 +988,8 @@ export function checkAnswerMatch(userAnswer, correctAnswers) {
     const normalizedCorrect = answer.answer.toLowerCase();
 
     const distance = levenshtein(normalizedUser, normalizedCorrect);
-    const ratio = distance / Math.max(normalizedUser.length, normalizedCorrect.length);
+    const ratio =
+      distance / Math.max(normalizedUser.length, normalizedCorrect.length);
     const allowed = Math.max(1, Math.floor(normalizedCorrect.length * 0.25));
 
     return distance <= allowed && ratio <= 0.25;
