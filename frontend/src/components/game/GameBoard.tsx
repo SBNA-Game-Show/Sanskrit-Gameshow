@@ -231,10 +231,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
               <div className="text-xs text-slate-400">
                 Question{" "}
                 {game.currentRound === 0
-                  ? 1
-                  : currentTeam
-                  ? questionsAnswered[currentTeam] + 1
-                  : game.currentQuestionIndex + 1}{" "}
+                  ? 1 
+                  : game.currentRound === 4 
+                  ? game.currentQuestionIndex - 17
+                  : (game.currentQuestionIndex % 3 + 1)}
+                  {" "}
                 of{" "}
                 {game.currentRound === 0 ? 1 : game.currentRound === 4 ? 7 : 3}{" "}
               </div>

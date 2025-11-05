@@ -331,34 +331,20 @@ const HostGamePage: React.FC = () => {
         <div className="order-2 md:hidden w-full flex gap-2">
           <div className="w-1/2">
             <TeamPanel
-              team={game.teams[0]}
+              game={game}
               teamIndex={0}
-              isActive={game.teams[0]?.active}
               showMembers={true}
-              currentRound={game.currentRound}
-              roundScore={game.teams[0].currentRoundScore}
-              questionsAnswered={team1QuestionsAnswered}
-              questionData={game.gameState.questionData["team1"]}
-              allTeams={game.teams}
               activeBorderColor="#dc2626"
               activeBackgroundColor="#ffd6d6ff"
-              players={game.players}
             />
           </div>
           <div className="w-1/2">
             <TeamPanel
-              team={game.teams[1]}
+              game={game}
               teamIndex={1}
-              isActive={game.teams[1]?.active}
               showMembers={true}
-              currentRound={game.currentRound}
-              roundScore={game.teams[1].currentRoundScore}
-              questionsAnswered={team2QuestionsAnswered}
-              questionData={game.gameState.questionData["team2"]}
-              allTeams={game.teams}
               activeBorderColor="#264adcff"
               activeBackgroundColor="#d6e0ffff"
-              players={game.players}
             />
           </div>
         </div>
@@ -366,18 +352,11 @@ const HostGamePage: React.FC = () => {
         {/* Desktop: Left Team Panel with Question Data */}
         <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
-            team={game.teams[0]}
+            game={game}
             teamIndex={0}
-            isActive={game.teams[0]?.active}
             showMembers={true}
-            currentRound={game.currentRound}
-            roundScore={game.teams[0].currentRoundScore}
-            questionsAnswered={team1QuestionsAnswered}
-            questionData={game.gameState.questionData["team1"]}
-            allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
-            players={game.players}
           />
         </div>
 
@@ -531,18 +510,11 @@ const HostGamePage: React.FC = () => {
         {/* Desktop: Right Team Panel with Question Data */}
         <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
-            team={game.teams[1]}
+            game={game}
             teamIndex={1}
-            isActive={game.teams[1]?.active}
             showMembers={true}
-            currentRound={game.currentRound}
-            roundScore={game.teams[1].currentRoundScore}
-            questionsAnswered={team2QuestionsAnswered}
-            questionData={game.gameState.questionData["team2"]}
-            allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
-            players={game.players}
           />
         </div>
       </PageLayout>

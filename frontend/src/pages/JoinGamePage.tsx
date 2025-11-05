@@ -49,39 +49,6 @@ const JoinGamePage: React.FC = () => {
   const isMyTurn = myTeam && myTeam.active;
   const canAnswer = isMyTurn && player?.teamId;
 
-  // Extract question data for teams
-  const getTeamQuestionData = (teamKey: "team1" | "team2"): RoundData => {
-    if (!game?.gameState?.questionData?.[teamKey]) {
-      return {
-        round1: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round2: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round3: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round4: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-      };
-    }
-    return game.gameState.questionData[teamKey];
-  };
-
   const {connect, disconnect} = useSetupSocket(socketRef);
   useSocketPlayerEvents(
     socketRef,
@@ -290,42 +257,28 @@ const JoinGamePage: React.FC = () => {
         <div className="order-2 md:hidden w-full flex gap-2">
           <div className="w-1/2">
             <TeamPanel
-              team={game.teams[0]}
+              game={game}
               teamIndex={0}
-              isActive={game.teams[0]?.active}
               showMembers={false}
               playerName={
                 player.teamId === game.teams[0].id ? player.name : undefined
               }
               isPlayerTeam={player.teamId === game.teams[0].id}
-              currentRound={game.currentRound}
-              roundScore={game.teams[0].currentRoundScore}
-              questionsAnswered={team1QuestionsAnswered}
-              questionData={getTeamQuestionData("team1")}
-              allTeams={game.teams}
               activeBorderColor="#dc2626"
               activeBackgroundColor="#ffd6d6ff"
-              players={game.players}
             />
           </div>
           <div className="w-1/2">
             <TeamPanel
-              team={game.teams[1]}
+              game={game}
               teamIndex={1}
-              isActive={game.teams[1]?.active}
               showMembers={false}
               playerName={
                 player.teamId === game.teams[1].id ? player.name : undefined
               }
               isPlayerTeam={player.teamId === game.teams[1].id}
-              currentRound={game.currentRound}
-              roundScore={game.teams[1].currentRoundScore}
-              questionsAnswered={team2QuestionsAnswered}
-              questionData={getTeamQuestionData("team2")}
-              allTeams={game.teams}
               activeBorderColor="#264adcff"
               activeBackgroundColor="#d6e0ffff"
-              players={game.players}
             />
           </div>
         </div>
@@ -333,22 +286,15 @@ const JoinGamePage: React.FC = () => {
         {/* Desktop: Left Team Panel */}
         <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
-            team={game.teams[0]}
+            game={game}
             teamIndex={0}
-            isActive={game.teams[0]?.active}
             showMembers={false}
             playerName={
               player.teamId === game.teams[0].id ? player.name : undefined
             }
             isPlayerTeam={player.teamId === game.teams[0].id}
-            currentRound={game.currentRound}
-            roundScore={game.teams[0].currentRoundScore}
-            questionsAnswered={team1QuestionsAnswered}
-            questionData={getTeamQuestionData("team1")}
-            allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
-            players={game.players}
           />
         </div>
 
@@ -531,22 +477,15 @@ const JoinGamePage: React.FC = () => {
         {/* Desktop: Right Team Panel */}
         <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
-            team={game.teams[1]}
+            game={game}
             teamIndex={1}
-            isActive={game.teams[1]?.active}
             showMembers={false}
             playerName={
               player.teamId === game.teams[1].id ? player.name : undefined
             }
             isPlayerTeam={player.teamId === game.teams[1].id}
-            currentRound={game.currentRound}
-            roundScore={game.teams[1].currentRoundScore}
-            questionsAnswered={team2QuestionsAnswered}
-            questionData={getTeamQuestionData("team2")}
-            allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
-            players={game.players}
           />
         </div>
       </PageLayout>
