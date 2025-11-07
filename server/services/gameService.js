@@ -255,6 +255,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
     // Stores the winning team of the toss-up round so that
     // subsequent rounds start with the correct team
     tossUpWinner: null,
+    disableForceNext: false,
     gameState: {
       currentTurn: null,
       questionsAnswered: {
@@ -907,6 +908,24 @@ export function joinGame(gameCode, playerName, localPlayerId) {
         connected: true,
         teamId: null,
       };
+
+      // If new player is joining a game that is in progress
+      if (games[gameCode].status !== "waiting") {
+        // Put them on the team with the lowest player count
+        const existingTeams = [
+          ...new Set(games[gameCode].players.map((p) => p.teamId).filter(Boolean)),
+        ].map((teamId) => ({
+          id: teamId,
+          playerCount: games[gameCode].players.filter((p) => p.teamId === teamId).length,
+        }));
+
+        if (existingTeams.length > 0) {
+          console.log(existingTeams)
+          existingTeams.sort((a, b) => a.playerCount - b.playerCount);
+          console.log(existingTeams)
+          player.teamId = existingTeams[0].id;
+        }
+      }
 
       players[playerId] = player;
       games[gameCode].players.push(player);

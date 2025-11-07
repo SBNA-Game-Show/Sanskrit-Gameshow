@@ -1,13 +1,14 @@
 import React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
+import { SocketContext } from "store/socket-context";
 import { Game } from "../../types";
+import { useSocketActions } from "../../hooks/useSocketActions";
 
 interface QuestionCardProps {
   game?: Game;
   question: string;
   duration: number;
   isTimerActive: boolean;
-  onPauseTimer?: () => void;
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -15,9 +16,14 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   duration,
   isTimerActive,
-  onPauseTimer,
 }) => {
   const [progress, setProgress] = useState(100);
+  const socketContext = useContext(SocketContext);
+  if (!socketContext) {
+    throw new Error("HostGamePage must be used within a SocketProvider");
+  }
+  const { socketRef } = socketContext;
+  const {pauseTimer} = useSocketActions(socketRef)
 
   // The canAdvance ref ensures that the onNextQuestion function doesn't run twice due to strict mode
   const canAdvanceRef = useRef(true);
@@ -37,8 +43,8 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     });
   }
 
-  if (progress <= 0 && canAdvanceRef.current) {
-    onPauseTimer?.();
+  if (progress <= 0 && canAdvanceRef.current && game) {
+    pauseTimer(game.code);
     canAdvanceRef.current = false;
   }
 

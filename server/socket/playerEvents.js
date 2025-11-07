@@ -188,6 +188,9 @@ socket.on("join-team", (data) => {
 
       // ✅ Both teams have answered — reveal and decide winner
       if (game.tossUpSubmittedTeams.length === 2) {
+        game.disableForceNext = true;
+        updateGame(gameCode, game);
+        
         setTimeout(() => {
           const currentQuestion = getCurrentQuestion(game);
 
@@ -385,6 +388,8 @@ socket.on("join-team", (data) => {
         });
 
         if (result.revealRemainingAfterDelay) {
+          game.disableForceNext = true;
+          updateGame(gameCode, game);
           setTimeout(() => {
             const updatedGame = getGame(gameCode);
             const currentQuestion = getCurrentQuestion(updatedGame);
@@ -396,18 +401,13 @@ socket.on("join-team", (data) => {
               });
             }
 
-            setTimeout(() => {
-              const readyGame = getGame(gameCode);
-              if (readyGame) {
-                readyGame.gameState.canAdvance = true;
-                updateGame(gameCode, readyGame);
+            updatedGame.gameState.canAdvance = true;
+            updateGame(gameCode, updatedGame);
 
-                io.to(gameCode).emit("question-complete", {
-                  game: readyGame,
-                  currentQuestion: getCurrentQuestion(readyGame),
-                });
-              }
-            }, 3000);
+            io.to(gameCode).emit("question-complete", {
+              game: updatedGame,
+              currentQuestion: getCurrentQuestion(updatedGame),
+            });
           }, 2000);
         }
       } else {
@@ -417,6 +417,9 @@ socket.on("join-team", (data) => {
           singleAttempt: true,
           allCardsRevealed: true,
         });
+
+        game.disableForceNext = true;
+        updateGame(gameCode, game);
 
         setTimeout(() => {
           const readyGame = getGame(gameCode);
@@ -429,7 +432,7 @@ socket.on("join-team", (data) => {
               currentQuestion: getCurrentQuestion(readyGame),
             });
           }
-        }, 3000);
+        }, 2000);
       }
     }
   });

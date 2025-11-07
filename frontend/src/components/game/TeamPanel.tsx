@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Player, Team } from "../../types";
+import { Game, Player, Team } from "../../types";
 import { getTeamColorClasses, getTeamRoundTotal } from "../../utils/gameHelper";
 
 interface QuestionStatus {
@@ -7,75 +7,37 @@ interface QuestionStatus {
   pointsEarned: number;
 }
 
-interface RoundData {
-  round1: QuestionStatus[];
-  round2: QuestionStatus[];
-  round3: QuestionStatus[];
-  round4: QuestionStatus[];
-}
-
 interface TeamPanelProps {
-  team: Team;
+  game: Game;
   teamIndex: number;
-  isActive?: boolean;
   showMembers?: boolean;
   playerName?: string;
   isPlayerTeam?: boolean;
-  currentRound?: number;
-  roundScore?: number;
-  questionsAnswered?: number;
-  questionData?: RoundData;
-  allTeams?: Team[];
   activeBorderColor: string;
   activeBackgroundColor: string;
-  players: Player[];
 }
 
 const TeamPanel: React.FC<TeamPanelProps> = ({
-  team,
+  game,
   teamIndex,
-  isActive = false,
   showMembers = true,
   playerName,
   isPlayerTeam = false,
-  currentRound = 1,
-  roundScore = 0,
-  questionsAnswered = 0,
-  questionData = {
-    round1: [
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-    ],
-    round2: [
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-    ],
-    round3: [
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-    ],
-    round4: [
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-      { firstAttemptCorrect: null, pointsEarned: 0 },
-    ],
-  },
-  allTeams = [],
   activeBorderColor,
   activeBackgroundColor,
-  players,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showRoundHistory, setShowRoundHistory] = useState(false);
   const colorClasses = getTeamColorClasses(teamIndex);
   const [showPlayerList, setShowPlayerList] = useState(false);
+
+  const team = game.teams[teamIndex]
+  const isActive = game.teams[teamIndex].active
+  const currentRound = game.currentRound
+  const questionsAnswered = teamIndex === 0 ? game.gameState.questionsAnswered.team1 : game.gameState.questionsAnswered.team2
+  const questionData = teamIndex === 0 ? game.gameState.questionData["team1"] : game.gameState.questionData["team2"]
+  const allTeams = game.teams
+  const players = game.players
 
   const getCurrentRoundData = () => {
     if (currentRound === 0) {

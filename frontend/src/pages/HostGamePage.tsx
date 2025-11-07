@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
-import io, { Socket } from "socket.io-client";
-import { GAME_CONFIG } from "../utils/constants";
 
 // Import components
 import CopyGameCode from "../components/game/CopyGameCode";
@@ -9,6 +7,7 @@ import PageLayout from "../components/layout/PageLayout";
 import AnimatedCard from "../components/common/AnimatedCard";
 import TeamPanel from "../components/game/TeamPanel";
 import GameBoard from "../components/game/GameBoard";
+import HostControls from "../components/game/HostControls";
 import GameResults from "../components/game/GameResults";
 import PlayerList from "../components/game/PlayerList";
 import GameCreationForm from "../components/forms/GameCreationForm";
@@ -20,7 +19,6 @@ import RoundSummaryComponent from "../components/game/RoundSummaryComponent";
 import { useSetupSocket } from "../hooks/useSetupSocket";
 import { useSocketHostEvents } from "../hooks/useSocketHostEvents";
 import { useSocketActions } from "../hooks/useSocketActions";
-import { useTimer } from "../hooks/useTimer";
 import gameApi from "../services/gameApi";
 import { SocketContext } from "store/socket-context";
 
@@ -30,6 +28,7 @@ import { getCurrentQuestion, getTeamName } from "../utils/gameHelper"; //getGame
 import { ROUTES } from "../utils/constants";
 
 const role = localStorage.getItem("role");
+
 const HostGamePage: React.FC = () => {
   const [game, setGame] = useState<Game | null>(null);
   const [team1Name, setTeam1Name] = useState("");
@@ -54,43 +53,7 @@ const HostGamePage: React.FC = () => {
 
   const location = useLocation();
 
-  // Hooks
-  const { timer } = useTimer(game?.status === "active");
-
-  // Extract question data for teams
-  const getTeamQuestionData = (teamKey: "team1" | "team2"): RoundData => {
-    if (!game?.gameState?.questionData?.[teamKey]) {
-      return {
-        round1: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round2: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round3: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round4: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-      };
-    }
-    return game.gameState.questionData[teamKey];
-  };
-
-  const {connect, disconnect} = useSetupSocket(socketRef);
+  const { connect, disconnect } = useSetupSocket(socketRef);
   useSocketHostEvents(
     socketRef,
     game?.code,
@@ -111,8 +74,6 @@ const HostGamePage: React.FC = () => {
     pauseTimer,
     skipToRound,
   } = useSocketActions(socketRef);
-  
-  
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -213,111 +174,35 @@ const HostGamePage: React.FC = () => {
     setIsLoading(false);
   };
 
-  // const handleStartGame = () => {
-  //   console.log("🎮 Starting single-attempt game with question tracking...");
-
-  //   if (game && socketRef.current && socketRef.current.connected) {
-  //     socketRef.current.emit("start-game", { gameCode: game.code });
-  //   } else {
-  //     console.error("❌ Cannot start game - missing requirements");
-  //     setControlMessage("Cannot start game. Please check your connection.");
-  //   }
-  // };
-
-  // const handleCompleteTossUpRound = () => {
-  //   if (game && socketRef.current) {
-  //     socketRef.current.emit("complete-toss-up-round", { gameCode: game.code });
-  //   }
-  // };
-
   const handleContinueToNextRound = () => {
     if (game && socketRef.current) {
       socketRef.current.emit("continue-to-next-round", { gameCode: game.code });
     }
   };
 
-  // const handleForceNextQuestion = () => {
-  //   if (game && socketRef.current) {
-  //     socketRef.current.emit("force-next-question", { gameCode: game.code });
-  //   }
-  // };
-
-  const handleNextQuestion = () => {
-    if (game && socketRef.current) {
-      socketRef.current.emit("advance-question", { gameCode: game.code });
-    }
-  };
-
-  const handlePauseTimer = () => {
-    if (game && socketRef.current) {
-      socketRef.current.emit("pause-timer", { gameCode: game.code });
-    }
-  };
-
   const handleOverrideAnswer = () => {
     if (pendingOverride) {
+      console.log(game)
       setOverrideMode(true);
       setControlMessage("");
       setOverridePoints("0");
     }
   };
 
-  const handleSelectOverride = (answerIndex: number) => {
+  const handleOverride = (answerIndex?: number) => {
     if (game && pendingOverride && socketRef.current && currentQuestion) {
-      const points = currentQuestion.answers[answerIndex]?.score || 0;
-      socketRef.current.emit("override-answer", {
-        gameCode: game.code,
-        teamId: pendingOverride.teamId,
-        round: pendingOverride.round,
-        questionNumber: pendingOverride.questionNumber,
-        isCorrect: true,
-        pointsAwarded: points,
-        answerIndex,
-      });
-      setPendingOverride(null);
-      setOverrideMode(false);
-      setOverridePoints("0");
-      setControlMessage("");
+      let points = parseInt(overridePoints, 10) || 0;
+      if (answerIndex !== undefined) {
+        points = currentQuestion.answers[answerIndex]?.score || 0;
+      }
+      overrideAnswer(game.code, points, answerIndex);
     }
-  };
-
-  const handleConfirmOverride = () => {
-    if (game && pendingOverride && socketRef.current) {
-      const points = parseInt(overridePoints, 10) || 0;
-      socketRef.current.emit("override-answer", {
-        gameCode: game.code,
-        teamId: pendingOverride.teamId,
-        round: pendingOverride.round,
-        questionNumber: pendingOverride.questionNumber,
-        isCorrect: true,
-        pointsAwarded: points,
-      });
-      setPendingOverride(null);
-      setOverrideMode(false);
-      setOverridePoints("0");
-      setControlMessage("");
-    }
-  };
+  }
 
   const handleCancelOverride = () => {
     setOverrideMode(false);
     setOverridePoints("0");
   };
-
-  const handleResetGame = () => {
-    if (game && socketRef.current) {
-      socketRef.current.emit("reset-game", { gameCode: game.code });
-    }
-  };
-
-  // const handleSkipToRound = (round: number, radioButtonRef: React.RefObject<HTMLFormElement>) => {
-  //   if (game && socketRef.current) {
-  //     const selectedStartingTeam = radioButtonRef.current?.querySelector<HTMLInputElement>(
-  //       'input[name="starting-team"]:checked'
-  //     )?.value;
-  //     socketRef.current.emit("skip-to-round", game.code , round, selectedStartingTeam );
-  //   }
-  // };
 
   // Request updated player list periodically when in waiting state
   useEffect(() => {
@@ -420,7 +305,7 @@ const HostGamePage: React.FC = () => {
   // Round Summary Screen
   if (game && game.status === "round-summary") {
     return (
-      <PageLayout gameCode={game.code} timer={timer} variant="game">
+      <PageLayout gameCode={game.code} variant="game">
         <div className="p-4">
           <RoundSummaryComponent
             game={game}
@@ -442,39 +327,25 @@ const HostGamePage: React.FC = () => {
     const team2QuestionsAnswered = game.gameState.questionsAnswered.team2 || 0;
 
     return (
-      <PageLayout gameCode={game.code} timer={timer} variant="game">
+      <PageLayout gameCode={game.code} variant="game">
         {/* Mobile: Team panels container at bottom */}
         <div className="order-2 md:hidden w-full flex gap-2">
           <div className="w-1/2">
             <TeamPanel
-              team={game.teams[0]}
+              game={game}
               teamIndex={0}
-              isActive={game.teams[0]?.active}
               showMembers={true}
-              currentRound={game.currentRound}
-              roundScore={game.teams[0].currentRoundScore}
-              questionsAnswered={team1QuestionsAnswered}
-              questionData={getTeamQuestionData("team1")}
-              allTeams={game.teams}
               activeBorderColor="#dc2626"
               activeBackgroundColor="#ffd6d6ff"
-              players={game.players}
             />
           </div>
           <div className="w-1/2">
             <TeamPanel
-              team={game.teams[1]}
+              game={game}
               teamIndex={1}
-              isActive={game.teams[1]?.active}
               showMembers={true}
-              currentRound={game.currentRound}
-              roundScore={game.teams[1].currentRoundScore}
-              questionsAnswered={team2QuestionsAnswered}
-              questionData={getTeamQuestionData("team2")}
-              allTeams={game.teams}
               activeBorderColor="#264adcff"
               activeBackgroundColor="#d6e0ffff"
-              players={game.players}
             />
           </div>
         </div>
@@ -482,32 +353,16 @@ const HostGamePage: React.FC = () => {
         {/* Desktop: Left Team Panel with Question Data */}
         <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
-            team={game.teams[0]}
+            game={game}
             teamIndex={0}
-            isActive={game.teams[0]?.active}
             showMembers={true}
-            currentRound={game.currentRound}
-            roundScore={game.teams[0].currentRoundScore}
-            questionsAnswered={team1QuestionsAnswered}
-            questionData={getTeamQuestionData("team1")}
-            allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
-            players={game.players}
           />
         </div>
 
         {/* Center Game Area */}
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
-          {/* Turn Indicator */}
-          {/* <TurnIndicator
-            currentTeam={game.gameState.currentTurn}
-            teams={game.teams}
-            currentQuestion={currentQuestion}
-            questionsAnswered={game.gameState.questionsAnswered}
-            round={game.currentRound}
-            variant="compact"
-          /> */}
 
           {/* Game Board */}
           <GameBoard
@@ -519,11 +374,8 @@ const HostGamePage: React.FC = () => {
             overridePoints={overridePoints}
             onOverridePointsChange={setOverridePoints}
             onCancelOverride={handleCancelOverride}
-            onConfirmOverride={handleConfirmOverride}
-            onSelectAnswer={handleSelectOverride}
-            onNextQuestion={handleNextQuestion}
+            onOverride={handleOverride}
             onCompleteTossUpRound={() => completeTossUpRound(game.code)}
-            onPauseTimer={handlePauseTimer}
             currentTeam={game.gameState.currentTurn}
             teams={game.teams}
             currentQuestion={game.questions[game.currentQuestionIndex]}
@@ -531,137 +383,24 @@ const HostGamePage: React.FC = () => {
             round={game.currentRound}
           />
 
-          {/* Host Controls - CLEAN VERSION */}
-          <div className="bg-[#FEFEFC] rounded p-3 mt-2">
-            <div className="text-center mb-2">
-              <div className="text-sm text-slate-400 mb-2">Host Controls</div>
-            </div>
-            <div className="flex gap-2 justify-center flex-wrap">
-              <Button
-                testid="force-next-question-button"
-                onClick={
-                  game.currentRound === 4
-                    ? () => pauseTimer(game.code)
-                    : () => forceNextQuestion(game.code)
-                }
-                disabled={game.currentRound === 4 && game.pauseTimer}
-                variant="secondary"
-                size="sm"
-                className="text-xs py-1 px-3"
-              >
-                ⏭️ Force Next
-              </Button>
-              {pendingOverride && !overrideMode && (
-                <Button
-                  testid="override-answer-button"
-                  onClick={handleOverrideAnswer}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
-                >
-                  ✅ Override
-                </Button>
-              )}
-              <Button
-                testid="reset-game-button"
-                onClick={() => resetGame(game.code)}
-                variant="secondary"
-                size="sm"
-                className="text-xs py-1 px-3"
-              >
-                🔄 Reset
-              </Button>
-
-              {role === "Tester" && (
-                <>
-                  <Button
-                  testid="skip-to-round-1-button"
-                  onClick={() => skipToRound(game.code, 1, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
-                  >
-                    Skip to R1
-                  </Button>
-                  <Button
-                  testid="skip-to-round-2-button"
-                  onClick={() => skipToRound(game.code, 2, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
-                  >
-                    Skip to R2
-                  </Button>
-                  <Button
-                  testid="skip-to-round-3-button"
-                  onClick={() => skipToRound(game.code, 3, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
-                  >
-                    Skip to R3
-                  </Button>
-                  <Button
-                  testid="skip-to-lightning-round-button"
-                  onClick={() => skipToRound(game.code, 4, radioButtonRef)}
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs py-1 px-3"
-                  >
-                    Skip to LR
-                  </Button>
-
-                  <form className="ml-3" ref={radioButtonRef}>
-                    <div className="flex gap-6">
-                      <div className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          data-testid="set-starting-team-1-button"
-                          id="team1"
-                          name="starting-team"
-                          value="team1"
-                          defaultChecked
-                        />
-                        <label className="pl-2" htmlFor="team1">
-                          {game.teams[0].name}
-                        </label>
-                      </div>
-
-                      <div className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          data-testid="set-starting-team-2-button"
-                          id="team2"
-                          name="starting-team"
-                          value="team2"
-                        />
-                        <label className="pl-2" htmlFor="team2">
-                          {game.teams[1].name}
-                        </label>
-                      </div>
-                    </div>
-                  </form>
-                </>
-              )}
-            </div>
-          </div>
+          {/* Host Controls */}
+          <HostControls
+            game={game}
+            role={role}
+            pendingOverride={pendingOverride}
+            overrideMode={overrideMode}
+            onOverrideAnswer={handleOverrideAnswer}
+          />
         </div>
 
         {/* Desktop: Right Team Panel with Question Data */}
         <div className="hidden md:block md:w-48 md:flex-shrink-0">
           <TeamPanel
-            team={game.teams[1]}
+            game={game}
             teamIndex={1}
-            isActive={game.teams[1]?.active}
             showMembers={true}
-            currentRound={game.currentRound}
-            roundScore={game.teams[1].currentRoundScore}
-            questionsAnswered={team2QuestionsAnswered}
-            questionData={getTeamQuestionData("team2")}
-            allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
-            players={game.players}
           />
         </div>
       </PageLayout>
@@ -671,7 +410,7 @@ const HostGamePage: React.FC = () => {
   // Results Screen
   if (game?.status === "finished") {
     return (
-      <PageLayout gameCode={game.code} timer={timer}>
+      <PageLayout gameCode={game.code}>
         <GameResults
           teams={game.teams}
           onCreateNewGame={createGame}
@@ -686,7 +425,9 @@ const HostGamePage: React.FC = () => {
     <PageLayout gameCode={game.code}>
       <AnimatedCard>
         <div className="glass-card p-8 text-center">
-          <p className="text-xl font-bold mb-4">Unexpected Game State {game?.status}</p>
+          <p className="text-xl font-bold mb-4">
+            Unexpected Game State {game?.status}
+          </p>
           <p className="text-slate-400 mb-4">
             The game is in an unexpected state. Please refresh the page or
             create a new game.

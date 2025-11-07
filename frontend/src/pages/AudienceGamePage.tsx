@@ -30,38 +30,6 @@ const AudienceGamePage: React.FC = () => {
   }
   const { socketRef } = socketContext;
 
-  const getTeamQuestionData = (teamKey: "team1" | "team2"): RoundData => {
-    if (!game?.gameState?.questionData?.[teamKey]) {
-      return {
-        round1: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round2: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round3: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-        round4: [
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-          { firstAttemptCorrect: null, pointsEarned: 0 },
-        ],
-      };
-    }
-    return game.gameState.questionData[teamKey];
-  };
-
   const {connect, disconnect, isConnected} = useSetupSocket(socketRef);
   useSocketAudienceEvents(socketRef, game, isConnected, setGame, setMessage);
   const {audienceJoinGame, requestPlayersList} = useSocketActions(socketRef);
@@ -164,29 +132,14 @@ const AudienceGamePage: React.FC = () => {
       <PageLayout gameCode={game.code} variant="game">
         <div className="order-2 md:order-none w-full md:w-48 md:flex-shrink-0">
           <TeamPanel
-            team={game.teams[0]}
+            game={game}
             teamIndex={0}
-            isActive={game.teams[0]?.active}
             showMembers={false}
-            currentRound={game.currentRound}
-            roundScore={game.teams[0].currentRoundScore}
-            questionsAnswered={team1Answered}
-            questionData={getTeamQuestionData("team1")}
-            allTeams={game.teams}
             activeBorderColor="#dc2626"
             activeBackgroundColor="#ffd6d6ff"
-            players={game.players}
           />
         </div>
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
-          {/* <TurnIndicator
-            currentTeam={game.gameState.currentTurn}
-            teams={game.teams}
-            currentQuestion={currentQuestion}
-            questionsAnswered={game.gameState.questionsAnswered}
-            round={game.currentRound}
-            variant="compact"
-          /> */}
           <GameBoard
             game={game}
             variant="host"
@@ -207,18 +160,11 @@ const AudienceGamePage: React.FC = () => {
         </div>
         <div className="order-3 md:order-none w-full md:w-48 md:flex-shrink-0">
           <TeamPanel
-            team={game.teams[1]}
+            game={game}
             teamIndex={1}
-            isActive={game.teams[1]?.active}
             showMembers={false}
-            currentRound={game.currentRound}
-            roundScore={game.teams[1].currentRoundScore}
-            questionsAnswered={team2Answered}
-            questionData={getTeamQuestionData("team2")}
-            allTeams={game.teams}
             activeBorderColor="#264adcff"
             activeBackgroundColor="#d6e0ffff"
-            players={game.players}
           />
         </div>
       </PageLayout>
