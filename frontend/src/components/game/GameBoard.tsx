@@ -102,7 +102,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
         {/* Keep question visible on mobile by sticking it to the top */}
         <div className="sticky top-0 z-10">
           {/* Question Header - Compact with Round Status */}
-          <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
+          <div className="question-header flex-shrink-0 bg-[#FEFEFC] py-4 md:py-2 min-h-[80px] md:min-h-0">
+            {" "}
             <div className="flex justify-between items-center">
               {/* Left section - Question info */}
               <div
@@ -131,8 +132,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
               </div>
 
               {/* Center section - Active team */}
-              <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2">
-                🎯 {activeTeam?.name}'s Turn
+              <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2 translate-y-9 md:translate-y-0">
+                {activeTeam ? `🎯 ${activeTeam.name}'s Turn` : "Buzz in"}
               </h3>
 
               {/* Right section - Round status */}
@@ -213,7 +214,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Keep question visible on mobile by sticking it to the top */}
       <div className="sticky top-0 z-10">
         {/* Question Header with Round Status */}
-        <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
+        <div className="question-header flex-shrink-0 bg-[#FEFEFC] py-4 md:py-2 min-h-[80px] md:min-h-0">
+          {" "}
           <div className="flex justify-between items-center">
             {/* Left section - Question info */}
             <div
@@ -237,8 +239,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
             </div>
 
             {/* Center section - Active team */}
-            <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2">
-              🎯 {activeTeam?.name}'s Turn
+            <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2 translate-y-9 md:translate-y-0">
+              {activeTeam ? `🎯 ${activeTeam.name}'s Turn` : "Buzz in"}
             </h3>
 
             {/* Right section - Round status */}
