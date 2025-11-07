@@ -140,14 +140,6 @@ const AudienceGamePage: React.FC = () => {
           />
         </div>
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
-          {/* <TurnIndicator
-            currentTeam={game.gameState.currentTurn}
-            teams={game.teams}
-            currentQuestion={currentQuestion}
-            questionsAnswered={game.gameState.questionsAnswered}
-            round={game.currentRound}
-            variant="compact"
-          /> */}
           <GameBoard
             game={game}
             variant="host"

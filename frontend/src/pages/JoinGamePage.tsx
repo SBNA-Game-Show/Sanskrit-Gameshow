@@ -15,6 +15,7 @@ import Button from "../components/common/Button";
 // import TurnIndicator from "../components/game/TurnIndicator";
 import RoundSummaryComponent from "../components/game/RoundSummaryComponent";
 import BuzzerButton from "../components/game/BuzzerButton";
+import PlayerInputs from "../components/game/PlayerInputs";
 
 // Import hooks and services
 import { useSetupSocket } from "../hooks/useSetupSocket";
@@ -243,9 +244,6 @@ const JoinGamePage: React.FC = () => {
 
   // Active game - SINGLE ATTEMPT LAYOUT WITH CLEAN UI
   if (game && game.status === "active") {
-    // const myTeam = game.teams.find((team) => team.id === player.teamId);
-    // const isMyTurn = myTeam && myTeam.active;
-    // const canAnswer = isMyTurn && player.teamId;
 
     // Calculate questions answered for each team in current round
     const team1QuestionsAnswered = game.gameState.questionsAnswered.team1 || 0;
@@ -300,16 +298,6 @@ const JoinGamePage: React.FC = () => {
 
         {/* Center Game Area */}
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
-          {/* Turn Indicator */}
-          {/* <TurnIndicator
-            currentTeam={game.gameState.currentTurn}
-            teams={game.teams}
-            currentQuestion={game.questions[game.currentQuestionIndex]}
-            questionsAnswered={game.gameState.questionsAnswered}
-            round={game.currentRound}
-            variant="compact"
-          /> */}
-
           {/* Game Board */}
           <GameBoard
             game={game}
@@ -322,156 +310,18 @@ const JoinGamePage: React.FC = () => {
             round={game.currentRound}
           />
 
-          {/* Answer Input Area - COMPLETELY CLEAN */}
-          <div className="bg-[#FEFEFC] rounded p-2 mt-2">
-            {/* START OF PLAYER INPUT FIELDS (answer input, buzzer, etc) */}
-            {player.teamId ? (
-              <div>
-                {/* Game Status Message */}
-                {gameMessage && (
-                  <div className="mb-3 p-1 bg-blue-500/20 border border-blue-500/50 rounded">
-                    <p className="text-blue-300 text-sm text-center">
-                      {gameMessage}
-                    </p>
-                  </div>
-                )}
-
-                {/* Error Message */}
-                {error && (
-                  <div className="mb-3 p-2 bg-red-500/20 border border-red-500/50 rounded">
-                    <p className="text-red-300 text-sm text-center">{error}</p>
-                  </div>
-                )}
-
-                {/* TOSS UP ROUND */}
-                {game.currentRound === 0 ? (
-                  !game.buzzedTeamId ? (
-                    <div className="flex justify-center my-4">
-                      <BuzzerButton
-                        onBuzz={handleBuzzIn}
-                        disabled={
-                          hasBuzzed ||
-                          !! game.buzzedTeamId ||
-                          game.gameState.canAdvance
-                        }
-                        teamName={myTeam?.name}
-                      />
-                    </div>
-                  ) : canAnswer && game?.activeTeamId ? (
-                    <div className="max-w-md mx-auto">
-                      <input
-                        data-testid="answer-input"
-                        type="text"
-                        value={answer}
-                        onChange={(e) => setAnswer(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Type your answer here..."
-                        disabled={!canAnswer}
-                        autoFocus={true}
-                        className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
-                      />
-                      <button
-                        data-testid="submit-answer-button"
-                        onClick={() => handleSubmitAnswer(answer)}
-                        disabled={!answer.trim() || !canAnswer}
-                        className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
-                          canAnswer && answer.trim()
-                            ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-105 active:scale-95"
-                            : "bg-gray-500 text-gray-300 cursor-not-allowed opacity-60"
-                        }`}
-                      >
-                        {answer.trim() ? "Submit Answer" : "Type an answer..."}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
-                      <div className="flex items-center justify-center gap-3 mb-3">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
-                        <p className="text-gray-300 font-medium">
-                          {game.teams.find((t) => t.active)?.name ||
-                            "Other team"}{" "}
-                          is answering...
-                        </p>
-                      </div>
-                    </div>
-                  )
-                ) : // LIGHTNING ROUND
-                game.currentRound === 4 ? (
-                  !game.buzzedTeamId ? (
-                    <div className="flex justify-center my-4">
-                      <BuzzerButton
-                        onBuzz={handleBuzzIn}
-                        disabled={
-                          hasBuzzed || !!game.buzzedTeamId || game.pauseTimer
-                        }
-                        teamName={myTeam?.name}
-                      />
-                    </div>
-                  ) : canAnswer ? (
-                    <div className="p-4 bg-blue-500/20 border border-blue-500/50 rounded text-center">
-                      <p className="text-blue-300 font-medium">
-                        Click on an answer card above to submit your answer
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
-                      <div className="flex items-center justify-center gap-3 mb-3">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
-                        <p className="text-gray-300 font-medium">
-                          {game.teams.find((t) => t.active)?.name ||
-                            "Other team"}{" "}
-                          is answering...
-                        </p>
-                      </div>
-                    </div>
-                  )
-                ) : // STANDARD ROUNDS
-                isMyTurn && game?.activeTeamId ? (
-                  <div className="max-w-md mx-auto">
-                    <input
-                      type="text"
-                      value={answer}
-                      onChange={(e) => setAnswer(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Type your answer here..."
-                      disabled={!canAnswer}
-                      autoFocus={true}
-                      className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
-                    />
-                    <button
-                      onClick={() => handleSubmitAnswer(answer)}
-                      disabled={!answer.trim() || !canAnswer}
-                      className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${
-                        canAnswer && answer.trim()
-                          ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-105 active:scale-95"
-                          : "bg-gray-500 text-gray-300 cursor-not-allowed opacity-60"
-                      }`}
-                    >
-                      {answer.trim() ? "Submit Answer" : "Type an answer..."}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-6 bg-gray-700/30 rounded-lg backdrop-blur">
-                    <div className="flex items-center justify-center gap-3 mb-3">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-white"></div>
-                      <p className="text-gray-300 font-medium">
-                        {game.teams.find((t) => t.active)?.name || "Other team"}{" "}
-                        is answering...
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-4 border-2 border-red-400/50 bg-red-400/10 rounded text-center">
-                <p className="text-red-300 font-medium text-sm">
-                  You didn't select a team before the game started. Please wait
-                  for the next game.
-                </p>
-              </div>
-            )}
-            {/* END OF PLAYER INPUT FIELDS */}
-          </div>
+          {/* Player Inputs (buzzer, text input) */}
+          <PlayerInputs
+            game={game}
+            player={player}
+            gameMessage={gameMessage}
+            error={error}
+            hasBuzzed={hasBuzzed}
+            answer={answer}
+            setAnswer={setAnswer}
+            onSubmitAnswer={handleSubmitAnswer}
+            onKeyDown={handleKeyDown}
+          />
         </div>
 
         {/* Desktop: Right Team Panel */}
