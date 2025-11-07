@@ -69,21 +69,13 @@ export const useSocketActions = (socketRef: React.MutableRefObject<Socket | null
 
   const overrideAnswer = (
     gameCode: string,
-    teamId: string,
-    round: number,
-    questionNumber: number,
-    isCorrect: boolean,
-    points: number,
+    pointsAwarded?: number,
     answerIndex?: number
   ) => {
     if (socket) {
       socket.emit("override-answer", {
         gameCode,
-        teamId,
-        round,
-        questionNumber,
-        isCorrect,
-        pointsAwarded: points,
+        pointsAwarded,
         answerIndex,
       });
     }

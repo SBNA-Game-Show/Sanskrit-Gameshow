@@ -44,11 +44,12 @@ const LoginForm: React.FC = () => {
   setError(null);
   setIsLoading(true);
 
-  try {
-    const res = await API.post<LoginResponse>('/login', {
-      username: formData.username,
-      password: formData.password,
-    });
+    try {
+      
+      const res = await API.post<LoginResponse>('/login', {
+        username: formData.username.trim(), // removes leading spaces
+        password: formData.password.trim(), 
+      });
 
     localStorage.setItem('token', res.data.token);
     localStorage.setItem('role', res.data.role);
