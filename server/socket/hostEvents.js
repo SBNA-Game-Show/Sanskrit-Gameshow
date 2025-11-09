@@ -130,6 +130,8 @@ export function setupHostEvents(socket, io) {
         game.activeTeamId = summary.tossUpWinner.teamId;
       }
 
+      game.disableForceNext = false;
+
       io.to(gameCode).emit("round-complete", {
         game,
         isGameFinished: false,
@@ -179,7 +181,7 @@ export function setupHostEvents(socket, io) {
     const { gameCode } = data;
     const game = getGame(gameCode);
 
-    if (game && game.hostId === socket.id && game.status === "active") {
+    if (game && game.hostId === socket.id && game.status === "active" && !game.disableForceNext) {
       console.log(`⚠️ Host forcing next question in game: ${gameCode}`);
 
       const currentQuestion = getCurrentQuestion(game);
@@ -240,6 +242,9 @@ export function setupHostEvents(socket, io) {
     if (activeTeam) {
       game.activeTeamId = activeTeam.id
     }
+
+    // Reset disable force next button
+    game.disableForceNext = false;
 
     if (
       game &&
@@ -315,18 +320,18 @@ export function setupHostEvents(socket, io) {
 
   // Host overrides a player's answer
   socket.on("override-answer", (data) => {
-    const { gameCode, teamId, round, questionNumber, isCorrect, pointsAwarded, answerIndex } = data;
+    const { gameCode, pointsAwarded, answerIndex } = data;
     const game = getGame(gameCode);
 
     if (game && game.hostId === socket.id) {
       const result = overrideAnswer(
-        gameCode,
-        teamId,
-        round,
-        questionNumber,
-        isCorrect,
-        pointsAwarded,
-        answerIndex
+        gameCode, // the game code
+        game.teams.find(team => team.active)?.id, // the id of the team that just answered
+        game.currentRound, // the current round
+        game.currentQuestionIndex % 3 + 1, // the question number (1-3)
+        true, // is correct?
+        pointsAwarded, // points overrided and awarded
+        answerIndex // the index of the answer that was clicked
       );
 
       if (result.success) {
@@ -350,6 +355,7 @@ export function setupHostEvents(socket, io) {
         status: "waiting",
         currentQuestionIndex: 0,
         currentRound: 0,
+        disableForceNext: false,
         gameState: {
           ...game.gameState,
           currentTurn: null,
@@ -471,6 +477,7 @@ export function setupHostEvents(socket, io) {
             roundScores: updatedRoundScores[idx],
             currentRoundScore: 0
           })),
+          disableForceNext: false,
           gameState: {
             ...game.gameState,
             currentTurn: null,
@@ -510,6 +517,7 @@ export function setupHostEvents(socket, io) {
             roundScores: updatedRoundScores[idx],
             currentRoundScore: 0
           })),
+          disableForceNext: false,
           gameState: {
             ...game.gameState,
             currentTurn: selectedStartingTeam,

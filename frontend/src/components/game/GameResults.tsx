@@ -151,7 +151,7 @@ const GameResults: React.FC<GameResultsProps> = ({
                       </div>
 
                       {/* Team members */}
-                      <div className="flex flex-wrap gap-1 justify-center">
+                      {/* <div className="flex flex-wrap gap-1 justify-center">
                         {team.members
                           .filter((member) => member.trim() !== "")
                           .map((member, i) => (
@@ -162,7 +162,7 @@ const GameResults: React.FC<GameResultsProps> = ({
                               {member}
                             </span>
                           ))}
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 );
@@ -171,7 +171,13 @@ const GameResults: React.FC<GameResultsProps> = ({
 
           {/* ACTION BUTTONS */}
           <div className="flex gap-4 justify-center">
-            <Link to={role === "Host" || role === "Tester" ? ROUTES.HOSTHOME : ROUTES.PLAYERHOME}>
+            <Link
+              to={
+                role === "Host" || role === "Tester"
+                  ? ROUTES.HOSTHOME
+                  : ROUTES.PLAYERHOME
+              }
+            >
               <Button variant="secondary" size="lg">
                 Back to Home
               </Button>

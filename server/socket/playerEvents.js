@@ -62,35 +62,69 @@ export function setupPlayerEvents(socket, io) {
       });
     }
   });
+socket.on("join-team", (data) => {
+  const { gameCode, playerId, teamId } = data;
+  const game = getGame(gameCode);
+  const player = getPlayer(playerId);
 
-  // Assign player to team
-  socket.on("join-team", (data) => {
-    const { gameCode, playerId, teamId } = data;
-    const game = getGame(gameCode);
-    const player = getPlayer(playerId);
+  if (!game || !player) {
+    console.error(`❌ join-team failed: game=${!!game}, player=${!!player}`);
+    return;
+  }
 
-    if (!game || !player) {
-      console.error(`❌ join-team failed: game=${!!game}, player=${!!player}`);
-      return;
+  const team = game.teams.find((t) => t.id === teamId);
+  if (!team) {
+    socket.emit("team-join-failed", { reason: "invalid-team" });
+    return;
+  }
+
+  // ✅ Remove player from previous team if they had one
+  if (player.teamId) {
+    const oldTeam = game.teams.find((t) => t.id === player.teamId);
+    if (oldTeam && oldTeam.members) {
+      oldTeam.members = oldTeam.members.filter((m) => m !== player.name);
     }
+  }
 
-    // ✅ Update player’s team info
-    updatePlayer(playerId, { teamId });
-
-    // ✅ Join both the game and private team room
-    socket.join(gameCode);
-    socket.join(teamId);
-
-    console.log(`👥 Player ${player.name} joined team room: ${teamId}`);
-    console.log(`📡 ${player.name} is now in rooms:`, socket.rooms);
-
-    // Notify everyone in the game room that a player joined
-    io.to(gameCode).emit("team-updated", {
-      playerId,
-      teamId,
-      game,
+  // ✅ Check if team is already full (5 members max)
+  const teamMembers = game.players.filter((p) => p.teamId === teamId);
+  if (teamMembers.length >= 5) {
+    console.log(`🚫 ${player.name} tried to join full team: ${team.name}`);
+    socket.emit("team-join-failed", {
+      reason: "team-full",
+      message: `Team ${team.name} already has 5 players.`,
     });
+    return;
+  }
+
+  // ✅ Assign team ID to player
+  updatePlayer(playerId, { teamId });
+
+  // ✅ Add player to team.members array
+  if (!team.members) team.members = [];
+  if (!team.members.includes(player.name)) {
+    team.members.push(player.name);
+  }
+
+  // ✅ Update game object in memory
+  updateGame(gameCode, game);
+
+  // ✅ Join both the game and private team room
+  socket.join(gameCode);
+  socket.join(teamId);
+
+  console.log(`👥 Player ${player.name} joined team room: ${teamId}`);
+  console.log(`📡 ${player.name} is now in rooms:`, socket.rooms);
+
+  // Notify everyone in the game room that a player joined or switched
+  io.to(gameCode).emit("team-updated", {
+    playerId,
+    teamId,
+    game,
   });
+});
+
+
 
   // UPDATED: Submit answer with SINGLE ATTEMPT system
   socket.on("submit-answer", (data) => {
@@ -154,6 +188,9 @@ export function setupPlayerEvents(socket, io) {
 
       // ✅ Both teams have answered — reveal and decide winner
       if (game.tossUpSubmittedTeams.length === 2) {
+        game.disableForceNext = true;
+        updateGame(gameCode, game);
+        
         setTimeout(() => {
           const currentQuestion = getCurrentQuestion(game);
 
@@ -351,6 +388,8 @@ export function setupPlayerEvents(socket, io) {
         });
 
         if (result.revealRemainingAfterDelay) {
+          game.disableForceNext = true;
+          updateGame(gameCode, game);
           setTimeout(() => {
             const updatedGame = getGame(gameCode);
             const currentQuestion = getCurrentQuestion(updatedGame);
@@ -362,18 +401,13 @@ export function setupPlayerEvents(socket, io) {
               });
             }
 
-            setTimeout(() => {
-              const readyGame = getGame(gameCode);
-              if (readyGame) {
-                readyGame.gameState.canAdvance = true;
-                updateGame(gameCode, readyGame);
+            updatedGame.gameState.canAdvance = true;
+            updateGame(gameCode, updatedGame);
 
-                io.to(gameCode).emit("question-complete", {
-                  game: readyGame,
-                  currentQuestion: getCurrentQuestion(readyGame),
-                });
-              }
-            }, 3000);
+            io.to(gameCode).emit("question-complete", {
+              game: updatedGame,
+              currentQuestion: getCurrentQuestion(updatedGame),
+            });
           }, 2000);
         }
       } else {
@@ -383,6 +417,9 @@ export function setupPlayerEvents(socket, io) {
           singleAttempt: true,
           allCardsRevealed: true,
         });
+
+        game.disableForceNext = true;
+        updateGame(gameCode, game);
 
         setTimeout(() => {
           const readyGame = getGame(gameCode);
@@ -395,7 +432,7 @@ export function setupPlayerEvents(socket, io) {
               currentQuestion: getCurrentQuestion(readyGame),
             });
           }
-        }, 3000);
+        }, 2000);
       }
     }
   });

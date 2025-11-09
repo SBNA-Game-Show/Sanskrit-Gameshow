@@ -182,6 +182,13 @@ export const useSocketHostEvents = (
       if (data.players && data.players.length > 0) {
         setGame((prevGame) => {
           if (!prevGame) return null;
+
+          const same = prevGame.players.length === data.players.length && 
+          prevGame.players.every((player, idx) => player.id === data.players[idx].id);
+
+          if (same) {
+            return prevGame;
+          }
           return {
             ...prevGame,
             players: data.players,

@@ -1,4 +1,7 @@
 import React from "react";
+import { useContext } from "react";
+import { SocketContext } from "store/socket-context";
+import { useSocketActions } from "../../hooks/useSocketActions";
 import { Game } from "../../types";
 import Button from "../common/Button";
 import Input from "../common/Input";
@@ -10,10 +13,8 @@ import { Question } from "../../types";
 interface GameBoardProps {
   game: Game;
   onRevealAnswer?: (answerIndex: number) => void;
-  onSelectAnswer?: (answerIndex: number) => void;
-  onNextQuestion?: () => void;
+  onOverride?: (answerIndex?: number) => void;
   onCompleteTossUpRound?: () => void;
-  onPauseTimer?: () => void;
   isHost?: boolean;
   variant?: "host" | "player";
   controlMessage?: string;
@@ -21,7 +22,6 @@ interface GameBoardProps {
   overridePoints?: string;
   onOverridePointsChange?: (value: string) => void;
   onCancelOverride?: () => void;
-  onConfirmOverride?: () => void;
   onClickAnswerCard?: (answer: string) => void;
   currentTeam: "team1" | "team2" | null;
   teams: Team[];
@@ -33,10 +33,8 @@ interface GameBoardProps {
 const GameBoard: React.FC<GameBoardProps> = ({
   game,
   onRevealAnswer,
-  onSelectAnswer,
-  onNextQuestion,
+  onOverride,
   onCompleteTossUpRound,
-  onPauseTimer,
   isHost = false,
   variant = "host",
   controlMessage,
@@ -44,7 +42,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
   overridePoints,
   onOverridePointsChange,
   onCancelOverride,
-  onConfirmOverride,
   onClickAnswerCard,
   currentTeam,
   teams,
@@ -52,6 +49,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
   questionsAnswered,
   round,
 }) => {
+  const socketContext = useContext(SocketContext);
+  if (!socketContext) {
+    throw new Error("HostGamePage must be used within a SocketProvider");
+  }
+  const { socketRef } = socketContext;
+  const {advanceQuestion} = useSocketActions(socketRef)
+
   const currentQuestion = getCurrentQuestion(game);
 
   // if (currentQuestion) {
@@ -102,7 +106,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
         {/* Keep question visible on mobile by sticking it to the top */}
         <div className="sticky top-0 z-10">
           {/* Question Header - Compact with Round Status */}
-          <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
+          <div className="question-header flex-shrink-0 bg-[#FEFEFC] py-4 md:py-2 min-h-[80px] md:min-h-0">
+            {" "}
             <div className="flex justify-between items-center">
               {/* Left section - Question info */}
               <div
@@ -131,8 +136,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
               </div>
 
               {/* Center section - Active team */}
-              <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2">
-                🎯 {activeTeam?.name}'s Turn
+              <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2 translate-y-9 md:translate-y-0">
+                {activeTeam ? `🎯 ${activeTeam.name}'s Turn` : "Buzz in"}
               </h3>
 
               {/* Right section - Round status */}
@@ -213,7 +218,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Keep question visible on mobile by sticking it to the top */}
       <div className="sticky top-0 z-10">
         {/* Question Header with Round Status */}
-        <div className="question-header flex-shrink-0 bg-[#FEFEFC]">
+        <div className="question-header flex-shrink-0 bg-[#FEFEFC] py-4 md:py-2 min-h-[80px] md:min-h-0">
+          {" "}
           <div className="flex justify-between items-center">
             {/* Left section - Question info */}
             <div
@@ -227,18 +233,19 @@ const GameBoard: React.FC<GameBoardProps> = ({
               <div className="text-xs text-slate-400">
                 Question{" "}
                 {game.currentRound === 0
-                  ? 1
-                  : currentTeam
-                  ? questionsAnswered[currentTeam] + 1
-                  : game.currentQuestionIndex + 1}{" "}
+                  ? 1 
+                  : game.currentRound === 4 
+                  ? game.currentQuestionIndex - 17
+                  : (game.currentQuestionIndex % 3 + 1)}
+                  {" "}
                 of{" "}
                 {game.currentRound === 0 ? 1 : game.currentRound === 4 ? 7 : 3}{" "}
               </div>
             </div>
 
             {/* Center section - Active team */}
-            <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2">
-              🎯 {activeTeam?.name}'s Turn
+            <h3 className="text-lg font-bold text-blue-300 mb-1 absolute left-1/2 -translate-x-1/2 translate-y-9 md:translate-y-0">
+              {activeTeam ? `🎯 ${activeTeam.name}'s Turn` : "Buzz in"}
             </h3>
 
             {/* Right section - Round status */}
@@ -253,7 +260,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
           question={currentQuestion.question}
           duration={10000}
           isTimerActive={game.currentRound === 4}
-          onPauseTimer={onPauseTimer}
         />
       </div>
 
@@ -287,7 +293,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
             onClick={() => {
               if (overrideMode) {
-                onSelectAnswer?.(index);
+                onOverride?.(index);
               } else if (isHost && !answer.revealed) {
                 onRevealAnswer?.(index);
               }
@@ -358,10 +364,10 @@ const GameBoard: React.FC<GameBoardProps> = ({
                       variant="center"
                       placeholder="Award points"
                     />
-                    {onConfirmOverride && (
+                    {onOverride && (
                       <Button
                         testid="confirm-override-button"
-                        onClick={onConfirmOverride}
+                        onClick={() => onOverride()}
                         variant="primary"
                         size="sm"
                         className="text-xs py-1 px-3"
@@ -392,7 +398,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   onClick={
                     game.currentRound === 0
                       ? onCompleteTossUpRound
-                      : onNextQuestion
+                      : () => advanceQuestion(game.code)
                   }
                   variant="primary"
                   size="sm"
