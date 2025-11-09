@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
 import type { Page, Locator } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    testIdAttribute: 'data-testid',   
+  },
+});
 
 /* ---------- auth ---------- */
 async function login(page: Page, username: string, password: string, baseURL?: string) {
@@ -15,13 +22,15 @@ async function login(page: Page, username: string, password: string, baseURL?: s
 /* ---------- inputs ---------- */
 function editableInput(p: Page): Locator {
   return p
-    .locator(
-      'input[placeholder*="Type your answer here"], ' +
-      'textarea[placeholder*="Type your answer here"], ' +
-      '[contenteditable="true"][role="textbox"]'
-    )
-    .first()
-    .or(p.getByRole('textbox', { name: /Type your answer here/i }));
+    .getByTestId('answer-input')
+    //.or(
+    //  p.locator(
+     //   'input[placeholder*="Type your answer here"], ' +
+     //   'textarea[placeholder*="Type your answer here"], ' +
+     //   '[contenteditable="true"][role="textbox"]'
+     // ).first()
+   // )
+   // .or(p.getByRole('textbox', { name: /Type your answer here/i }));
 }
 
 async function getEditableAnswerInput(p: Page): Promise<Locator> {
@@ -42,16 +51,16 @@ async function typeAndSubmit(p: Page, text: string) {
   await input.focus();
   await input.fill('');
   await input.type(text, { delay: 35 });
-  await p.getByRole('button', { name: /submit answer/i }).click();
+  await p.getByTestId('submit-answer-button').click();
   await p.waitForTimeout(200);
 }
 
 /* ---------- small helpers ---------- */
-const buzzBtn = (p: Page) => p.getByRole('button', { name: /🔔 BUZZ IN!/i });
+const buzzBtn = (p: Page) => p.getByTestId('buzzer-button');
 async function buzz(p: Page) { await buzzBtn(p).click(); }
 async function answer(p: Page, text: string) { await typeAndSubmit(p, text); }
 async function nextQuestion(host: Page) {
-  const btn = host.getByRole('button', { name: /^next question$/i });
+  const btn = host.getByTestId('host-next-question-button');
   await expect(btn).toBeEnabled({ timeout: 10_000 });
   await btn.click();
   await Promise.race([
@@ -60,10 +69,55 @@ async function nextQuestion(host: Page) {
   ]);
 }
 
+/* ========= LIGHTNING ROUND HELPERS ========= */
+
+/** Finish the lightning round and go to final scoreboard */
+async function finishLightningRound(hostPage: Page) {
+  const finishBtn = hostPage
+    .getByTestId('host-finish-lightning-button')
+    .or(hostPage.getByRole('button', { name: /(finish|final score|final scoreboard|show final scores)/i }));
+
+  if (await finishBtn.isVisible().catch(() => false)) {
+    await expect(finishBtn).toBeEnabled({ timeout: 15_000 });
+    await finishBtn.click();
+  }
+}
+
+/** 
+async function playLightningRound(p: Page) {
+  // Q1
+  await p.getByTestId('buzzer-button').click();
+  await p.locator('span').filter({ hasText: 'Paris' }).first().click();
+
+  // Q2
+  await p.getByTestId('buzzer-button').click();
+  await p.getByTestId('answer-3-card').click();
+
+  // Q3
+  await p.getByTestId('buzzer-button').click();
+  await p.getByTestId('answer-1-card').click();
+
+  // Q4
+  await p.getByTestId('buzzer-button').click();
+  await p.locator('span').filter({ hasText: '5' }).first().click();
+
+  // Q5
+  await p.getByTestId('buzzer-button').click();
+  await p.getByTestId('answer-1-card').click();
+
+  // Q6
+  await p.getByTestId('buzzer-button').click();
+  await p.getByTestId('answer-2-card').click();
+  
+  // Q7
+  await p.getByTestId('buzzer-button').click();
+  await p.getByTestId('answer-4-card').click();
+}
+*/
 /* ---------- round navigation ---------- */
 async function goToNextRound(hostPage: Page, activePlayerPage: Page) {
   // If a leftover "NEXT QUESTION" is present, click it first.
-  const nextQ = hostPage.getByRole('button', { name: /^next question$/i });
+  const nextQ = hostPage.getByTestId('host-next-question-button');
   if (await nextQ.isVisible().catch(() => false)) {
     await expect(nextQ).toBeEnabled({ timeout: 5_000 });
     await nextQ.click();
@@ -74,19 +128,33 @@ async function goToNextRound(hostPage: Page, activePlayerPage: Page) {
   }
 
   // Now the "Next Round" button should be available.
-  const nextRoundBtn = hostPage.getByRole('button', { name: /next round/i });
+  const nextRoundBtn = hostPage.getByTestId('next-round-button');
   await nextRoundBtn.waitFor({ state: 'visible', timeout: 20_000 });
   await expect(nextRoundBtn).toBeEnabled({ timeout: 10_000 });
   await nextRoundBtn.scrollIntoViewIfNeeded();
   await nextRoundBtn.click();
 
-  // Entered the new round once host controls are visible.
-  await hostPage.getByText(/host controls/i).waitFor({ timeout: 15_000 });
 
-  // Active player's input should be editable in the new round.
-  const input = editableInput(activePlayerPage);
-  await input.waitFor({ state: 'visible', timeout: 15_000 });
-  await expect(input).toBeEditable({ timeout: 15_000 });
+  // Give the new screen a moment to render.
+  await hostPage.waitForTimeout(300);
+
+
+  // Case 1: Normal round (1–3) → there IS an answer-input on the active player's page.
+  const hasTextInput = await activePlayerPage
+    .getByTestId('answer-input')
+    .isVisible()
+    .catch(() => false);
+
+  if (hasTextInput) {
+    const input = editableInput(activePlayerPage);
+    await input.waitFor({ state: 'visible', timeout: 15_000 });
+    await expect(input).toBeEditable({ timeout: 15_000 });
+  } else {
+    // Case 2: Lightning Round → no text input.
+    await Promise.race([
+      activePlayerPage.getByTestId('buzzer-button').waitFor({ state: 'visible', timeout: 15_000 }),
+    ]);
+  }
 
   await hostPage.waitForTimeout(200);
 }
@@ -127,10 +195,10 @@ test('Host creates game and plays through 3 rounds (mock data)', async ({ browse
   const hostPage = await hostContext.newPage();
   await login(hostPage, 'Host', '12345678', baseURL);
 
-  await hostPage.getByRole('button', { name: /create room/i }).click();
-  await hostPage.getByRole('textbox', { name: 'Team 1 Name' }).fill('Red');
-  await hostPage.getByRole('textbox', { name: 'Team 2 Name' }).fill('Blue');
-  await hostPage.getByRole('button', { name: /🚀 create game/i }).click();
+  await hostPage.getByTestId('host-create-room-button').click();
+  await hostPage.getByTestId('host-team1-input').fill('Red');
+  await hostPage.getByTestId('host-team2-input').fill('Blue');
+  await hostPage.getByTestId('host-create-game-button').click();
 
   const codeElement = hostPage.locator('p:has-text("Share this code with contestants:") + div');
   const gameCode = (await codeElement.innerText()).trim();
@@ -139,20 +207,24 @@ test('Host creates game and plays through 3 rounds (mock data)', async ({ browse
   const p1Ctx = await browser.newContext();
   const p1 = await p1Ctx.newPage();
   await login(p1, 'Player1', '12345', baseURL);
-  await p1.getByRole('button', { name: '🎯 Enter as a contestant' }).click();
-  await p1.getByRole('textbox', { name: 'Game Code' }).fill(gameCode);
-  await p1.getByRole('button', { name: '🚀 JOIN GAME' }).click();
+  await p1.getByTestId('player-join-room-button').click();
+  await p1.getByTestId('join-game-code-input').fill(gameCode);
+  await p1.getByTestId('join-game-button').click();
+  await p1.getByTestId('join-team-1-button').click();
+  
 
   // PLAYER 2
   const p2Ctx = await browser.newContext();
   const p2 = await p2Ctx.newPage();
   await login(p2, 'Player2', '12345', baseURL);
-  await p2.getByRole('button', { name: '🎯 Enter as a contestant' }).click();
-  await p2.getByRole('textbox', { name: 'Game Code' }).fill(gameCode);
-  await p2.getByRole('button', { name: '🚀 JOIN GAME' }).click();
+  await p2.getByTestId('player-join-room-button').click();
+  await p2.getByTestId('join-game-code-input').fill(gameCode);
+  await p2.getByTestId('join-game-button').click();
+  await p2.getByTestId('join-team-2-button').click();
+  
 
   // START GAME
-  await hostPage.getByRole('button', { name: '🎮 BEGIN SINGLE-ATTEMPT' }).click();
+  await hostPage.getByTestId('host-start-game-button').click();
 
   // Toss-up
   await buzz(p1);
@@ -160,6 +232,7 @@ test('Host creates game and plays through 3 rounds (mock data)', async ({ browse
   await answer(p2, 'Brush Teeth');
 
   // Enter Round 1 (Red starts)
+  await nextQuestion(hostPage);
   await goToNextRound(hostPage, p1);
 
   // Rounds 1..3
@@ -180,6 +253,32 @@ test('Host creates game and plays through 3 rounds (mock data)', async ({ browse
     }
   }
 
+  // ---------- LIGHTNING ROUND (NEW) ----------
+  await goToNextRound(hostPage, p1);  
+  //await playLightningRound(p1); 
+  await p1.getByTestId('buzzer-button').click();
+  await p1.getByTestId('answer-1-card').click();   
+  await p2.waitForTimeout(500); 
+  await p2.getByTestId('buzzer-button').click();
+  await p2.getByTestId('answer-1-card').click();    
+  await p1.waitForTimeout(500); 
+  await p1.getByTestId('buzzer-button').click();
+  await p1.getByTestId('answer-5-card').click();
+  await p2.waitForTimeout(500); 
+  await p2.getByTestId('buzzer-button').click();
+  await p2.getByTestId('answer-4-card').click();    
+  await p1.waitForTimeout(500); 
+  await p1.getByTestId('buzzer-button').click();
+  await p1.getByTestId('answer-3-card').click();  
+  await p2.waitForTimeout(500); 
+  await p2.getByTestId('buzzer-button').click();
+  await p2.getByTestId('answer-2-card').click();    
+  await p1.waitForTimeout(500); 
+  await p1.getByTestId('buzzer-button').click();
+  await p1.getByTestId('answer-1-card').click(); 
+   
+  await hostPage.waitForTimeout(1000); 
+ 
   // Final scoreboard
-  await expect(hostPage.getByText(/Total Score|Final Score|Game Over/i)).toBeVisible();
+  await expect(hostPage.getByTestId('final-result-page')).toBeVisible();
 });
