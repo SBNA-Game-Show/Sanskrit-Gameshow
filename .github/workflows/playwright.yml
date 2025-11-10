@@ -23,6 +23,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Frontend dependencies
+        working-directory: Frontend
+        run: npm install
+
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
