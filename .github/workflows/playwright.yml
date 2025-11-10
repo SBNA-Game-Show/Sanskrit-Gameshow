@@ -25,7 +25,9 @@ jobs:
 
       - name: Install Frontend dependencies
         working-directory: frontend
-        run: npm install
+        run: |
+          npm install
+          npm install cross-env
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
