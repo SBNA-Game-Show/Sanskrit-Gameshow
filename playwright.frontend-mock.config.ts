@@ -11,7 +11,7 @@ export default defineConfig({
 
   use: {
     ...devices['Desktop Chrome'],
-    headless: false,
+    headless: !!process.env.CI,
     baseURL: FRONTEND_URL,
     trace: 'on-first-retry',
     launchOptions: { slowMo: 100 },
