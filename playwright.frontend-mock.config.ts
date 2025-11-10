@@ -4,7 +4,7 @@ const FRONTEND_URL = 'http://localhost:3000';
 const BACKEND_URL  = 'http://localhost:5004';
 
 export default defineConfig({
-  testDir: './tests/frontend',
+  testDir: './tests/Frontend',
   timeout: 1_000_000,
   fullyParallel: true,
   reporter: 'html',
