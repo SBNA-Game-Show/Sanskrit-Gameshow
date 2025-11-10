@@ -7,7 +7,12 @@ export default defineConfig({
   testDir: './tests/Frontend',
   timeout: 1_000_000,
   fullyParallel: true,
-  reporter: 'html',
+  reporter: [
+  ['list'],                 
+  ['github'],               
+  ['html', { open: 'never' }]
+  ],
+
 
   use: {
     ...devices['Desktop Chrome'],
