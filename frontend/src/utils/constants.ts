@@ -5,7 +5,7 @@ export const BACKEND_HOST =
 export const API_BASE = `${BACKEND_HOST}`;
 
 export const GAME_CONFIG = {
-  SOCKET_URL: BACKEND_HOST,
+  SOCKET_URL: "http://localhost:5004",
   ANSWER_TIME_LIMIT: 30000, // 30 seconds
   MIN_PLAYERS: 2,
   MAX_STRIKES: 3,
