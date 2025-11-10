@@ -37,7 +37,7 @@ jobs:
 
       #  Change test command here:
       - name: Run Playwright tests (frontend + backend)
-        run: npm run test:backend
+        run: npm run test:frontend
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
