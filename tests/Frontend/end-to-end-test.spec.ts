@@ -281,4 +281,6 @@ test('Host creates game and plays through 3 rounds (mock data)', async ({ browse
  
   // Final scoreboard
   await expect(hostPage.getByTestId('final-result-page')).toBeVisible();
+
+  console.log("✅ End to End Test Passed")
 });
