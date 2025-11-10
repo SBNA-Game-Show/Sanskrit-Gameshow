@@ -15,7 +15,7 @@ export const setupServer = () => {
   console.log("[BOOT] allowedOrigins  =", allowedOrigins);
   
   const corsOptions = {
-    origin: allowedOrigins,
+    origin: "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true, // <- optional but useful
   };
