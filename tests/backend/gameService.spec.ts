@@ -16,7 +16,7 @@ import {
   isRoundComplete,
   getCurrentQuestion,
   getGameWinner,
-  calculateRoundSummary,
+  continueToNextRound,
   cleanupOldGames,
   getGameStats,
   games,
@@ -82,7 +82,7 @@ test.describe('Game Service Core Functions', () => {
     });
   });
 
-  test('createGame should initialize game with correct structure', async () => { // Add async here
+  test('createGame should initialize game with correct structure', async () => {
     const mockQuestions = [
       { _id: 'q1', question: 'Test Q1', round: 1, teamAssignment: 'team1', questionNumber: 1, answers: [] },
       { _id: 'q2', question: 'Test Q2', round: 1, teamAssignment: 'team2', questionNumber: 1, answers: [] }
@@ -90,15 +90,15 @@ test.describe('Game Service Core Functions', () => {
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
     const teamNames = { team1: 'Team Alpha', team2: 'Team Beta' };
 
-    const result = await createGame(mockQuestions, mockTossUp, teamNames); // Add await here
+    const result = await createGame(mockQuestions, mockTossUp, teamNames);
     
-    expect(result).toHaveProperty('gameCode');
-    expect(result).toHaveProperty('gameId');
+    // Updated assertion - result now contains game object directly
+    expect(result).toHaveProperty('game');
+    expect(result.game).toHaveProperty('code');
+    expect(result.game).toHaveProperty('id');
     
-    // Fix: Type assertion for games object
-    const game = (games as any)[result.gameCode];
-    expect(game).toBeDefined();
-    expect(game.code).toBe(result.gameCode);
+    const game = result.game;
+    expect(game.code).toMatch(/^[A-Z0-9]{6}$/);
     expect(game.status).toBe('waiting');
     expect(game.teams).toHaveLength(2);
     expect(game.teams[0].name).toBe('Team Alpha');
@@ -107,15 +107,14 @@ test.describe('Game Service Core Functions', () => {
     expect(game.questions).toEqual(mockQuestions);
   });
 
-  test('startGame should activate game and set initial state', async () => { // Add async here
+  test('startGame should activate game and set initial state', async () => {
     const mockQuestions = [
       { _id: 'q1', question: 'Test Q1', round: 1, teamAssignment: 'team1', questionNumber: 1, answers: [] }
     ];
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
     
-    // Add await here since createGame is async
     const result = await createGame(mockQuestions, mockTossUp, { team1: 'Team A', team2: 'Team B' });
-    const { gameCode } = result;
+    const gameCode = result.game.code;
     
     const game = startGame(gameCode);
     
@@ -126,12 +125,12 @@ test.describe('Game Service Core Functions', () => {
 });
 
 test.describe('Player Management', () => {
-  test('joinGame should add player to game', async () => { // Add async
+  test('joinGame should add player to game', async () => {
     // Create a game first
     const mockQuestions: any[] = [];
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
-    const result = await createGame(mockQuestions, mockTossUp, {}); // Add await
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Team Alpha', team2: 'Team Beta' });
+    const gameCode = result.game.code;
     
     // Join the game
     const joinResult = joinGame(gameCode, 'TestPlayer');
@@ -141,12 +140,12 @@ test.describe('Player Management', () => {
     expect(joinResult).toHaveProperty('game');
     
     // Verify game state was updated
-    const game = getGame(gameCode); // Use getGame instead of direct access
+    const game = getGame(gameCode);
     expect(game!.players).toHaveLength(1);
     expect(game!.players[0].name).toBe('TestPlayer');
     
     // Verify players storage was updated
-    const player = getPlayer(joinResult.playerId); // Use getPlayer instead of direct access
+    const player = getPlayer(joinResult.playerId!);
     expect(player!.name).toBe('TestPlayer');
     expect(player!.gameCode).toBe(gameCode);
   });
@@ -157,12 +156,12 @@ test.describe('Player Management', () => {
     }).toThrow('Game not found');
   });
 
-  test('getGame should return correct game', async () => { // Add async
+  test('getGame should return correct game', async () => {
     // Create a game first
     const mockQuestions: any[] = [];
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
-    const result = await createGame(mockQuestions, mockTossUp, {}); // Add await
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Team A', team2: 'Team B' });
+    const gameCode = result.game.code;
     
     // Test getting valid game
     const game = getGame(gameCode);
@@ -175,17 +174,17 @@ test.describe('Player Management', () => {
     expect(invalidGame).toBeNull();
   });
 
-  test('getPlayer should return correct player', async () => { // Add async
+  test('getPlayer should return correct player', async () => {
     // Create a game and join a player
     const mockQuestions: any[] = [];
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
-    const result = await createGame(mockQuestions, mockTossUp, {}); // Add await
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Team One', team2: 'Team Two' });
+    const gameCode = result.game.code;
     const joinResult = joinGame(gameCode, 'TestPlayer');
     const { playerId } = joinResult;
     
     // Test getting valid player
-    const player = getPlayer(playerId);
+    const player = getPlayer(playerId!);
     expect(player).toBeDefined();
     expect(player!.name).toBe('TestPlayer');
     expect(player!.gameCode).toBe(gameCode);
@@ -195,11 +194,11 @@ test.describe('Player Management', () => {
     expect(invalidPlayer).toBeNull();
   });
 
-  test('multiple players can join the same game', async () => { // Add async
+  test('multiple players can join the same game', async () => {
     const mockQuestions: any[] = [];
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
-    const result = await createGame(mockQuestions, mockTossUp, {}); // Add await
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Red Team', team2: 'Blue Team' });
+    const gameCode = result.game.code;
     
     // Join multiple players
     const player1Result = joinGame(gameCode, 'Player1');
@@ -207,25 +206,25 @@ test.describe('Player Management', () => {
     const player3Result = joinGame(gameCode, 'Player3');
     
     // Verify all players were added to the game
-    const game = getGame(gameCode); // Use getGame instead of direct access
+    const game = getGame(gameCode);
     expect(game!.players).toHaveLength(3);
     expect(game!.players.map((p: any) => p.name)).toEqual(['Player1', 'Player2', 'Player3']);
     
     // Verify all players exist in players storage using getPlayer
-    expect(getPlayer(player1Result.playerId)!.name).toBe('Player1');
-    expect(getPlayer(player2Result.playerId)!.name).toBe('Player2');
-    expect(getPlayer(player3Result.playerId)!.name).toBe('Player3');
+    expect(getPlayer(player1Result.playerId!)!.name).toBe('Player1');
+    expect(getPlayer(player2Result.playerId!)!.name).toBe('Player2');
+    expect(getPlayer(player3Result.playerId!)!.name).toBe('Player3');
   });
 
-  test('player should have correct initial state', async () => { // Add async
+  test('player should have correct initial state', async () => {
     const mockQuestions: any[] = [];
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
-    const result = await createGame(mockQuestions, mockTossUp, {}); // Add await
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Team X', team2: 'Team Y' });
+    const gameCode = result.game.code;
     const joinResult = joinGame(gameCode, 'TestPlayer');
     const { playerId } = joinResult;
     
-    const player = getPlayer(playerId); // Use getPlayer instead of direct access
+    const player = getPlayer(playerId!);
     expect(player).toEqual({
       id: playerId,
       name: 'TestPlayer',
@@ -235,16 +234,16 @@ test.describe('Player Management', () => {
     });
   });
 
-  test('updatePlayer should modify player properties', async () => { // Add async
+  test('updatePlayer should modify player properties', async () => {
     const mockQuestions: any[] = [];
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
-    const result = await createGame(mockQuestions, mockTossUp, {}); // Add await
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'First Team', team2: 'Second Team' });
+    const gameCode = result.game.code;
     const joinResult = joinGame(gameCode, 'TestPlayer');
     const { playerId } = joinResult;
     
     // Update player
-    const updatedPlayer = updatePlayer(playerId, { 
+    const updatedPlayer = updatePlayer(playerId!, { 
       teamId: 'team1_123', 
       connected: false 
     });
@@ -255,7 +254,7 @@ test.describe('Player Management', () => {
     expect(updatedPlayer!.connected).toBe(false);
     
     // Verify the update persisted using getPlayer
-    const player = getPlayer(playerId);
+    const player = getPlayer(playerId!);
     expect(player!.teamId).toBe('team1_123');
     expect(player!.connected).toBe(false);
   });
@@ -265,20 +264,23 @@ test.describe('Player Management', () => {
     expect(result).toBeNull();
   });
 
-  test('players should be assigned unique IDs', async () => { // Add async
+  test('players should be assigned unique IDs', async () => {
     const mockQuestions: any[] = [];
     const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
-    const result = await createGame(mockQuestions, mockTossUp, {}); // Add await
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Alpha', team2: 'Beta' });
+    const gameCode = result.game.code;
     
     const player1 = joinGame(gameCode, 'Player1');
     const player2 = joinGame(gameCode, 'Player2');
     
+    // Add null checks
+    expect(player1.playerId).not.toBeNull();
+    expect(player2.playerId).not.toBeNull();
     expect(player1.playerId).not.toBe(player2.playerId);
     expect(typeof player1.playerId).toBe('string');
     expect(typeof player2.playerId).toBe('string');
-    expect(player1.playerId.length).toBeGreaterThan(0);
-    expect(player2.playerId.length).toBeGreaterThan(0);
+    expect(player1.playerId!.length).toBeGreaterThan(0);
+    expect(player2.playerId!.length).toBeGreaterThan(0);
   });
 });
 
@@ -318,23 +320,21 @@ test.describe('Answer Submission Logic', () => {
       ] 
     };
     
-    const result = await createGame(mockQuestions, mockTossUp, {});
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Team Alpha', team2: 'Team Beta' });
+    const gameCode = result.game.code;
     const joinResult = joinGame(gameCode, 'Player1');
     const { playerId } = joinResult;
     const game = startGame(gameCode);
     
     // Assign player to team using updatePlayer
-    updatePlayer(playerId, { teamId: game!.teams[0].id });
+    updatePlayer(playerId!, { teamId: game!.teams[0].id });
     
-    const submitResult = submitAnswer(gameCode, playerId, 'correct');
+    const submitResult = submitAnswer(gameCode, playerId!, 'correct');
     
-    // Type-safe property access
     expect(submitResult.success).toBe(true);
     
-    // Use type assertion for successful result
     if (submitResult.success) {
-      const successResult = submitResult as any; // Use type assertion for now
+      const successResult = submitResult as any;
       expect(successResult.isCorrect).toBe(true);
       expect(successResult.pointsAwarded).toBe(10);
       expect(successResult.tossUp).toBe(true);
@@ -353,8 +353,8 @@ test.describe('Answer Submission Logic', () => {
     }];
     const mockTossUp = { _id: 'toss1', answers: [] };
     
-    const result = await createGame(mockQuestions, mockTossUp, {});
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Red Team', team2: 'Blue Team' });
+    const gameCode = result.game.code;
     const joinResult = joinGame(gameCode, 'Player1');
     const { playerId } = joinResult;
     const game = startGame(gameCode);
@@ -369,16 +369,15 @@ test.describe('Answer Submission Logic', () => {
     });
     
     // Update player and team using proper functions
-    updatePlayer(playerId, { teamId: game!.teams[0].id });
+    updatePlayer(playerId!, { teamId: game!.teams[0].id });
     updateTeamActiveStatus(getGame(gameCode)!);
     
-    const submitResult = submitAnswer(gameCode, playerId, 'wrong');
+    const submitResult = submitAnswer(gameCode, playerId!, 'wrong');
     
-    // Type-safe property access
     expect(submitResult.success).toBe(true);
     
     if (submitResult.success) {
-      const successResult = submitResult as any; // Use type assertion for now
+      const successResult = submitResult as any;
       expect(successResult.isCorrect).toBe(false);
       expect(successResult.revealAllCards).toBe(true);
     }
@@ -387,10 +386,8 @@ test.describe('Answer Submission Logic', () => {
   test('submitAnswer should return error for invalid game state', () => {
     const result = submitAnswer('INVALID_GAME', 'INVALID_PLAYER', 'answer');
     
-    // Type-safe property access for error case - use type assertion
     expect(result.success).toBe(false);
     
-    // Use type assertion to access message property
     const errorResult = result as any;
     expect(errorResult.message).toContain('Invalid game state');
   });
@@ -407,8 +404,8 @@ test.describe('Answer Submission Logic', () => {
     }];
     const mockTossUp = { _id: 'toss1', answers: [] };
     
-    const result = await createGame(mockQuestions, mockTossUp, {});
-    const { gameCode } = result;
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Team One', team2: 'Team Two' });
+    const gameCode = result.game.code;
     const joinResult = joinGame(gameCode, 'Player1');
     const { playerId } = joinResult;
     
@@ -423,16 +420,15 @@ test.describe('Answer Submission Logic', () => {
       }
     });
     
-    updatePlayer(playerId, { teamId: game!.teams[0].id });
+    updatePlayer(playerId!, { teamId: game!.teams[0].id });
     updateTeamActiveStatus(getGame(gameCode)!);
     
-    const submitResult = submitAnswer(gameCode, playerId, 'correct answer');
+    const submitResult = submitAnswer(gameCode, playerId!, 'correct answer');
     
-    // Type-safe property access
     expect(submitResult.success).toBe(true);
     
     if (submitResult.success) {
-      const successResult = submitResult as any; // Use type assertion for now
+      const successResult = submitResult as any;
       expect(successResult.isCorrect).toBe(true);
       expect(successResult.pointsAwarded).toBe(10);
     }
@@ -447,178 +443,168 @@ test.describe('Game State Management', () => {
     ];
     const mockTossUp = { _id: 'toss1', answers: [] };
     
-    const { gameCode } = await createGame(mockQuestions, mockTossUp, {});
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Alpha Team', team2: 'Beta Team' });
+    const gameCode = result.game.code;
     const game = startGame(gameCode);
     
     // Set up for regular round
-    game.currentRound = 1;
-    game.gameState.currentTurn = 'team1';
-    game.gameState.questionsAnswered.team1 = 0;
+    game!.currentRound = 1;
+    game!.gameState.currentTurn = 'team1';
+    game!.gameState.questionsAnswered.team1 = 0;
     
     const updatedGame = advanceGameState(gameCode);
     
-    expect(updatedGame.gameState.questionsAnswered.team1).toBe(1);
+    expect(updatedGame!.gameState.questionsAnswered.team1).toBe(1);
   });
 
   test('isRoundComplete should detect completed rounds', async () => {
-    const { gameCode } = await createGame([], { answers: [] }, {});
-    const game = (games as any)[gameCode]; // Type assertion
+    const result = await createGame([], { answers: [] }, { team1: 'First Team', team2: 'Second Team' });
+    const gameCode = result.game.code;
+    const game = getGame(gameCode);
     
     // Not complete
-    game.gameState.questionsAnswered = { team1: 2, team2: 2 };
-    expect(isRoundComplete(game)).toBe(false);
+    game!.gameState.questionsAnswered = { team1: 2, team2: 2 };
+    expect(isRoundComplete(game!)).toBe(false);
     
     // Complete
-    game.gameState.questionsAnswered = { team1: 3, team2: 3 };
-    expect(isRoundComplete(game)).toBe(true);
-    });
+    game!.gameState.questionsAnswered = { team1: 3, team2: 3 };
+    expect(isRoundComplete(game!)).toBe(true);
+  });
 
-    test('getCurrentQuestion should return correct question', async () => {
-        const mockQuestions = [
-            { _id: 'q1', round: 1, teamAssignment: 'team1', questionNumber: 1, answers: [] },
-            { _id: 'q2', round: 1, teamAssignment: 'team1', questionNumber: 2, answers: [] }
-        ];
-        const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
-        
-        const { gameCode } = await createGame(mockQuestions, mockTossUp, {});
-        const game = (games as any)[gameCode];
-        
-        // Toss-up round
-        game.currentRound = 0;
-        expect(getCurrentQuestion(game)).toStrictEqual(mockTossUp); // Changed to toStrictEqual
-        
-        // Regular round
-        game.currentRound = 1;
-        game.currentQuestionIndex = 0;
-        expect(getCurrentQuestion(game)).toStrictEqual(mockQuestions[0]); // Changed to toStrictEqual
-        
-        // No question
-        game.currentQuestionIndex = 10;
-        expect(getCurrentQuestion(game)).toBeNull();
-    });
+  test('getCurrentQuestion should return correct question', async () => {
+    const mockQuestions = [
+      { _id: 'q1', round: 1, teamAssignment: 'team1', questionNumber: 1, answers: [] },
+      { _id: 'q2', round: 1, teamAssignment: 'team1', questionNumber: 2, answers: [] }
+    ];
+    const mockTossUp = { _id: 'toss1', question: 'Toss Up', answers: [] };
+    
+    const result = await createGame(mockQuestions, mockTossUp, { team1: 'Team X', team2: 'Team Y' });
+    const gameCode = result.game.code;
+    const game = getGame(gameCode);
+    
+    // Toss-up round
+    game!.currentRound = 0;
+    expect(getCurrentQuestion(game!)).toStrictEqual(mockTossUp);
+    
+    // Regular round
+    game!.currentRound = 1;
+    game!.currentQuestionIndex = 0;
+    expect(getCurrentQuestion(game!)).toStrictEqual(mockQuestions[0]);
+    
+    // No question
+    game!.currentQuestionIndex = 10;
+    expect(getCurrentQuestion(game!)).toBeNull();
+  });
 });
 
 test.describe('Team and Scoring Logic', () => {
   test('updateTeamActiveStatus should set correct active team', async () => {
-    const { gameCode } = await createGame([], { answers: [] }, {
+    const result = await createGame([], { answers: [] }, {
       team1: 'Team One',
       team2: 'Team Two'
     });
-    const game = (games as any)[gameCode];
+    const gameCode = result.game.code;
+    const game = getGame(gameCode);
     
-    updateTeamActiveStatus(game);
+    updateTeamActiveStatus(game!);
     
     // No team should be active initially
-    expect(game.teams[0].active).toBe(false);
-    expect(game.teams[1].active).toBe(false);
+    expect(game!.teams[0].active).toBe(false);
+    expect(game!.teams[1].active).toBe(false);
     
     // Set team1 as current turn
-    game.gameState.currentTurn = 'team1';
-    updateTeamActiveStatus(game);
-    expect(game.teams[0].active).toBe(true);
-    expect(game.teams[1].active).toBe(false);
+    game!.gameState.currentTurn = 'team1';
+    updateTeamActiveStatus(game!);
+    expect(game!.teams[0].active).toBe(true);
+    expect(game!.teams[1].active).toBe(false);
     
     // Set team2 as current turn
-    game.gameState.currentTurn = 'team2';
-    updateTeamActiveStatus(game);
-    expect(game.teams[0].active).toBe(false);
-    expect(game.teams[1].active).toBe(true);
+    game!.gameState.currentTurn = 'team2';
+    updateTeamActiveStatus(game!);
+    expect(game!.teams[0].active).toBe(false);
+    expect(game!.teams[1].active).toBe(true);
   });
 
   test('getGameWinner should determine winner correctly', async () => {
-    const { gameCode } = await createGame([], { answers: [] }, {});
-    const game = (games as any)[gameCode];
+    const result = await createGame([], { answers: [] }, { team1: 'Alpha Team', team2: 'Beta Team' });
+    const gameCode = result.game.code;
+    const game = getGame(gameCode);
     
-    const team1 = game.teams[0];
-    const team2 = game.teams[1];
+    const team1 = game!.teams[0];
+    const team2 = game!.teams[1];
     
     // Team 1 wins
     team1.roundScores = [10, 20, 30]; // Total: 60
     team2.roundScores = [5, 15, 25];  // Total: 45
-    expect(getGameWinner(game)).toBe(team1);
+    expect(getGameWinner(game!)).toBe(team1);
     
     // Team 2 wins
     team1.roundScores = [10, 10, 10]; // Total: 30
     team2.roundScores = [15, 15, 15]; // Total: 45
-    expect(getGameWinner(game)).toBe(team2);
+    expect(getGameWinner(game!)).toBe(team2);
     
     // Tie
     team1.roundScores = [10, 10, 10]; // Total: 30
     team2.roundScores = [10, 10, 10]; // Total: 30
-    expect(getGameWinner(game)).toBeNull();
-  });
-
-  test('calculateRoundSummary should provide accurate round data', async () => {
-    const { gameCode } = await createGame([], { answers: [] }, {
-      team1: 'Red Team',
-      team2: 'Blue Team'
-    });
-    const game = (games as any)[gameCode];
-    
-    game.currentRound = 1;
-    game.teams[0].currentRoundScore = 25;
-    game.teams[1].currentRoundScore = 15;
-    game.teams[0].roundScores = [0, 0, 0]; // Previous rounds
-    game.teams[1].roundScores = [0, 0, 0];
-    
-    const summary = calculateRoundSummary(game);
-    
-    expect(summary.round).toBe(1);
-    expect(summary.teamScores.team1.roundScore).toBe(25);
-    expect(summary.teamScores.team2.roundScore).toBe(15);
-    expect(summary.teamScores.team1.teamName).toBe('Red Team');
-    expect(summary.teamScores.team2.teamName).toBe('Blue Team');
+    expect(getGameWinner(game!)).toBeNull();
   });
 });
 
 test.describe('Utility Functions', () => {
   test('updateQuestionData should track question attempts', async () => {
-    const { gameCode } = await createGame([], { answers: [] }, {});
-    const game = (games as any)[gameCode];
+    const result = await createGame([], { answers: [] }, { team1: 'Red Team', team2: 'Blue Team' });
+    const gameCode = result.game.code;
+    const game = getGame(gameCode);
     
-    updateQuestionData(game, 'team1', 1, 1, true, 10);
+    updateQuestionData(game!, 'team1', 1, 1, true, 10);
     
-    const questionData = game.gameState.questionData.team1.round1[0];
+    const questionData = game!.gameState.questionData.team1.round1[0];
     expect(questionData.firstAttemptCorrect).toBe(true);
     expect(questionData.pointsEarned).toBe(10);
     
     // Should not update if already attempted
-    updateQuestionData(game, 'team1', 1, 1, false, 0);
+    updateQuestionData(game!, 'team1', 1, 1, false, 0);
     expect(questionData.firstAttemptCorrect).toBe(true); // Still true
   });
 
   test('overrideQuestionData should force update question data', async () => {
-    const { gameCode } = await createGame([], { answers: [] }, {});
-    const game = (games as any)[gameCode];
+    const result = await createGame([], { answers: [] }, { team1: 'Team X', team2: 'Team Y' });
+    const gameCode = result.game.code;
+    const game = getGame(gameCode);
     
-    overrideQuestionData(game, 'team1', 1, 1, false, 0);
+    overrideQuestionData(game!, 'team1', 1, 1, false, 0);
     
-    const questionData = game.gameState.questionData.team1.round1[0];
+    const questionData = game!.gameState.questionData.team1.round1[0];
     expect(questionData.firstAttemptCorrect).toBe(false);
     expect(questionData.pointsEarned).toBe(0);
   });
 
   test('cleanupOldGames should remove expired games', async () => {
-    const { gameCode } = await createGame([], { answers: [] }, {});
+    const result = await createGame([], { answers: [] }, { team1: 'First Team', team2: 'Second Team' });
+    const gameCode = result.game.code;
     
     // Make game old
-    (games as any)[gameCode].createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 hours ago
+    const game = getGame(gameCode);
+    game!.createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 hours ago
     
     cleanupOldGames();
     
-    expect((games as any)[gameCode]).toBeUndefined();
+    expect(getGame(gameCode)).toBeNull();
   });
 
   test('getGameStats should return correct statistics', () => {
     // Clear existing games
-    Object.keys(games).forEach(key => delete (games as any)[key]);
-    Object.keys(players).forEach(key => delete (players as any)[key]);
+    resetGameState();
     
-    // Create test games and players
-    createGame([], { answers: [] }, {});
-    createGame([], { answers: [] }, {});
-    (players as any)['player1'] = { id: 'player1', name: 'Test', gameCode: 'TEST', connected: true, teamId: null };
-    (players as any)['player2'] = { id: 'player2', name: 'Test2', gameCode: 'TEST', connected: true, teamId: null };
+    // Create test games and players with distinct team names
+    createGame([], { answers: [] }, { team1: 'Team A', team2: 'Team B' });
+    createGame([], { answers: [] }, { team1: 'Team C', team2: 'Team D' });
+    
+    // Create test players directly in the players object
+    const player1 = { id: 'player1', name: 'Test', gameCode: 'TEST', connected: true, teamId: null };
+    const player2 = { id: 'player2', name: 'Test2', gameCode: 'TEST', connected: true, teamId: null };
+    (players as any)['player1'] = player1;
+    (players as any)['player2'] = player2;
     
     const stats = getGameStats();
     
@@ -635,14 +621,12 @@ test.describe('Error Handling', () => {
   });
 
   test('submitAnswer should handle non-existent player', async () => {
-    const { gameCode } = await createGame([], { answers: [] }, {});
+    const result = await createGame([], { answers: [] }, { team1: 'Home Team', team2: 'Away Team' });
+    const gameCode = result.game.code;
     startGame(gameCode);
     
-    const result = submitAnswer(gameCode, 'INVALID_PLAYER', 'answer');
-    expect(result.success).toBe(false);
-    expect((result as any).message).toContain('Invalid game state');
+    const result2 = submitAnswer(gameCode, 'INVALID_PLAYER', 'answer');
+    expect(result2.success).toBe(false);
+    expect((result2 as any).message).toContain('Invalid game state');
   });
-
 });
-
-  
