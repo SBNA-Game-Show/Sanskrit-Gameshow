@@ -4,14 +4,19 @@ const FRONTEND_URL = 'http://localhost:3000';
 const BACKEND_URL  = 'http://localhost:5004';
 
 export default defineConfig({
-  testDir: './tests/frontend',
+  testDir: './tests/Frontend',
   timeout: 1_000_000,
   fullyParallel: true,
-  reporter: 'html',
+  reporter: [
+  ['list'],                 
+  ['github'],               
+  ['html', { open: 'never' }]
+  ],
+
 
   use: {
     ...devices['Desktop Chrome'],
-    headless: false,
+    headless: !!process.env.CI,
     baseURL: FRONTEND_URL,
     trace: 'on-first-retry',
     launchOptions: { slowMo: 100 },
