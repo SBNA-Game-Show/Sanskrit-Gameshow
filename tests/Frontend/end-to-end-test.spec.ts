@@ -23,14 +23,6 @@ async function login(page: Page, username: string, password: string, baseURL?: s
 function editableInput(p: Page): Locator {
   return p
     .getByTestId('answer-input')
-    //.or(
-    //  p.locator(
-     //   'input[placeholder*="Type your answer here"], ' +
-     //   'textarea[placeholder*="Type your answer here"], ' +
-     //   '[contenteditable="true"][role="textbox"]'
-     // ).first()
-   // )
-   // .or(p.getByRole('textbox', { name: /Type your answer here/i }));
 }
 
 async function getEditableAnswerInput(p: Page): Promise<Locator> {
@@ -69,51 +61,36 @@ async function nextQuestion(host: Page) {
   ]);
 }
 
-/* ========= LIGHTNING ROUND HELPERS ========= */
+/* ========= LIGHTNING ROUND ========= */
+type LightningStep = {
+  by: 'p1' | 'p2';
+  answerTestId: string;
+};
 
-/** Finish the lightning round and go to final scoreboard */
-async function finishLightningRound(hostPage: Page) {
-  const finishBtn = hostPage
-    .getByTestId('host-finish-lightning-button')
-    .or(hostPage.getByRole('button', { name: /(finish|final score|final scoreboard|show final scores)/i }));
+const LIGHTNING_STEPS: LightningStep[] = [
+  { by: 'p1', answerTestId: 'answer-1-card' },
+  { by: 'p2', answerTestId: 'answer-1-card' },
+  { by: 'p1', answerTestId: 'answer-5-card' },
+  { by: 'p2', answerTestId: 'answer-4-card' },
+  { by: 'p1', answerTestId: 'answer-3-card' },
+  { by: 'p2', answerTestId: 'answer-2-card' },
+  { by: 'p1', answerTestId: 'answer-1-card' },
+];
 
-  if (await finishBtn.isVisible().catch(() => false)) {
-    await expect(finishBtn).toBeEnabled({ timeout: 15_000 });
-    await finishBtn.click();
+async function playLightningRound(p1: Page, p2: Page) {
+  const players = { p1, p2 } as const;
+
+  for (const step of LIGHTNING_STEPS) {
+    const page = players[step.by];
+
+    await page.getByTestId('buzzer-button').click();
+    await page.getByTestId(step.answerTestId).click();
+
+    // small gap between lightning answers, mirroring your current code
+    await page.waitForTimeout(500);
   }
 }
 
-/** 
-async function playLightningRound(p: Page) {
-  // Q1
-  await p.getByTestId('buzzer-button').click();
-  await p.locator('span').filter({ hasText: 'Paris' }).first().click();
-
-  // Q2
-  await p.getByTestId('buzzer-button').click();
-  await p.getByTestId('answer-3-card').click();
-
-  // Q3
-  await p.getByTestId('buzzer-button').click();
-  await p.getByTestId('answer-1-card').click();
-
-  // Q4
-  await p.getByTestId('buzzer-button').click();
-  await p.locator('span').filter({ hasText: '5' }).first().click();
-
-  // Q5
-  await p.getByTestId('buzzer-button').click();
-  await p.getByTestId('answer-1-card').click();
-
-  // Q6
-  await p.getByTestId('buzzer-button').click();
-  await p.getByTestId('answer-2-card').click();
-  
-  // Q7
-  await p.getByTestId('buzzer-button').click();
-  await p.getByTestId('answer-4-card').click();
-}
-*/
 /* ---------- round navigation ---------- */
 async function goToNextRound(hostPage: Page, activePlayerPage: Page) {
   // If a leftover "NEXT QUESTION" is present, click it first.
@@ -253,29 +230,9 @@ test('Host creates game and plays through 3 rounds (mock data)', async ({ browse
     }
   }
 
-  // ---------- LIGHTNING ROUND (NEW) ----------
+  // ---------- LIGHTNING ROUND  ----------
   await goToNextRound(hostPage, p1);  
-  //await playLightningRound(p1); 
-  await p1.getByTestId('buzzer-button').click();
-  await p1.getByTestId('answer-1-card').click();   
-  await p2.waitForTimeout(500); 
-  await p2.getByTestId('buzzer-button').click();
-  await p2.getByTestId('answer-1-card').click();    
-  await p1.waitForTimeout(500); 
-  await p1.getByTestId('buzzer-button').click();
-  await p1.getByTestId('answer-5-card').click();
-  await p2.waitForTimeout(500); 
-  await p2.getByTestId('buzzer-button').click();
-  await p2.getByTestId('answer-4-card').click();    
-  await p1.waitForTimeout(500); 
-  await p1.getByTestId('buzzer-button').click();
-  await p1.getByTestId('answer-3-card').click();  
-  await p2.waitForTimeout(500); 
-  await p2.getByTestId('buzzer-button').click();
-  await p2.getByTestId('answer-2-card').click();    
-  await p1.waitForTimeout(500); 
-  await p1.getByTestId('buzzer-button').click();
-  await p1.getByTestId('answer-1-card').click(); 
+  await playLightningRound(p1, p2);
    
   await hostPage.waitForTimeout(1000); 
  
