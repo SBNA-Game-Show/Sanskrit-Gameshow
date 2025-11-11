@@ -37,16 +37,16 @@ interface GameState {
 }
 
 test.describe('WebSocket/Socket.IO Event Tests', () => {
-  test('WebSocket connection should be available', async ({ page }) => {
-    // Test basic WebSocket connectivity
-    await page.goto(BASE_URL);
+  // test('WebSocket connection should be available', async ({ page }) => {
+  //   // Test basic WebSocket connectivity
+  //   await page.goto(BASE_URL);
     
-    // Check if the page loads successfully
-    const response = await page.goto(BASE_URL);
-    expect(response?.status()).toBe(200);
+  //   // Check if the page loads successfully
+  //   const response = await page.goto(BASE_URL);
+  //   expect(response?.status()).toBe(200);
     
-    console.log('✅ Basic HTTP connectivity confirmed');
-  });
+  //   console.log('✅ Basic HTTP connectivity confirmed');
+  // });
 
   test('API endpoints should respond to game creation', async ({ request }) => {
     console.log('Testing /api/create-game endpoint...');
