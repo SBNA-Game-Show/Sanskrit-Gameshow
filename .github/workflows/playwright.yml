@@ -52,11 +52,11 @@ jobs:
           path: playwright-report/
           retention-days: 30
 
-      - name: Push tested commit to deploy-branch
+      - name: Push tested commit to release-branch
         if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           # Push the current tested commit on main to the deploy-branch
-          git push origin HEAD:deploy-branch
+          git push origin HEAD:release-branch
