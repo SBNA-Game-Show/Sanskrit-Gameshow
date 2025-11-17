@@ -1,4 +1,7 @@
 # Sanskrit-Gameshow
+Sanskrit Gameshow Documentation:
+https://docs.google.com/document/d/1y9AqemQoLbCJDlFvv1zpL788Pp7I6hgRk34ImQU0dZk/edit?usp=sharing
+
 Commands to run the Playwright Tests:
 1) npm run test:frontend
 2) npm run test:backend
@@ -8,7 +11,7 @@ Commands to run the Playwright Tests:
 This project automatically deploys to Vercel (frontend) and Render (backend) whenever new code is pushed to the main branch.
 
  
-#🚀Automatic Deployment Behavior
+# 🚀Automatic Deployment Behavior
 Whenever you push new commits to main:
 1) GitHub Actions runs all automated tests.
 2) If the tests pass, the workflow synchronizes main → release-branch.
