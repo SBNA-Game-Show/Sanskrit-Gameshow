@@ -58,5 +58,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          git fetch origin
+
+          git checkout -B release-branch $GITHUB_SHA
+
           # Push the current tested commit on main to the deploy-branch
-          git push origin HEAD:release-branch
+          git push origin release-branch --force
+
