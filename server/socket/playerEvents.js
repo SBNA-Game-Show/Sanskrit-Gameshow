@@ -241,7 +241,6 @@ socket.on("join-team", (data) => {
         // active team to allow the second team to answer.
         game.activeTeamId = otherTeamId;
         game.teams.forEach((t) => (t.active = t.id === otherTeamId));
-        game.gameState.inputEnabled = true;
         game.gameState.currentTurn = otherTeamId.includes("team1")
           ? "team1"
           : "team2";
@@ -332,7 +331,6 @@ socket.on("join-team", (data) => {
           // active team to allow the second team to answer.
           game.activeTeamId = otherTeamId;
           game.teams.forEach((t) => (t.active = t.id === otherTeamId));
-          game.gameState.inputEnabled = true;
           game.gameState.currentTurn = otherTeamId.includes("team1")
             ? "team1"
             : "team2";
