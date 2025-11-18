@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { formatTimer } from "../utils/gameHelper";
 
+//UNUSED
+//used to display time elapsed
 export const useTimer = (isActive: boolean = false) => {
   const [timer, setTimer] = useState("00:00");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
