@@ -2,53 +2,57 @@ import { ApiError } from "../utils/ApiError.js";
 import { QUESTION_LEVEL, QUESTION_TYPE } from "../utils/constants.js";
 
 /**
- * Fetches questions for all rounds from the given Mongo collection.
- * Handles both Input (rounds 1–3) and Lightning (round 4 / MCQ) types.
+ * Fetches ALL questions from the database
+ * so users can select which ones to use in the game
  */
 async function getQuestions(collection) {
   try {
-    // --- Round 1: Beginner Input Questions ---
-    const beginnerInputQuestions = await collection.aggregate([
-      { $match: { questionType: QUESTION_TYPE.INPUT, questionLevel: QUESTION_LEVEL.BEGINNER } },
-      { $sample: { size: 6 } }
-    ])
+    // --- Fetch ALL questions of each type (no $sample) ---
+    const beginnerInputQuestions = await collection
+      .find({
+        questionType: QUESTION_TYPE.INPUT,
+        questionLevel: QUESTION_LEVEL.BEGINNER,
+      })
+      .lean();
 
-    // --- Round 2: Intermediate Input Questions ---
-    const intermediateInputQuestions = await collection.aggregate([
-      { $match: { questionType: QUESTION_TYPE.INPUT, questionLevel: QUESTION_LEVEL.INTERMEDIATE } },
-      { $sample: { size: 7 } }
-    ])
+    const intermediateInputQuestions = await collection
+      .find({
+        questionType: QUESTION_TYPE.INPUT,
+        questionLevel: QUESTION_LEVEL.INTERMEDIATE,
+      })
+      .lean();
 
-    // --- Round 3: Advanced Input Questions ---
-    const advancedInputQuestions = await collection.aggregate([
-      { $match: { questionType: QUESTION_TYPE.INPUT, questionLevel: QUESTION_LEVEL.ADVANCED } },
-      { $sample: { size: 6 } }
-    ])
+    const advancedInputQuestions = await collection
+      .find({
+        questionType: QUESTION_TYPE.INPUT,
+        questionLevel: QUESTION_LEVEL.ADVANCED,
+      })
+      .lean();
 
-    // --- Round 4 (Lightning / MCQ) ---
-    const mcqQuestions = await collection.aggregate([
-      { $match: { questionType: QUESTION_TYPE.MCQ } },
-      { $sample: { size: 7 } }
-    ])
+    const mcqQuestions = await collection
+      .find({
+        questionType: QUESTION_TYPE.MCQ,
+      })
+      .lean();
 
-    // --- Merge Input Rounds ---
+    // --- Merge all input questions ---
     const inputQuestions = [
       ...beginnerInputQuestions,
       ...intermediateInputQuestions,
       ...advancedInputQuestions,
     ];
 
-    // --- Validate ---
-    if (inputQuestions.length < 19) {
-      console.error("❌ Found only", inputQuestions.length, "input questions.");
-      throw new ApiError(404, "Less than 19 questions in the DB. Game needs 19.");
-    }
+    console.log(
+      `📚 Loaded ${inputQuestions.length} input questions and ${mcqQuestions.length} MCQ questions from DB`
+    );
 
     return { inputQuestions, mcqQuestions };
-
   } catch (error) {
     console.error("❌ Error in getQuestions():", error);
-    throw new ApiError(500, "Failed to fetch questions from DB: " + error.message);
+    throw new ApiError(
+      500,
+      "Failed to fetch questions from DB: " + error.message
+    );
   }
 }
 

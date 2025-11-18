@@ -1,8 +1,12 @@
 import { Router } from "express";
-import { joinGame, getGameStats, createGame } from "../services/gameService.js";
 import { ApiError } from "../utils/ApiError.js";
 import { prepareGameQuestions } from "../services/loadQuestionFromDB.js";
-
+import {
+  joinGame,
+  getGameStats,
+  createGame,
+  setGameQuestions,
+} from "../services/gameService.js";
 //Comments By: Austin Sinclair
 
 //Main Game Router for creating and joining games. Routes are called within
@@ -50,13 +54,11 @@ router.post("/api/create-game", async (req, res) => {
     let { updatedTossUpQuestion, updatedQuestions } =
       await prepareGameQuestions();
 
-    
-
     console.log(updatedQuestions[0].answers);
 
     const { game } = await createGame(
       updatedQuestions,
-      updatedTossUpQuestion,
+      updatedTossUpQuestion, // This will be null now
       teamNames
     );
     if (!game.code) {
@@ -118,6 +120,50 @@ router.post("/api/join-game", (req, res) => {
         details: error.message,
       });
     }
+  }
+});
+// In gameRoutes.js - Add this new route
+
+router.post("/api/set-game-questions", async (req, res) => {
+  try {
+    console.log("Set game questions request received");
+    const { gameCode, questionIds, tossUpQuestionId } = req.body; // Added tossUpQuestionId
+
+    if (
+      !gameCode ||
+      !questionIds ||
+      !Array.isArray(questionIds) ||
+      tossUpQuestionId === undefined // Check for undefined (null is valid)
+    ) {
+      return res.status(400).json({
+        error:
+          "Game code, question IDs array, and tossUpQuestionId are required",
+      });
+    }
+
+    const result = await setGameQuestions(
+      gameCode,
+      questionIds,
+      tossUpQuestionId
+    ); // Pass to service
+
+    if (!result.success) {
+      return res.status(404).json({ error: result.message });
+    }
+
+    console.log(
+      `✅ Questions set for game ${gameCode}: ${questionIds.length} questions`
+    );
+    res.json({
+      success: true,
+      game: result.game,
+    });
+  } catch (error) {
+    console.error("Error setting game questions:", error);
+    res.status(500).json({
+      error: "Failed to set game questions",
+      details: error.message,
+    });
   }
 });
 

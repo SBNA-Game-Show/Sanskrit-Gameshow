@@ -51,6 +51,19 @@ export const gameApi = {
     const response = await apiClient.post("/api/join-game", request);
     return response.data;
   },
+
+  async setGameQuestions(
+    gameCode: string,
+    questionIds: string[],
+    tossUpQuestionId: string | null // Added tossUpQuestionId
+  ): Promise<any> {
+    const response = await apiClient.post("/api/set-game-questions", {
+      gameCode,
+      questionIds,
+      tossUpQuestionId, // Pass it to the backend
+    });
+    return response.data;
+  },
 };
 
 export default gameApi;

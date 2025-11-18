@@ -5,9 +5,109 @@ import fs from "fs";
 export let games = {};
 export let players = {};
 
+function shuffleArray(array) {
+  let currentIndex = array.length,
+    randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex],
+      array[currentIndex],
+    ];
+  }
+  return array;
+}
 // Generate random game code
 export function generateGameCode() {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
+}
+
+// In gameService.js - Add this new function
+
+export function setGameQuestions(
+  gameCode,
+  selectedQuestionIds,
+  tossUpQuestionId
+) {
+  const game = games[gameCode];
+  if (!game) {
+    return { success: false, message: "Game not found" };
+  }
+
+  // --- 1. SET TOSS-UP ---
+  const tossUpQuestion = game.questions.find((q) => q._id === tossUpQuestionId);
+  if (!tossUpQuestion) {
+    return { success: false, message: "Selected toss-up question not found" };
+  }
+  game.gameState.tossUpQuestion = {
+    ...tossUpQuestion,
+    round: 0,
+    questionNumber: 1,
+  };
+
+  // --- 2. PREPARE FINAL QUESTION LIST ---
+  // Get all *other* selected questions
+  const selectedQuestions = game.questions.filter(
+    (q) => selectedQuestionIds.includes(q._id) && q._id !== tossUpQuestionId
+  );
+
+  const finalOrderedQuestions = [];
+
+  // --- 3. PROCESS ROUNDS 1, 2, 3 ---
+  for (let roundNum = 1; roundNum <= 3; roundNum++) {
+    // Get all selected questions for this round
+    let roundQuestions = selectedQuestions.filter((q) => q.round === roundNum);
+
+    // Shuffle them to randomize who gets which question
+    shuffleArray(roundQuestions);
+
+    // Assign team and question number
+    const team1Questions = [];
+    const team2Questions = [];
+
+    roundQuestions.forEach((q, index) => {
+      const questionNumber = Math.floor(index / 2) + 1;
+      if (index % 2 === 0) {
+        // Even index (0, 2, 4) -> Team 1
+        team1Questions.push({
+          ...q,
+          teamAssignment: "team1",
+          questionNumber,
+        });
+      } else {
+        // Odd index (1, 3, 5) -> Team 2
+        team2Questions.push({
+          ...q,
+          teamAssignment: "team2",
+          questionNumber,
+        });
+      }
+    });
+
+    // Add them to the final list, ordered by team
+    // This order is CRITICAL for the game logic
+    finalOrderedQuestions.push(...team1Questions, ...team2Questions);
+  }
+
+  // --- 4. PROCESS ROUND 4 ---
+  const round4Questions = selectedQuestions
+    .filter((q) => q.round === 4)
+    .sort((a, b) => a.questionNumber - b.questionNumber); // Sort by pre-assigned number
+
+  finalOrderedQuestions.push(...round4Questions);
+
+  // --- 5. SET GAME QUESTIONS ---
+  game.questions = finalOrderedQuestions;
+
+  console.log(
+    `Game ${gameCode} now has ${game.questions.length} ordered questions`
+  );
+  console.log(
+    `Toss-up question set for ${gameCode}: ${game.gameState.tossUpQuestion.question}`
+  );
+
+  return { success: true, game };
 }
 
 // Initialize question data structure
@@ -175,7 +275,7 @@ function startNewRound(game) {
       );
     }
   } else {
-    // ⚡ Lightning Round (Round 4) fix
+    // âš¡ Lightning Round (Round 4) fix
     const firstLightningQuestion = game.questions.find((q) => q.round === 4);
     if (firstLightningQuestion) {
       game.currentQuestionIndex = game.questions.findIndex(
@@ -185,7 +285,7 @@ function startNewRound(game) {
         `⚡ Lightning Round started at index ${game.currentQuestionIndex}`
       );
     } else {
-      console.error("⚠️ No Lightning Round questions found in game.questions!");
+      console.error("⚠️No Lightning Round questions found in game.questions!");
       game.currentQuestionIndex = 0; // safe fallback
     }
   }
@@ -209,7 +309,10 @@ export function updateTeamActiveStatus(game) {
 
 // Create a new game (SINGLE ATTEMPT + Question Data)
 export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
-  if (teamNames?.team1?.trim().toLowerCase() === teamNames?.team2?.trim().toLowerCase()) {
+  if (
+    teamNames?.team1?.trim().toLowerCase() ===
+    teamNames?.team2?.trim().toLowerCase()
+  ) {
     throw new Error("Team names must be different (case-insensitive).");
   }
 
@@ -283,7 +386,7 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
   console.log(
     `🎮 Single-attempt game created with question tracking: ${gameCode}`
   );
-  return { game: games[gameCode]};
+  return { game: games[gameCode] };
 }
 
 // Start the game (called by host)
@@ -440,7 +543,7 @@ export function submitAnswer(gameCode, playerId, answerText) {
     return { success: false, message: "Invalid team" };
   }
 
-  // ✅ TOSS-UP ROUND LOGIC
+  // âœ… TOSS-UP ROUND LOGIC
   if (game.currentRound === 0) {
     if (!game.tossUpSubmittedTeams) game.tossUpSubmittedTeams = [];
     if (!game.tossUpAnswers) game.tossUpAnswers = [];
@@ -505,8 +608,8 @@ export function submitAnswer(gameCode, playerId, answerText) {
     return response;
   }
 
-  // ✅ LIGHTNING ROUND LOGIC (Round 4)
-  // ✅ LIGHTNING ROUND LOGIC (Round 4)
+  // âœ… LIGHTNING ROUND LOGIC (Round 4)
+  // âœ… LIGHTNING ROUND LOGIC (Round 4)
   if (game.currentRound === 4) {
     if (!game.lightningRoundSubmittedTeams)
       game.lightningRoundSubmittedTeams = [];
@@ -611,7 +714,7 @@ export function submitAnswer(gameCode, playerId, answerText) {
       if (!otherTeamAnswered) {
         // Other team hasn't answered yet - wait for them
         console.log(
-          `🔄 Lightning Round: Waiting for ${otherTeamKey} to answer`
+          `⚡ Lightning Round: Waiting for ${otherTeamKey} to answer`
         );
         result.waitingForOtherTeam = true;
       } else {
@@ -631,7 +734,7 @@ export function submitAnswer(gameCode, playerId, answerText) {
     return result;
   }
 
-  // ✅ REGULAR ROUND LOGIC (Rounds 1-3)
+  // âœ… REGULAR ROUND LOGIC (Rounds 1-3)
   if (!playerTeam.active) {
     return { success: false, message: "Not your team's turn" };
   }
@@ -883,24 +986,21 @@ export function joinGame(gameCode, playerName, localPlayerId) {
     throw new Error("Game not found");
   }
 
-
   if (games[gameCode].players.length < 10) {
     let playerId = "";
     if (!localPlayerId) {
       playerId = uuidv4();
-    }
-    else {
+    } else {
       playerId = localPlayerId;
     }
 
-    let player = games[gameCode].players.find(p => p.id === playerId);
+    let player = games[gameCode].players.find((p) => p.id === playerId);
 
     if (player) {
-      console.log("PLAYER EXISTS")
+      console.log("PLAYER EXISTS");
       player.connected = true;
-    }
-    else {
-      console.log("PLAYER DOESN'T EXIST")
+    } else {
+      console.log("PLAYER DOESN'T EXIST");
       player = {
         id: playerId,
         name: playerName,
@@ -913,16 +1013,20 @@ export function joinGame(gameCode, playerName, localPlayerId) {
       if (games[gameCode].status !== "waiting") {
         // Put them on the team with the lowest player count
         const existingTeams = [
-          ...new Set(games[gameCode].players.map((p) => p.teamId).filter(Boolean)),
+          ...new Set(
+            games[gameCode].players.map((p) => p.teamId).filter(Boolean)
+          ),
         ].map((teamId) => ({
           id: teamId,
-          playerCount: games[gameCode].players.filter((p) => p.teamId === teamId).length,
+          playerCount: games[gameCode].players.filter(
+            (p) => p.teamId === teamId
+          ).length,
         }));
 
         if (existingTeams.length > 0) {
-          console.log(existingTeams)
+          console.log(existingTeams);
           existingTeams.sort((a, b) => a.playerCount - b.playerCount);
-          console.log(existingTeams)
+          console.log(existingTeams);
           player.teamId = existingTeams[0].id;
         }
       }
@@ -932,10 +1036,14 @@ export function joinGame(gameCode, playerName, localPlayerId) {
     }
 
     console.log(`👤 Player joined: ${playerName} in game ${gameCode}`);
-    return { playerId, game: games[gameCode], teamId: player.teamId, gameFull: false };
-  }
-  else {
-    return { playerId: null, game: null, teamId: null, gameFull: true }
+    return {
+      playerId,
+      game: games[gameCode],
+      teamId: player.teamId,
+      gameFull: false,
+    };
+  } else {
+    return { playerId: null, game: null, teamId: null, gameFull: true };
   }
 }
 

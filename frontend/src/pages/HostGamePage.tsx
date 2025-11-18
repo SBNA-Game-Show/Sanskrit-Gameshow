@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
+import QuestionSelection from "../components/game/QuestionSelection";
 
 // Import components
 import CopyGameCode from "../components/game/CopyGameCode";
@@ -23,8 +24,8 @@ import gameApi from "../services/gameApi";
 import { SocketContext } from "store/socket-context";
 
 // Import types and utils
-import { Game, RoundData } from "../types"; //Team
-import { getCurrentQuestion, getTeamName } from "../utils/gameHelper"; //getGameWinner
+import { Game, RoundData } from "../types";
+import { getCurrentQuestion, getTeamName } from "../utils/gameHelper";
 import { ROUTES } from "../utils/constants";
 
 const role = localStorage.getItem("role");
@@ -42,6 +43,10 @@ const HostGamePage: React.FC = () => {
     questionNumber: number;
   } | null>(null);
   const [overridePoints, setOverridePoints] = useState("0");
+
+  // New state for question selection flow
+  const [showQuestionSelection, setShowQuestionSelection] = useState(false);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
 
   const socketContext = useContext(SocketContext);
   if (!socketContext) {
@@ -127,6 +132,8 @@ const HostGamePage: React.FC = () => {
     return { canStart: true, reason: "" };
   };
 
+  // In HostGamePage.tsx - Update createGame function
+
   const createGame = async () => {
     console.log(
       "🎮 Creating new single-attempt game with question tracking..."
@@ -138,6 +145,7 @@ const HostGamePage: React.FC = () => {
       const testResponse = await gameApi.testConnection();
       console.log("✅ Server connection successful:", testResponse);
 
+      // Create game with all questions - selection happens next
       const response = await gameApi.createGame({
         team1: team1Name.trim(),
         team2: team2Name.trim(),
@@ -145,14 +153,13 @@ const HostGamePage: React.FC = () => {
       console.log("✅ Game creation response:", response);
 
       const { game: newGame } = response;
-
       setGame(newGame);
 
+      // Show question selection
+      setShowQuestionSelection(true);
       setControlMessage(
-        `Game created successfully! Code: ${newGame.code}. Each question allows only 1 attempt.`
+        `Game created successfully! Code: ${newGame.code}. Select your questions.`
       );
-
-      connect(newGame.code, true, setGame, setControlMessage);
     } catch (error: unknown) {
       console.error("❌ Error creating game:", error);
 
@@ -174,6 +181,38 @@ const HostGamePage: React.FC = () => {
     setIsLoading(false);
   };
 
+  const handleQuestionsConfirmed = async (
+    questionIds: string[],
+    tossUpQuestionId: string | null // Updated signature
+  ) => {
+    setSelectedQuestionIds(questionIds);
+    setShowQuestionSelection(false);
+
+    if (game) {
+      if (!tossUpQuestionId) {
+        console.error("No toss-up question was selected.");
+        setControlMessage("Error: You must select one toss-up question.");
+        setShowQuestionSelection(true); // Stay on selection screen
+        return;
+      }
+
+      try {
+        // Send selected question IDs and toss-up ID to backend
+        await gameApi.setGameQuestions(
+          game.code,
+          questionIds,
+          tossUpQuestionId
+        );
+
+        // Now connect to the game socket
+        connect(game.code, true, setGame, setControlMessage);
+      } catch (error) {
+        console.error("Error setting game questions:", error);
+        setControlMessage("Failed to set questions. Please try again.");
+      }
+    }
+  };
+
   const handleContinueToNextRound = () => {
     if (game && socketRef.current) {
       socketRef.current.emit("continue-to-next-round", { gameCode: game.code });
@@ -182,7 +221,7 @@ const HostGamePage: React.FC = () => {
 
   const handleOverrideAnswer = () => {
     if (pendingOverride) {
-      console.log(game)
+      console.log(game);
       setOverrideMode(true);
       setControlMessage("");
       setOverridePoints("0");
@@ -197,7 +236,7 @@ const HostGamePage: React.FC = () => {
       }
       overrideAnswer(game.code, points, answerIndex);
     }
-  }
+  };
 
   const handleCancelOverride = () => {
     setOverrideMode(false);
@@ -257,6 +296,17 @@ const HostGamePage: React.FC = () => {
     );
   }
 
+  // Question Selection Screen - NEW
+  if (showQuestionSelection && game) {
+    return (
+      <PageLayout>
+        <QuestionSelection
+          questions={game.questions || []}
+          onConfirm={handleQuestionsConfirmed} // This now passes the correct signature
+        />
+      </PageLayout>
+    );
+  }
   // Game created but waiting for players
   if (game && game.status === "waiting") {
     const validation = canStartGame(game);
@@ -363,7 +413,6 @@ const HostGamePage: React.FC = () => {
 
         {/* Center Game Area */}
         <div className="order-1 md:order-none flex-1 flex flex-col overflow-y-auto">
-
           {/* Game Board */}
           <GameBoard
             game={game}
