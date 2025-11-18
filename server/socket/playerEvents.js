@@ -286,12 +286,12 @@ socket.on("join-team", (data) => {
 
         if (result.revealRemainingAfterDelay) {
           setTimeout(() => {
-            const updatedGame = getGame(gameCode);
-            const currentQuestion = getCurrentQuestion(updatedGame);
+            game.gameState.canAdvance = true;
+            const currentQuestion = getCurrentQuestion(game);
             if (currentQuestion) {
               currentQuestion.answers.forEach((a) => (a.revealed = true));
               io.to(gameCode).emit("remaining-cards-revealed", {
-                game: updatedGame,
+                game: game,
                 currentQuestion,
               });
             }
@@ -311,6 +311,7 @@ socket.on("join-team", (data) => {
         if (game.lightningRoundSubmittedTeams.length === 2) {
           
           setTimeout(() => {
+            game.gameState.canAdvance = true;
             const currentQuestion = getCurrentQuestion(game);
 
             if (currentQuestion) {

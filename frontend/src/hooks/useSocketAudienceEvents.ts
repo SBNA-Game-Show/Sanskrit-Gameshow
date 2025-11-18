@@ -90,6 +90,7 @@ export const useSocketAudienceEvents = (
 
     socket.on("next-question", (data) => {
       setGame(data.game);
+      setMessage({ text: `Advanced to the next question!`, type: "info" });
     });
 
     socket.on("question-complete", (data) => {

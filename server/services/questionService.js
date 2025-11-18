@@ -39,9 +39,9 @@ async function getQuestions(collection) {
     ];
 
     // --- Validate ---
-    if (inputQuestions.length < 26) {
+    if (inputQuestions.length < 19) {
       console.error("❌ Found only", inputQuestions.length, "input questions.");
-      throw new ApiError(404, "Less than 26 questions in the DB. Game needs 26.");
+      throw new ApiError(404, "Less than 19 questions in the DB. Game needs 19.");
     }
 
     return { inputQuestions, mcqQuestions };
