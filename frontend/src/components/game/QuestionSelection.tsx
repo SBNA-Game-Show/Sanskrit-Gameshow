@@ -270,6 +270,7 @@ const QuestionSelection: React.FC<QuestionSelectionProps> = ({
 
             {/* Random Select Button */}
             <button
+              data-testid="random-select-button"
               onClick={handleRandomSelect}
               className="px-4 py-2 bg-[#f2d2b6] text-black font-semibold rounded-lg shadow-md transition-all transform hover:scale-105 flex items-center gap-2 h-12"
             >
@@ -378,6 +379,7 @@ const QuestionSelection: React.FC<QuestionSelectionProps> = ({
           {/* Confirm Button */}
           <div className="mt-6 flex justify-end">
             <button
+              data-testid="confirm-selections-button"
               onClick={handleConfirm}
               disabled={!canConfirm}
               className={`px-8 py-3 rounded-lg font-semibold text-black transition-all transform ${
