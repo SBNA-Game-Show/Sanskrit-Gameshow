@@ -8,21 +8,25 @@ interface Option {
 
 interface QuestionSelectionProps {
   questions: Question[];
+  initialSelectedIds?: string[]; // Added prop
+  initialTossUpId?: string | null; // Added prop
   onConfirm: (
     selectedQuestionIds: string[],
     tossUpQuestionId: string | null
-  ) => void; // Updated signature
+  ) => void;
 }
 
 const QuestionSelection: React.FC<QuestionSelectionProps> = ({
   questions,
+  initialSelectedIds = [],
+  initialTossUpId = null,
   onConfirm,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<Option | null>(null);
   const [search, setSearch] = useState("");
 
-  // Store selections per round, adding "0" for Toss-Up
+  // Store selections per round
   const [roundSelections, setRoundSelections] = useState<{
     [key: string]: Set<string>;
   }>({
@@ -35,8 +39,42 @@ const QuestionSelection: React.FC<QuestionSelectionProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Effect to populate state from props (for Editing mode)
+  useEffect(() => {
+    if (initialSelectedIds.length > 0 || initialTossUpId) {
+      const newSelections: { [key: string]: Set<string> } = {
+        "0": new Set(),
+        "1": new Set(),
+        "2": new Set(),
+        "3": new Set(),
+        "4": new Set(),
+      };
+
+      // Handle Toss Up
+      if (initialTossUpId) {
+        newSelections["0"].add(initialTossUpId);
+      }
+
+      // Handle other questions
+      initialSelectedIds.forEach((id) => {
+        const q = questions.find((q) => q._id === id);
+        if (q) {
+          // If it's round 4, it goes to 4. Otherwise map 1,2,3.
+          // Note: Logic in randomizer puts logic in specific buckets.
+          // We map based on the question's inherent round property.
+          const roundKey = q.round.toString();
+          if (newSelections[roundKey]) {
+            newSelections[roundKey].add(id);
+          }
+        }
+      });
+
+      setRoundSelections(newSelections);
+    }
+  }, [initialSelectedIds, initialTossUpId, questions]);
+
   const options: Option[] = [
-    { value: "0", label: "Toss-Up" }, // Added Toss-Up
+    { value: "0", label: "Toss-Up" },
     { value: "1", label: "Round 1" },
     { value: "2", label: "Round 2" },
     { value: "3", label: "Round 3" },

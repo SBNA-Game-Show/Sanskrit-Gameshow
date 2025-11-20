@@ -24,14 +24,48 @@ import gameApi from "../services/gameApi";
 import { SocketContext } from "store/socket-context";
 
 // Import types and utils
-import { Game, RoundData } from "../types";
-import { getCurrentQuestion, getTeamName } from "../utils/gameHelper";
+import { Game, Question } from "../types";
+import { getCurrentQuestion } from "../utils/gameHelper";
 import { ROUTES } from "../utils/constants";
 
 const role = localStorage.getItem("role");
 
+// Helper function to randomly select questions immediately
+const selectRandomQuestions = (questions: Question[]) => {
+  const selectedIds: string[] = [];
+  let tossUpId: string | null = null;
+
+  // Separate Round 2 questions for Toss-Up and Round 2 selection
+  const round2Questions = questions.filter((q) => q.round === 2);
+  const shuffledRound2 = [...round2Questions].sort(() => Math.random() - 0.5);
+
+  // Select 1 for Toss-Up
+  const tossUp = shuffledRound2.slice(0, 1);
+  if (tossUp[0]) {
+    tossUpId = tossUp[0]._id;
+  }
+
+  // Select 6 for Round 2 (from the rest)
+  const round2 = shuffledRound2.slice(1, 7);
+  round2.forEach((q) => selectedIds.push(q._id));
+
+  // Select for other rounds
+  [1, 3, 4].forEach((roundNum) => {
+    const roundQuestions = questions.filter((q) => q.round === roundNum);
+    const required = roundNum === 4 ? 7 : 6;
+    const shuffled = [...roundQuestions].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, required);
+    selected.forEach((q) => selectedIds.push(q._id));
+  });
+
+  return { selectedIds, tossUpId };
+};
+
 const HostGamePage: React.FC = () => {
   const [game, setGame] = useState<Game | null>(null);
+  // Store ALL available questions here, so we can pass them to QuestionSelection even if game.questions is filtered
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+
   const [team1Name, setTeam1Name] = useState("");
   const [team2Name, setTeam2Name] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -132,8 +166,7 @@ const HostGamePage: React.FC = () => {
     return { canStart: true, reason: "" };
   };
 
-  // In HostGamePage.tsx - Update createGame function
-
+  // Updated createGame function for Random-First Flow
   const createGame = async () => {
     console.log(
       "🎮 Creating new single-attempt game with question tracking..."
@@ -142,23 +175,36 @@ const HostGamePage: React.FC = () => {
     setControlMessage("");
 
     try {
-      const testResponse = await gameApi.testConnection();
-      console.log("✅ Server connection successful:", testResponse);
+      await gameApi.testConnection();
 
-      // Create game with all questions - selection happens next
+      // Create game with all questions initially
       const response = await gameApi.createGame({
         team1: team1Name.trim(),
         team2: team2Name.trim(),
       });
-      console.log("✅ Game creation response:", response);
 
       const { game: newGame } = response;
-      setGame(newGame);
 
-      // Show question selection
-      setShowQuestionSelection(true);
+      setAllQuestions(newGame.questions || []);
+
+      // Automatically Randomize Questions
+      const { selectedIds, tossUpId } = selectRandomQuestions(
+        newGame.questions
+      );
+
+      // Set the questions immediately
+      if (tossUpId) {
+        await gameApi.setGameQuestions(newGame.code, selectedIds, tossUpId);
+      }
+
+      // Connect to socket (this will return the game with filtered questions)
+      connect(newGame.code, true, setGame, setControlMessage);
+
+      // Do not show selection screen by default
+      setShowQuestionSelection(false);
+
       setControlMessage(
-        `Game created successfully! Code: ${newGame.code}. Select your questions.`
+        `Game created successfully! Code: ${newGame.code}. Questions randomized.`
       );
     } catch (error: unknown) {
       console.error("❌ Error creating game:", error);
@@ -183,7 +229,7 @@ const HostGamePage: React.FC = () => {
 
   const handleQuestionsConfirmed = async (
     questionIds: string[],
-    tossUpQuestionId: string | null // Updated signature
+    tossUpQuestionId: string | null
   ) => {
     setSelectedQuestionIds(questionIds);
     setShowQuestionSelection(false);
@@ -192,7 +238,7 @@ const HostGamePage: React.FC = () => {
       if (!tossUpQuestionId) {
         console.error("No toss-up question was selected.");
         setControlMessage("Error: You must select one toss-up question.");
-        setShowQuestionSelection(true); // Stay on selection screen
+        setShowQuestionSelection(true);
         return;
       }
 
@@ -204,8 +250,8 @@ const HostGamePage: React.FC = () => {
           tossUpQuestionId
         );
 
-        // Now connect to the game socket
         connect(game.code, true, setGame, setControlMessage);
+        setControlMessage("Questions updated successfully!");
       } catch (error) {
         console.error("Error setting game questions:", error);
         setControlMessage("Failed to set questions. Please try again.");
@@ -296,17 +342,24 @@ const HostGamePage: React.FC = () => {
     );
   }
 
-  // Question Selection Screen - NEW
+  // Question Selection Screen - Modified to accept initial props
   if (showQuestionSelection && game) {
+    // Determine current selections from the game object if not manually tracked yet
+    const currentQuestionIds = game.questions.map((q) => q._id);
+    const currentTossUpId = game.gameState.tossUpQuestion?._id || null;
+
     return (
       <PageLayout>
         <QuestionSelection
-          questions={game.questions || []}
-          onConfirm={handleQuestionsConfirmed} // This now passes the correct signature
+          questions={allQuestions.length > 0 ? allQuestions : game.questions}
+          initialSelectedIds={currentQuestionIds}
+          initialTossUpId={currentTossUpId}
+          onConfirm={handleQuestionsConfirmed}
         />
       </PageLayout>
     );
   }
+
   // Game created but waiting for players
   if (game && game.status === "waiting") {
     const validation = canStartGame(game);
@@ -319,6 +372,16 @@ const HostGamePage: React.FC = () => {
               <h2 className="text-3xl font-bold mb-6">Game Setup</h2>
 
               <CopyGameCode gameCode={game.code} />
+
+              {/* New Edit Questions Button */}
+              <div className="mb-6">
+                <button
+                  onClick={() => setShowQuestionSelection(true)}
+                  className="text-sm text-gray-600 underline hover:text-purple-600 font-medium"
+                >
+                  Edit Selected Questions
+                </button>
+              </div>
 
               {!validation.canStart && (
                 <div className="mb-4 p-4 bg-gray-200 border-yellow-500/50 rounded">
