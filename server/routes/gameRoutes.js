@@ -122,18 +122,19 @@ router.post("/api/join-game", (req, res) => {
     }
   }
 });
-// In gameRoutes.js - Add this new route
 
+//new route to set the game questions that were selected with questionselection (either manually selecting the questions or using random select)
+//includes toss up question
 router.post("/api/set-game-questions", async (req, res) => {
   try {
     console.log("Set game questions request received");
-    const { gameCode, questionIds, tossUpQuestionId } = req.body; // Added tossUpQuestionId
+    const { gameCode, questionIds, tossUpQuestionId } = req.body;
 
     if (
       !gameCode ||
       !questionIds ||
       !Array.isArray(questionIds) ||
-      tossUpQuestionId === undefined // Check for undefined (null is valid)
+      tossUpQuestionId === undefined
     ) {
       return res.status(400).json({
         error:
@@ -145,7 +146,7 @@ router.post("/api/set-game-questions", async (req, res) => {
       gameCode,
       questionIds,
       tossUpQuestionId
-    ); // Pass to service
+    );
 
     if (!result.success) {
       return res.status(404).json({ error: result.message });

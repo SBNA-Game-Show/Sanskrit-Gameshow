@@ -29,7 +29,7 @@ export async function prepareGameQuestions() {
 
   // --- Round Assignment ---
   // Only assign round based on questionLevel.
-  const updatedInputQuestions = questions.map((q) => {
+  const updatedInputQuestions = inputQuestions.map((q) => {
     let round;
     if (q.questionLevel === QUESTION_LEVEL.BEGINNER) round = 1;
     else if (q.questionLevel === QUESTION_LEVEL.INTERMEDIATE) round = 2;
@@ -46,7 +46,7 @@ export async function prepareGameQuestions() {
     ...q,
     answers: shuffleAnswers(q.answers),
     round: 4,
-    questionNumber: index + 1, // Round 4 still needs a number
+    questionNumber: i + 1, // Round 4 still needs a number
     teamAssignment: "shared",
   }));
 
