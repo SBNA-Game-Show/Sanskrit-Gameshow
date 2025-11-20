@@ -19,10 +19,10 @@ const AudienceGamePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [game, setGame] = useState<Game | null>(null);
-  const [message, setMessage] = useState<
-    | { text: string; type: "info" | "success" | "error" }
-    | null
-  >(null);
+  const [message, setMessage] = useState<{
+    text: string;
+    type: "info" | "success" | "error";
+  } | null>(null);
 
   const socketContext = useContext(SocketContext);
   if (!socketContext) {

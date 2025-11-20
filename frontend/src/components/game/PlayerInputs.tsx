@@ -138,6 +138,7 @@ const PlayerInputs: React.FC<PlayerInputsProps> = ({
           isMyTurn && game?.activeTeamId ? (
             <div className="max-w-md mx-auto">
               <input
+                data-testid="answer-input"
                 type="text"
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
@@ -148,6 +149,7 @@ const PlayerInputs: React.FC<PlayerInputsProps> = ({
                 className="w-full px-4 py-3 text-lg font-semibold rounded-lg bg-white text-gray-900 border-2 border-green-400 focus:outline-none focus:border-green-300 focus:ring-4 focus:ring-green-300/30 transition-all shadow-md placeholder-gray-500"
               />
               <button
+                data-testid="submit-answer-button"
                 onClick={() => onSubmitAnswer(answer)}
                 disabled={!answer.trim() || !canAnswer}
                 className={`w-full py-3 px-6 mt-2 rounded-lg font-bold text-lg transition-all transform shadow-lg ${

@@ -1,6 +1,6 @@
-import { Counter, GameQuestion } from "../models/gameQuestion.model.js";
+import { GameQuestion } from "../models/gameQuestion.model.js";
 import { ApiError } from "../utils/ApiError.js";
-import { QUESTION_LEVEL } from "../utils/constants.js";
+import { QUESTION_LEVEL, QUESTION_TYPE } from "../utils/constants.js";
 import { SCHEMA_MODELS } from "../utils/enums.js";
 import { getQuestions } from "./questionService.js";
 
@@ -9,10 +9,9 @@ function shuffleAnswers(array) {
 
   // Use Fisher-Yates shuffle
   for (let i = arr.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-
   return arr;
 }
 
@@ -21,13 +20,8 @@ export async function prepareGameQuestions() {
     SCHEMA_MODELS.FINALQUESTION
   );
 
-  const questions = inputQuestions;
-
-  if (!questions.length) {
-    throw new ApiError(
-      500,
-      "No New questions found to load into game. All The questions were used in previous Game."
-    );
+  if (!inputQuestions?.length) {
+    throw new ApiError(500, "No new questions found to load into game.");
   }
 
   // --- Toss-Up Logic ---
@@ -47,8 +41,8 @@ export async function prepareGameQuestions() {
     };
   });
 
-  // --- Add Round 4 Lightning Questions ---
-  const updatedMcqQuestions = mcqQuestions.map((q, index) => ({
+  // --- Round 4 (Lightning / MCQ)
+  const updatedMcqQuestions = (mcqQuestions || []).map((q, i) => ({
     ...q,
     answers: shuffleAnswers(q.answers),
     round: 4,
@@ -65,7 +59,6 @@ export async function prepareGameQuestions() {
     ...updatedMcqQuestions,
   ]);
 
-  // --- Return combined questions ---
   return {
     updatedTossUpQuestion: null,
     updatedQuestions: [...updatedInputQuestions, ...updatedMcqQuestions],

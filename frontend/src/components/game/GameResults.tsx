@@ -44,7 +44,7 @@ const GameResults: React.FC<GameResultsProps> = ({
   return (
     <AnimatedCard>
       <div className="max-w-6xl mx-auto">
-        <div className="glass-card p-12 text-center">
+        <div className="glass-card p-12 text-center" data-testid="final-result-page">
           {/* FINAL CHAMPION DISPLAY AT TOP */}
           <div className="mb-12">
             <div className="text-6xl mb-4 animate-float">🏆</div>

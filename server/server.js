@@ -24,7 +24,7 @@ setInterval(() => {
   cleanupOldGames();
 }, 60 * 60 * 1000);
 
-["MONGODB_URI", "DB_NAME", "PORT"].forEach((key) => {
+["MONGODB_URI", "DB_NAME"].forEach((key) => {
   if (!process.env[key]) {
     throw new Error(`❌ Missing required env variable: ${key}`);
   }
@@ -42,7 +42,7 @@ connectDB()
 
     // Start the Express server
     server.listen(PORT, () => {
-      console.log(`🚀 Family Feud Quiz Server running on port ${PORT}`);
+      console.log(`🚀 Family Feud Quiz Server running on port ${process.env.FRONTEND_URL || "http://localhost:3000"}`);
       console.log(`📱 Frontend should connect to http://localhost:${PORT}`);
       console.log(`🎮 Ready for multiplayer games!`);
       console.log(`🔧 Server organized with modular components`);

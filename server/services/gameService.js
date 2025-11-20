@@ -372,15 +372,15 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
         round4: { team1: 0, team2: 0 },
       },
       tossUpQuestion: JSON.parse(JSON.stringify(tossUpQuestion)),
-      tossUpAnswers: [], // Stores both team responses
-      tossUpSubmittedTeams: [], // To track who already answered
-      lightningRoundSubmittedTeams: [],
-      pauseTimer: false,
-
       awaitingAnswer: false,
       canAdvance: false,
       questionData: initializeQuestionData(),
     },
+    tossUpAnswers: [], // Stores both team responses
+    tossUpSubmittedTeams: [], // To track who already answered
+    tossUpComplete: false,
+    lightningRoundSubmittedTeams: [],
+    pauseTimer: false,
   };
 
   console.log(

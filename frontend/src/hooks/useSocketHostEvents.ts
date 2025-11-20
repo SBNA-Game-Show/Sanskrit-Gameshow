@@ -102,11 +102,6 @@ export const useSocketHostEvents = (
       setGame(data.game);
       // Preserve the previous message instead of showing a new one
 
-      if (data.game.currentRound === 4) {
-        setTimeout(() => {
-          socket.emit("advance-question", { gameCode });
-        }, 2500);
-      }
     });
 
     socket.on("turn-changed", (data) => {
@@ -208,11 +203,6 @@ export const useSocketHostEvents = (
       setControlMessage("All answers have been revealed!");
       setOverrideMode(false);
 
-      if (data.game.currentRound === 4) {
-        setTimeout(() => {
-          socket.emit("advance-question", { gameCode });
-        }, 2500);
-      }
     });
 
     socket.on("answer-overridden", (data) => {

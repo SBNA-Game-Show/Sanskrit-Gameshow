@@ -8,6 +8,7 @@ const API = axios.create({
     "Content-Type": "application/json",
   },
 });
+
 export const loginUser = async (
   credentials: LoginCredentials
 ): Promise<LoginResponse> => {
