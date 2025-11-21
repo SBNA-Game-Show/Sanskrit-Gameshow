@@ -5,6 +5,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { SCHEMA_MODELS } from "../utils/enums.js";
 
+// UNUSED FUNCTION
+// USE prepareGameQuestions() in services\loadQUestionFromDB.js instead
 export const loadQuestions = asyncHandler(async (req, res) => {
   // Initial Step: Clean GameQuestion Schema
 

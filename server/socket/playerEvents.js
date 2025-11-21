@@ -241,7 +241,6 @@ socket.on("join-team", (data) => {
         // active team to allow the second team to answer.
         game.activeTeamId = otherTeamId;
         game.teams.forEach((t) => (t.active = t.id === otherTeamId));
-        game.gameState.inputEnabled = true;
         game.gameState.currentTurn = otherTeamId.includes("team1")
           ? "team1"
           : "team2";
@@ -287,12 +286,12 @@ socket.on("join-team", (data) => {
 
         if (result.revealRemainingAfterDelay) {
           setTimeout(() => {
-            const updatedGame = getGame(gameCode);
-            const currentQuestion = getCurrentQuestion(updatedGame);
+            game.gameState.canAdvance = true;
+            const currentQuestion = getCurrentQuestion(game);
             if (currentQuestion) {
               currentQuestion.answers.forEach((a) => (a.revealed = true));
               io.to(gameCode).emit("remaining-cards-revealed", {
-                game: updatedGame,
+                game: game,
                 currentQuestion,
               });
             }
@@ -312,6 +311,7 @@ socket.on("join-team", (data) => {
         if (game.lightningRoundSubmittedTeams.length === 2) {
           
           setTimeout(() => {
+            game.gameState.canAdvance = true;
             const currentQuestion = getCurrentQuestion(game);
 
             if (currentQuestion) {
@@ -332,7 +332,6 @@ socket.on("join-team", (data) => {
           // active team to allow the second team to answer.
           game.activeTeamId = otherTeamId;
           game.teams.forEach((t) => (t.active = t.id === otherTeamId));
-          game.gameState.inputEnabled = true;
           game.gameState.currentTurn = otherTeamId.includes("team1")
             ? "team1"
             : "team2";

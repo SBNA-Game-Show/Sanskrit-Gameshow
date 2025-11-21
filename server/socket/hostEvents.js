@@ -286,6 +286,17 @@ export function setupHostEvents(socket, io) {
           currentQuestion,
           byHost: true,
         });
+
+        // Allow host to manually advance like a normal question
+        game.gameState.canAdvance = true;
+        game.activeTeamId = null;
+        const updatedGame = updateGame(gameCode, game);
+
+        io.to(gameCode).emit("question-complete", {
+          game: updatedGame,
+          currentQuestion: getCurrentQuestion(updatedGame),
+        });
+        console.log(`⚠️ Host forced question completion, awaiting next command`);
       }
     }
   });
