@@ -6,6 +6,10 @@
 //confirm-selections-button - save and go back to the game code area
 
 //note - edit-questions-button in hostgamepage needs to be clicked to go to this component. It is located under the game code area
+
+// bugs/things to test
+// - Sometimes when the host rejoins the game it causes an unexpected game state.
+// - Sometimes when selecting the questions manually (not using random select) the questions do not appear in the correct rounds.
 import { Question } from "@types";
 import React, { useState, useRef, useEffect } from "react";
 
@@ -16,8 +20,8 @@ interface Option {
 
 interface QuestionSelectionProps {
   questions: Question[];
-  initialSelectedIds?: string[]; // Added prop
-  initialTossUpId?: string | null; // Added prop
+  initialSelectedIds?: string[];
+  initialTossUpId?: string | null;
   onConfirm: (
     selectedQuestionIds: string[],
     tossUpQuestionId: string | null
