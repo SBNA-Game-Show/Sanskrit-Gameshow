@@ -1,3 +1,11 @@
+// list of data-testid
+//round-select-combobox - click the combobox to view options (rounds)
+//round-option-${option.value} - 0-toss up, 1-round 1, 2-round 2, 3-round 3, 4-lightning round
+//{question.question} - the id for each each is the entire question text, use this to check/uncheck specific questions
+//random-select-button - randomly selects questions for each round.
+//confirm-selections-button - save and go back to the game code area
+
+//note - edit-questions-button in hostgamepage needs to be clicked to go to this component. It is located under the game code area
 import { Question } from "@types";
 import React, { useState, useRef, useEffect } from "react";
 
@@ -245,6 +253,7 @@ const QuestionSelection: React.FC<QuestionSelectionProps> = ({
               <div className="relative">
                 <input
                   type="text"
+                  data-testid="round-select-combobox"
                   value={isOpen ? search : selected?.label || ""}
                   onChange={(e) => {
                     setSearch(e.target.value);
@@ -289,6 +298,7 @@ const QuestionSelection: React.FC<QuestionSelectionProps> = ({
                       return (
                         <button
                           key={option.value}
+                          data-testid={`round-option-${option.value}`}
                           onClick={() => handleSelect(option)}
                           className="w-full px-4 py-3 text-left hover:bg-purple-50 flex items-center justify-between transition-colors"
                         >
@@ -359,6 +369,7 @@ const QuestionSelection: React.FC<QuestionSelectionProps> = ({
                             <td className="px-6 py-4">
                               <input
                                 type="checkbox"
+                                data-testid={question.question}
                                 checked={currentRoundSelections.has(
                                   question._id
                                 )}

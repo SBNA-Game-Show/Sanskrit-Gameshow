@@ -376,6 +376,7 @@ const HostGamePage: React.FC = () => {
               {/* New Edit Questions Button */}
               <div className="mb-6">
                 <button
+                  data-testid="edit-questions-button"
                   onClick={() => setShowQuestionSelection(true)}
                   className="text-sm text-gray-600 underline hover:text-purple-600 font-medium"
                 >
