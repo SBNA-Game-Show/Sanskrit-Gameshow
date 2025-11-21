@@ -77,7 +77,7 @@ const LIGHTNING_STEPS: LightningStep[] = [
   { by: 'p1', answerTestId: 'answer-1-card' },
 ];
 
-async function playLightningRound(p1: Page, p2: Page) {
+async function playLightningRound(hostPage: Page, p1: Page, p2: Page) {
   const players = { p1, p2 } as const;
 
   for (const step of LIGHTNING_STEPS) {
@@ -88,6 +88,23 @@ async function playLightningRound(p1: Page, p2: Page) {
 
     // small gap between lightning answers, mirroring your current code
     await page.waitForTimeout(500);
+
+    const nextBtn = hostPage.getByTestId('host-next-question-button');
+    
+    await nextBtn.waitFor({
+      state: 'visible',
+      timeout: 10_000,
+    });
+
+    await expect(nextBtn).toBeEnabled({ timeout: 10_000 });
+
+    await nextBtn.click();
+
+    await Promise.race([
+      nextBtn.waitFor({ state: 'detached', timeout: 7_000 }),
+      expect(nextBtn).toBeHidden({ timeout: 7_000 }),
+    ]);
+
   }
 }
 
@@ -232,7 +249,7 @@ test('Host creates game and plays through 3 rounds (mock data)', async ({ browse
 
   // ---------- LIGHTNING ROUND  ----------
   await goToNextRound(hostPage, p1);  
-  await playLightningRound(p1, p2);
+  await playLightningRound(hostPage, p1, p2);
    
   await hostPage.waitForTimeout(1000); 
  
