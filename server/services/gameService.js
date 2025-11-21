@@ -23,8 +23,6 @@ export function generateGameCode() {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
 }
 
-// In gameService.js - Add this new function
-
 export function setGameQuestions(
   gameCode,
   selectedQuestionIds,
@@ -35,8 +33,13 @@ export function setGameQuestions(
     return { success: false, message: "Game not found" };
   }
 
+  // If questionPool doesn't exist (legacy games), fall back to game.questions
+  const sourceQuestions = game.questionPool || game.questions;
+
   // --- 1. SET TOSS-UP ---
-  const tossUpQuestion = game.questions.find((q) => q._id === tossUpQuestionId);
+  const tossUpQuestion = sourceQuestions.find(
+    (q) => q._id === tossUpQuestionId
+  );
   if (!tossUpQuestion) {
     return { success: false, message: "Selected toss-up question not found" };
   }
@@ -47,8 +50,8 @@ export function setGameQuestions(
   };
 
   // --- 2. PREPARE FINAL QUESTION LIST ---
-  // Get all *other* selected questions
-  const selectedQuestions = game.questions.filter(
+  // Get all *other* selected questions from the source pool
+  const selectedQuestions = sourceQuestions.filter(
     (q) => selectedQuestionIds.includes(q._id) && q._id !== tossUpQuestionId
   );
 
@@ -68,20 +71,18 @@ export function setGameQuestions(
 
     roundQuestions.forEach((q, index) => {
       const questionNumber = Math.floor(index / 2) + 1;
+
+      // Create a clean copy for the game instance to avoid mutating the pool
+      const gameQuestion = { ...q, questionNumber };
+
       if (index % 2 === 0) {
         // Even index (0, 2, 4) -> Team 1
-        team1Questions.push({
-          ...q,
-          teamAssignment: "team1",
-          questionNumber,
-        });
+        gameQuestion.teamAssignment = "team1";
+        team1Questions.push(gameQuestion);
       } else {
         // Odd index (1, 3, 5) -> Team 2
-        team2Questions.push({
-          ...q,
-          teamAssignment: "team2",
-          questionNumber,
-        });
+        gameQuestion.teamAssignment = "team2";
+        team2Questions.push(gameQuestion);
       }
     });
 
@@ -93,11 +94,13 @@ export function setGameQuestions(
   // --- 4. PROCESS ROUND 4 ---
   const round4Questions = selectedQuestions
     .filter((q) => q.round === 4)
-    .sort((a, b) => a.questionNumber - b.questionNumber); // Sort by pre-assigned number
+    .sort((a, b) => a.questionNumber - b.questionNumber) // Sort by pre-assigned number
+    .map((q) => ({ ...q })); // Ensure we clone them
 
   finalOrderedQuestions.push(...round4Questions);
 
   // --- 5. SET GAME QUESTIONS ---
+  // This overwrites the active questions, but questionPool remains intact
   game.questions = finalOrderedQuestions;
 
   console.log(
@@ -323,12 +326,18 @@ export async function createGame(updatedQuestions, tossUpQuestion, teamNames) {
 
   console.log("TossUpQuestion Fetched ", tossUpQuestion);
 
+  // Create a deep copy for the pool
+  const questionPool = JSON.parse(JSON.stringify(updatedQuestions));
+
   games[gameCode] = {
     id: gameId,
     code: gameCode,
     status: "waiting",
     currentQuestionIndex: 0,
     currentRound: 0,
+    // Store the Master List separately from the Active List
+    questionPool: questionPool,
+    // Initially, questions is the full list (or could be empty, but setting it to pool is safe)
     questions: JSON.parse(JSON.stringify(updatedQuestions)),
     teams: [
       {
