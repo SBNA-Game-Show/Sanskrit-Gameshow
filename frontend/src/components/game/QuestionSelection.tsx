@@ -9,7 +9,10 @@
 
 // bugs/things to test
 // - Sometimes when the host rejoins the game it causes an unexpected game state.
-// - Sometimes when selecting the questions manually (not using random select) the questions do not appear in the correct rounds.
+
+//full playthrough test needs to be updated to work with questionselection.
+//note - scrolling is needed to view some of the questions in questionselection.
+
 import { Question } from "@types";
 import React, { useState, useRef, useEffect } from "react";
 
