@@ -66,7 +66,7 @@ const GameCreationForm: React.FC<GameCreationFormProps> = ({
           </div>
 
           {duplicateNames && (
-  <p className="text-red-400 mb-4 text-sm">
+  <p data-testid="name-different" className="text-red-400 mb-4 text-sm">
     Team names must be different
   </p>
 )}

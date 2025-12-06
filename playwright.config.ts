@@ -13,7 +13,7 @@ export default defineConfig({
     headless: false,                     // 👈 show test browser
     trace: 'on-first-retry',
     launchOptions: {
-      slowMo: 5000,                      // 👈 slows actions by 1s so you can watch
+      slowMo: 2000,                      // 👈 slows actions by 1s so you can watch
     },
   },
 

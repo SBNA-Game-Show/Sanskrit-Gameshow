@@ -37,7 +37,7 @@ const AudienceJoinForm: React.FC<AudienceJoinFormProps> = ({
             <p className="text-lg text-slate-300 mb-4">Watch a game in progress</p>
           </div>
           {error && (
-            <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6 text-red-300">
+            <div data-testid="gamefull" className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6 text-red-300">
               {error}
             </div>
           )}

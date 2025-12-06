@@ -19,7 +19,7 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
     const MAX_MEMBERS = 5;
 
   return (
-    <div className="bg-white border shadow p-8 text-center mb-8">
+    <div data-testid="team-page" className="bg-white border shadow p-8 text-center mb-8">
       <h2 className="text-3xl font-bold mb-4">Welcome {playerName}!</h2>
 
       <div className="mb-6">
@@ -64,7 +64,7 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
 
                     {/* ✅ Indicate team full */}
                     {isFull && (
-                      <p className="text-red-400 text-xs mt-2 font-semibold">
+                      <p data-testid={`team-${index + 1}-full-message`} className="text-red-400 text-xs mt-2 font-semibold">
                         Team is full
                       </p>
                     )}
@@ -76,7 +76,7 @@ const TeamSelection: React.FC<TeamSelectionProps> = ({
 
 
           {selectedTeamId && (
-            <div className="mt-6 p-4  rounded-lg border border-blue-500/30 shadow bg-gray-100">
+            <div data-testid="player-joined-team-message" className="mt-6 p-4  rounded-lg border border-blue-500/30 shadow bg-gray-100">
               <p className="text-blue-300 font-medium">
                 You're on{" "}
                 {teams.find((t) => t.id === selectedTeamId)?.name || "a team"}!

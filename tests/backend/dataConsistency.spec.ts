@@ -361,6 +361,11 @@ test.describe('API Integration Tests - Multiple Concurrent Games', () => {
       }
     });
 
+    if (createResponse.status() !== 200) {
+      console.log('Response status:', createResponse.status());
+      console.log('Response body:', await createResponse.text());
+    }
+
     expect(createResponse.status()).toBe(200);
     
     const gameData: GameData = await createResponse.json();
